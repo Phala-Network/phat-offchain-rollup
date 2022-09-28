@@ -64,6 +64,7 @@ contract PhatQueuedAnchor is PhatRollupAnchor {
     /// Pushes a request to the queue waiting for the Phat Contract to process
     ///
     /// Returns the index of the reqeust.
+    /// TODO: add permission control?
     function pushRequest(bytes memory data) public returns (uint256) {
         uint256 end = getUint("end");
         bytes memory itemKey = abi.encode(end);
