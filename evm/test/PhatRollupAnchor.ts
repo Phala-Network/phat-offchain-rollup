@@ -45,7 +45,7 @@ describe("RollupAnchor", function () {
           // updates
           [], [],
           // actions
-          ['0xDEADBEEF'],
+          ['0x00DEADBEEF'],
         )
       ).to.be.revertedWith('bad caller');
     });
@@ -60,7 +60,7 @@ describe("RollupAnchor", function () {
           // updates
           [], [],
           // actions
-          ['0xDEADBEEF'],
+          ['0x00DEADBEEF'],
         )
       ).to.be.revertedWith('bad cond len');
 
@@ -71,7 +71,7 @@ describe("RollupAnchor", function () {
           // updates
           ['0x'], [],
           // actions
-          ['0xDEADBEEF'],
+          ['0x00DEADBEEF'],
         )
       ).to.be.revertedWith('bad update len');
     });
@@ -87,8 +87,8 @@ describe("RollupAnchor", function () {
           // updates
           ['0x01'],
           ['0x0000000000000000000000000000000000000000000000000000000000000001'],
-          // actions
-          ['0xDEADBEEF'],
+          // actions (0x01 - callback; 0xdeadbeef - data)
+          ['0x01DEADBEEF'],
         )
       ).not.to.be.reverted;
 
@@ -111,7 +111,7 @@ describe("RollupAnchor", function () {
           ['0x01'],
           ['0x0000000000000000000000000000000000000000000000000000000000000001'],
           // actions
-          ['0xDEADBEEF'],
+          ['0x00DEADBEEF'],
         )
       ).not.to.be.reverted;
       expect(await anchor.getStorage('0x01')).to.be.equals('0x0000000000000000000000000000000000000000000000000000000000000001');
@@ -125,7 +125,7 @@ describe("RollupAnchor", function () {
           ['0x01'],
           ['0x0000000000000000000000000000000000000000000000000000000000000001'],
           // actions
-          ['0xDEADBEEF'],
+          ['0x00DEADBEEF'],
         )
       ).to.be.revertedWith('cond not met');
     });
