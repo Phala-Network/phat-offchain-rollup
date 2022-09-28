@@ -19,6 +19,9 @@ import "./PhatRollupAnchor.sol";
 /// - `<prefix>/end`: `uint` - index of the next element to push to the queue
 /// - `<prefix/<n>`: `bytes` - the `n`-th message
 contract PhatQueuedAnchor is PhatRollupAnchor {
+    event RequestQueued(uint256 idx, bytes data);
+    event RequestProcessedTo(uint256);
+
     bytes queuePrefix;
     bytes lockKey;
 
@@ -33,7 +36,7 @@ contract PhatQueuedAnchor is PhatRollupAnchor {
         queuePrefix = queuePrefix_;
     }
 
-    function getUint(bytes memory key) internal view returns (uint256) {
+    function getUint(bytes memory key) public view returns (uint256) {
         bytes memory storageKey = bytes.concat(queuePrefix, key);
         return toUint256Strict(phatStorage[storageKey], 0);
     }
@@ -67,6 +70,7 @@ contract PhatQueuedAnchor is PhatRollupAnchor {
         setBytes(itemKey, data);
         setUint("end", end + 1);
         incLock();
+        emit RequestQueued(end, data);
         return end;
     }
 
@@ -77,6 +81,8 @@ contract PhatQueuedAnchor is PhatRollupAnchor {
             bytes memory itemKey = abi.encode(end);
             removeBytes(itemKey);
         }
+        setUint("start", end);
+        emit RequestProcessedTo(end);
     }
 
     // Handle queue related messages
