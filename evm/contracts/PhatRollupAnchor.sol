@@ -5,18 +5,14 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./PhatRollupReceiver.sol";
 
 // Uncomment this line to use console.log
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 contract PhatRollupAnchor is ReentrancyGuard {
+    bytes4 constant ROLLUP_RECEIVED = 0x43a53d89;
     // function genReceiverSelector() public pure returns (bytes4) {
     //     return bytes4(keccak256("onPhatRollupReceived(address,bytes)"));
     // }
-    bytes4 constant ROLLUP_RECEIVED = 0x43a53d89;
-
     // function testConvert(bytes calldata inputData) public view returns (uint256) {
-    //     console.log("###Received input data");
-    //     console.logBytes(inputData);
-    //     console.log("###");
     //     return toUint256(inputData, 0);
     // }
     
