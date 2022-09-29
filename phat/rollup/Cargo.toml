@@ -1,0 +1,21 @@
+[package]
+name = "phat_offchain_rollup"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "phat_offchain_rollup"
+path = "src/lib.rs"
+
+[dependencies]
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
+primitive-types = { version = "0.11", default-features = false, features = ["codec", "scale-info"] }
+
+[features]
+default = ["std"]
+std = [
+    "scale/std",
+    "scale-info/std",
+	"primitive-types/std",
+]

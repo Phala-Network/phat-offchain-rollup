@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "rollup",
+    "sample_oracle",
+    #"scheduler",
+]
