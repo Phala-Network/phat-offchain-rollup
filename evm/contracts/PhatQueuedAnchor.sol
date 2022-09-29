@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./PhatRollupAnchor.sol";
+import "./Interfaces.sol";
 
 /// A Phat Contract Rollup Anchor with a built-in request queue
 ///
@@ -18,7 +20,7 @@ import "./PhatRollupAnchor.sol";
 /// - `<prefix>/start`: `uint` - index of the first element
 /// - `<prefix>/end`: `uint` - index of the next element to push to the queue
 /// - `<prefix/<n>`: `bytes` - the `n`-th message
-contract PhatQueuedAnchor is PhatRollupAnchor {
+contract PhatQueuedAnchor is PhatRollupAnchor, IPhatQueuedAnchor, Ownable {
     event RequestQueued(uint256 idx, bytes data);
     event RequestProcessedTo(uint256);
 
@@ -64,8 +66,7 @@ contract PhatQueuedAnchor is PhatRollupAnchor {
     /// Pushes a request to the queue waiting for the Phat Contract to process
     ///
     /// Returns the index of the reqeust.
-    /// TODO: add permission control?
-    function pushRequest(bytes memory data) public returns (uint256) {
+    function pushRequest(bytes memory data) public onlyOwner() returns (uint256) {
         uint256 end = getUint("end");
         bytes memory itemKey = abi.encode(end);
         setBytes(itemKey, data);
