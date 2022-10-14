@@ -8,7 +8,7 @@ async function main() {
 
   console.log('Deploying...');
   const oracle = await TestOracle.deploy();
-  const anchor = await Anchor.deploy(deployer.address, oracle.address, "0x71"); // Q
+  const anchor = await Anchor.deploy(deployer.address, oracle.address, "0x71"); // q
   await Promise.all([
     oracle.deployed(),
     anchor.deployed(),
