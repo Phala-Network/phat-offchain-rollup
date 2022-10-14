@@ -10,6 +10,7 @@ mod sample_oracle {
     use hex_literal::hex;
     use phat_offchain_rollup::{
         lock::{Locks, GLOBAL as GLOBAL_LOCK},
+        platforms::Evm,
         RollupResult, RollupTx, Target as RollupTarget,
     };
     use primitive_types::U256;
@@ -111,11 +112,12 @@ mod sample_oracle {
 
             // Apply the response to request
             let payload = ethabi::encode(&[
-                ethabi::Token::Uint(rid),
+                ethabi::Token::Uint(*rid),
                 ethabi::Token::Bytes(encoded_price),
             ]);
-            tx.actions
-                .extend(&[Action::Reply(payload), Action::ProcessedTo(start + 1)]);
+
+            tx.action(Action::Reply(payload))
+                .action(Action::ProcessedTo(start + 1));
 
             let result = RollupResult {
                 tx,
@@ -134,6 +136,28 @@ mod sample_oracle {
     use pink_web3::transports::{resolve_ready, PinkHttp};
     use pink_web3::types::TransactionParameters;
     use pink_web3::types::{Bytes, FilterBuilder, H160};
+
+    enum Action {
+        Reply(Vec<u8>),
+        ProcessedTo(u32),
+    }
+
+    // conver to Vec<u8> for EVM
+    impl Into<Vec<u8>> for Action {
+        fn into(self) -> Vec<u8> {
+            use core::iter::once;
+            match self {
+                Action::Reply(data) => once(0u8).chain(data.into_iter()).collect(),
+                Action::ProcessedTo(n) => once(1u8).chain(u256_be(n.into()).into_iter()).collect(),
+            }
+        }
+    }
+
+    fn u256_be(n: U256) -> [u8; 32] {
+        let mut r = [0u8; 32];
+        n.to_big_endian(&mut r);
+        r
+    }
 
     struct Anchor {
         address: H160,
@@ -191,10 +215,18 @@ mod sample_oracle {
             }
             Ok(U256::from_big_endian(&data))
         }
+
+        fn submit_rollup(&self, tx: RollupTx) -> Result<()> {
+            let pair = pink_web3::keys::pink::KeyPair::from(hex![
+                "4c5d4f158b3d691328a1237d550748e019fe499ebf3df7467db6fa02a0818821"
+            ]);
+            // self.contract.signed_call("rollupU256CondEq", (), Options::default(), key)
+            Ok(())
+        }
     }
 
     // TODO: mock locks
-    fn locks() -> Locks {
+    fn locks() -> Locks<Evm> {
         let mut locks = Locks::default();
         locks
             .add("queue", GLOBAL_LOCK)
@@ -231,7 +263,8 @@ mod sample_oracle {
         fn default_works() {
             pink_extension_runtime::mock_ext::mock_all_ext();
             let sample_oracle = SampleOracle::default();
-            sample_oracle.handle_req().unwrap();
+            let res = sample_oracle.handle_req().unwrap();
+            println!("res: {:#?}", res);
         }
 
         /// We test a simple use case of our contract.

@@ -2,20 +2,41 @@
 
 extern crate alloc;
 
-use alloc::{
-    vec::Vec,
-    string::String
-};
-use scale::{Encode, Decode};
+use core::fmt::Debug;
+
+use alloc::{string::String, vec::Vec};
+use scale::{Decode, Encode};
 
 pub mod lock;
+pub mod platforms;
 
 #[derive(Debug)]
 pub enum Error {
     UnknownLock,
     FailedToReadVersion,
+    FailedToDecode,
+    DecodeOverflow,
 }
 pub type Result<T> = core::result::Result<T, Error>;
+
+#[derive(Clone, PartialEq, Eq, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+pub struct Raw(Vec<u8>);
+impl Debug for Raw {
+    fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(fmt, "0x{}", hex::encode(&self.0))
+    }
+}
+impl From<Vec<u8>> for Raw {
+    fn from(data: Vec<u8>) -> Raw {
+        Raw(data)
+    }
+}
+impl Into<Vec<u8>> for Raw {
+    fn into(self) -> Vec<u8> {
+        self.0
+    }
+}
 
 #[derive(Debug, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
@@ -28,15 +49,22 @@ pub struct RollupResult {
 #[derive(Debug, Default, PartialEq, Eq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct RollupTx {
-    conds: Vec<Cond>,
-    actions: Vec<Vec<u8>>,
-    updates: Vec<(Vec<u8>, Option<Vec<u8>>)>,
+    pub conds: Vec<Cond>,
+    pub actions: Vec<Raw>,
+    pub updates: Vec<(Raw, Option<Raw>)>,
+}
+
+impl RollupTx {
+    pub fn action(&mut self, act: impl Into<Vec<u8>>) -> &mut Self {
+        self.actions.push(Into::<Vec<u8>>::into(act).into());
+        self
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub enum Cond {
-    Eq(Vec<u8>, Option<Vec<u8>>),
+    Eq(Raw, Option<Raw>),
 }
 
 #[derive(Debug, Encode, Decode)]
