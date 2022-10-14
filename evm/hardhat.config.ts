@@ -9,7 +9,10 @@ const config: HardhatUserConfig = {
       url: process.env['GOERLI_API'],
       accounts: [process.env['GOERLI_SK']!],
     }
-  }
+  },
+  etherscan: {
+    apiKey: process.env['ETHERSCAN_KEY'],
+  },
 };
 
 export default config;
