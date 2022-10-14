@@ -4,11 +4,10 @@ use crate::{platforms::Platform, Cond, Error, Raw, Result, RollupTx};
 use alloc::{
     collections::BTreeMap,
     string::{String, ToString},
-    vec::Vec,
 };
-use hex::ToHex;
-use primitive_types::U256;
-use scale::Encode;
+
+
+
 
 pub const GLOBAL: &str = "Global";
 
@@ -116,7 +115,7 @@ mod test {
         locks.add("a", GLOBAL).unwrap();
         locks.add("b", "a").unwrap();
 
-        let mut vstore = MockVersionStore::default();
+        let vstore = MockVersionStore::default();
 
         // Simple read
         let mut tx = RollupTx::default();

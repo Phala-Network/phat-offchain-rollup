@@ -32,9 +32,9 @@ impl From<Vec<u8>> for Raw {
         Raw(data)
     }
 }
-impl Into<Vec<u8>> for Raw {
-    fn into(self) -> Vec<u8> {
-        self.0
+impl From<Raw> for Vec<u8> {
+    fn from(r: Raw) -> Vec<u8> {
+        r.0
     }
 }
 
