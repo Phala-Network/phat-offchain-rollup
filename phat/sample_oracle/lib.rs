@@ -3,7 +3,6 @@
 extern crate alloc;
 
 use ink_lang as ink;
-use pink_extension as pink;
 
 #[ink::contract(env = pink_extension::PinkEnvironment)]
 mod sample_oracle {
@@ -199,7 +198,7 @@ mod sample_oracle {
 
         fn read_typed<T: Decode + Default>(&self, key: &[u8]) -> Result<T> {
             let data = self.read_raw(key)?;
-            if data.len() == 0 {
+            if data.is_empty() {
                 return Ok(Default::default());
             }
             T::decode(&mut &data[..]).or(Err(Error::FailedToDecodeStorage))
@@ -207,7 +206,7 @@ mod sample_oracle {
 
         fn read_u256(&self, key: &[u8]) -> Result<U256> {
             let data = self.read_raw(key)?;
-            if data.len() == 0 {
+            if data.is_empty() {
                 return Ok(Default::default());
             }
             if data.len() != 32 {
