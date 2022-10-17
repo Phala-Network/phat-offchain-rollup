@@ -6,9 +6,6 @@ use alloc::{
     string::{String, ToString},
 };
 
-
-
-
 pub const GLOBAL: &str = "Global";
 
 pub type LockId = u8;
@@ -56,7 +53,7 @@ impl<P: Platform> Locks<P> {
         let id = *self.lock_ids.get(lock).ok_or(Error::UnknownLock)?;
         // Only check version
         let v = reader.get_version(id)?;
-        tx.conds.push(Cond::Eq(key(id), Some(Self::value(v))));
+        tx.conds.push(Cond::Eq(Self::key(id), Some(Self::value(v))));
         Ok(())
     }
 
@@ -69,18 +66,22 @@ impl<P: Platform> Locks<P> {
         let id = *self.lock_ids.get(lock).ok_or(Error::UnknownLock)?;
         // Check reading version
         let v = reader.get_version(id)?;
-        tx.conds.push(Cond::Eq(key(id), Some(Self::value(v))));
+        tx.conds.push(Cond::Eq(Self::key(id), Some(Self::value(v))));
         // Update writing versions
         let mut i = Some(id);
         while let Some(id) = i {
             let v = reader.get_version(id)?;
-            tx.updates.push((key(id), Some(Self::value(v + 1))));
+            tx.updates.push((Self::key(id), Some(Self::value(v + 1))));
             i = self.deps.get(&id).cloned();
         }
         Ok(())
     }
 
-    fn value(version: LockVersion) -> Raw {
+    pub fn key(id: LockId) -> Raw {
+        vec![id].into()
+    }
+
+    pub fn value(version: LockVersion) -> Raw {
         P::encode_u32(version).into()
     }
 }
@@ -89,9 +90,7 @@ pub trait LockVersionReader {
     fn get_version(&self, id: LockId) -> Result<LockVersion>;
 }
 
-fn key(id: LockId) -> Raw {
-    vec![id].into()
-}
+pub type EvmLocks = Locks<crate::platforms::Evm>;
 
 #[cfg(test)]
 mod test {
@@ -106,8 +105,6 @@ mod test {
             Ok(self.versions.get(&id).cloned().unwrap_or(0))
         }
     }
-
-    type EvmLocks = Locks<crate::platforms::Evm>;
 
     #[test]
     fn lock_works() {
@@ -125,7 +122,7 @@ mod test {
         assert_eq!(
             tx,
             RollupTx {
-                conds: vec![Cond::Eq(key(1), Some(EvmLocks::value(0))),],
+                conds: vec![Cond::Eq(EvmLocks::key(1), Some(EvmLocks::value(0))),],
                 actions: vec![],
                 updates: vec![],
             }
@@ -142,8 +139,8 @@ mod test {
                 conds: vec![Cond::Eq(key(1), Some(EvmLocks::value(0))),],
                 actions: vec![],
                 updates: vec![
-                    (key(1), Some(EvmLocks::value(1))),
-                    (key(0), Some(EvmLocks::value(1))),
+                    (EvmLocks::key(1), Some(EvmLocks::value(1))),
+                    (EvmLocks::key(0), Some(EvmLocks::value(1))),
                 ],
             }
         );

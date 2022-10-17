@@ -31,6 +31,7 @@ mod sample_oracle {
         BadAbi,
         FailedToGetStorage,
         FailedToDecodeStorage,
+        FailedToEstimateGas,
     }
 
     type Result<T> = core::result::Result<T, Error>;
@@ -53,15 +54,9 @@ mod sample_oracle {
         /// Simply returns the current value of our `bool`.
         #[ink(message)]
         pub fn handle_req(&self) -> Result<Option<RollupResult>> {
-            // TODO: change to return `core::result::Result<RollupResult, Vec<u8>>`
+            // FIXME: change to return `core::result::Result<RollupResult, Vec<u8>>`
             let mut tx = RollupTx::default();
             let locks = locks();
-            let vstore = MockVersionStore::default();
-
-            // Declare write to global lock since it pops an element from the queue
-            locks
-                .tx_write(&mut tx, &vstore, GLOBAL_LOCK)
-                .expect("lock must succeed");
 
             /**
              Deployed {
@@ -75,6 +70,12 @@ mod sample_oracle {
                 "https://eth-goerli.g.alchemy.com/v2/jIHxR3mmAe_x36nOylBoWRgPL_XoxaUb".to_string(),
                 addr,
             )?;
+            let vstore = BlockingVersionStore { anchor: &anchor };
+
+            // Declare write to global lock since it pops an element from the queue
+            locks
+                .tx_write(&mut tx, &vstore, GLOBAL_LOCK)
+                .expect("lock must succeed");
 
             // Read the queue pointer from the Anchor Contract
             let start: u32 = anchor.read_u256(b"qstart")?.try_into().unwrap();
@@ -106,13 +107,11 @@ mod sample_oracle {
             // Get the price from somewhere
             // let price = get_price(pair);
             // let encoded_price = encode(price);
-            let encoded_price =
-                ethabi::encode(&[ethabi::Token::Uint(19800_000000_000000_000000u128.into())]);
 
             // Apply the response to request
             let payload = ethabi::encode(&[
                 ethabi::Token::Uint(*rid),
-                ethabi::Token::Bytes(encoded_price),
+                ethabi::Token::Uint(19800_000000_000000_000000u128.into()),
             ]);
 
             tx.action(Action::Reply(payload))
@@ -127,6 +126,25 @@ mod sample_oracle {
                 },
             };
             Ok(Some(result))
+        }
+
+        #[ink(message)]
+        pub fn rollup(&self) -> Result<()> {
+            if let Some(rollup) = self.handle_req()? {
+                println!("RollupTx: {:#?}", rollup);
+                // Connect to Ethereum RPC
+                let addr: H160 = hex!("b3083F961C729f1007a6A1265Ae6b97dC2Cc16f2").into();
+                let anchor = connect(
+                    "https://eth-goerli.g.alchemy.com/v2/jIHxR3mmAe_x36nOylBoWRgPL_XoxaUb"
+                        .to_string(),
+                    addr,
+                )?;
+                // panic!("stop before finished");
+                println!("submitting rollup tx");
+                let tx_id = anchor.submit_rollup(rollup.tx)?;
+                println!("submitted: {:?}", tx_id);
+            }
+            Ok(())
         }
     }
 
@@ -146,8 +164,11 @@ mod sample_oracle {
         fn into(self) -> Vec<u8> {
             use core::iter::once;
             match self {
-                Action::Reply(data) => once(0u8).chain(data.into_iter()).collect(),
-                Action::ProcessedTo(n) => once(1u8).chain(u256_be(n.into()).into_iter()).collect(),
+                Action::Reply(data) => once(1u8).chain(data.into_iter()).collect(),
+                Action::ProcessedTo(n) => [2u8, 0u8]
+                    .into_iter()
+                    .chain(u256_be(n.into()).into_iter())
+                    .collect(),
             }
         }
     }
@@ -191,6 +212,7 @@ mod sample_oracle {
             ))
             .unwrap();
             println!("{:?}", value);
+            // FIXME
             // ).or(Err(Error::FailedToGetStorage))?;
 
             Ok(value.0)
@@ -215,12 +237,53 @@ mod sample_oracle {
             Ok(U256::from_big_endian(&data))
         }
 
-        fn submit_rollup(&self, tx: RollupTx) -> Result<()> {
+        fn submit_rollup(&self, tx: RollupTx) -> Result<primitive_types::H256> {
+            use ethabi::Token;
+            use pink_web3::signing::Key;
+
             let pair = pink_web3::keys::pink::KeyPair::from(hex![
                 "4c5d4f158b3d691328a1237d550748e019fe499ebf3df7467db6fa02a0818821"
             ]);
-            // self.contract.signed_call("rollupU256CondEq", (), Options::default(), key)
-            Ok(())
+
+            // rollupU256CondEq params
+            let (cond_keys, cond_values): (Vec<Vec<u8>>, Vec<Vec<u8>>) = tx
+                .conds
+                .into_iter()
+                .map(|cond| {
+                    let phat_offchain_rollup::Cond::Eq(k, v) = cond;
+                    (k.into(), v.map(Into::into).unwrap_or_default())
+                })
+                .unzip();
+            let (update_keys, update_values): (Vec<Vec<u8>>, Vec<Vec<u8>>) = tx
+                .updates
+                .into_iter()
+                .map(|(k, v)| (k.into(), v.map(Into::into).unwrap_or_default()))
+                .unzip();
+            let actions: Vec<Vec<u8>> = tx.actions.into_iter().map(Into::into).collect();
+            let params = (
+                Token::Array(cond_keys.into_iter().map(Token::Bytes).collect()),
+                Token::Array(cond_values.into_iter().map(Token::Bytes).collect()),
+                Token::Array(update_keys.into_iter().map(Token::Bytes).collect()),
+                Token::Array(update_values.into_iter().map(Token::Bytes).collect()),
+                Token::Array(actions.into_iter().map(Token::Bytes).collect()),
+            );
+
+            let gas = resolve_ready(self.contract.estimate_gas(
+                "rollupU256CondEq",
+                params.clone(),
+                pair.address(),
+                Options::default(),
+            ))
+            .expect("FIXME: failed to estiamte gas");
+
+            let tx_id = resolve_ready(self.contract.signed_call(
+                "rollupU256CondEq",
+                params,
+                Options::with(|opt| opt.gas = Some(gas)),
+                pair,
+            ))
+            .expect("FIXME: submit failed");
+            Ok(tx_id)
         }
     }
 
@@ -235,14 +298,19 @@ mod sample_oracle {
 
     use alloc::collections::BTreeMap;
     use phat_offchain_rollup::lock::{LockId, LockVersion, LockVersionReader};
-    // TODO: mock version reader
-    #[derive(Default)]
-    struct MockVersionStore {
-        versions: BTreeMap<LockId, LockVersion>,
+
+    struct BlockingVersionStore<'a> {
+        anchor: &'a Anchor,
     }
-    impl LockVersionReader for MockVersionStore {
+    impl<'a> LockVersionReader for BlockingVersionStore<'a> {
         fn get_version(&self, id: LockId) -> phat_offchain_rollup::Result<LockVersion> {
-            Ok(self.versions.get(&id).cloned().unwrap_or(0))
+            let id: Vec<u8> = phat_offchain_rollup::lock::EvmLocks::key(id).into();
+            let value = self
+                .anchor
+                .read_u256(&id)
+                .expect("FIXME: assume successful");
+            let value: u32 = value.try_into().expect("version musn't exceed u32");
+            Ok(value)
         }
     }
 
@@ -262,7 +330,8 @@ mod sample_oracle {
         fn default_works() {
             pink_extension_runtime::mock_ext::mock_all_ext();
             let sample_oracle = SampleOracle::default();
-            let res = sample_oracle.handle_req().unwrap();
+            // let res = sample_oracle.handle_req().unwrap();
+            let res = sample_oracle.rollup().unwrap();
             println!("res: {:#?}", res);
         }
 
