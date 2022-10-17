@@ -241,11 +241,12 @@ mod sample_oracle {
             use ethabi::Token;
             use pink_web3::signing::Key;
 
+            // FIXME: replace the key
             let pair = pink_web3::keys::pink::KeyPair::from(hex![
                 "4c5d4f158b3d691328a1237d550748e019fe499ebf3df7467db6fa02a0818821"
             ]);
 
-            // rollupU256CondEq params
+            // Prepare rollupU256CondEq params
             let (cond_keys, cond_values): (Vec<Vec<u8>>, Vec<Vec<u8>>) = tx
                 .conds
                 .into_iter()
@@ -268,6 +269,7 @@ mod sample_oracle {
                 Token::Array(actions.into_iter().map(Token::Bytes).collect()),
             );
 
+            // Estiamte gas before submission
             let gas = resolve_ready(self.contract.estimate_gas(
                 "rollupU256CondEq",
                 params.clone(),
@@ -276,6 +278,7 @@ mod sample_oracle {
             ))
             .expect("FIXME: failed to estiamte gas");
 
+            // Actually submit the tx (no guarantee for success)
             let tx_id = resolve_ready(self.contract.signed_call(
                 "rollupU256CondEq",
                 params,
