@@ -93,6 +93,7 @@ contract PhatQueuedAnchor is PhatRollupAnchor, IPhatQueuedAnchor, Ownable {
         // processed to: [0] [u256 to]
         uint8 actionType = uint8(action[0]);
         if (actionType == ACTION_QUEUE_PROCESSED_TO) {
+            require(action.length == 32 + 1, "bad queue arg size");
             uint256 end = abi.decode(action[1:], (uint256));
             popTo(end);
         } else {
