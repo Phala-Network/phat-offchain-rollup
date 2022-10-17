@@ -4,43 +4,63 @@ Phat Contract Stateful Rollup implementation
 
 ## Phat Contract side
 
+### Misc
 
-- Contract
-    - Scheduler (dummy)
-        - query: `poll()`
-            - call all the ready targets
-            - should check health (trigger exactly one health worker)
-        - tx: `register(config, address, calldata)` owner-only (direct call, stateless)
-        - tx: `delete(id)` owner-only
-        - log: the trigger events
-    - RollupTransactor
-        - tx: `add_target(type) -> id`
-        - query: `target_info(id) -> TargetInfo`
-            - address of the managed wallet
-        - query: `execute(address, calldata)`
-            - got `Result<RollupResult, Vec<u8>>` response
-            - submit tx to `RollupResult.target_id`
-                - use the latest nonce
-                - fire and forget
-                - for gas efficiency, save the recent submitted tx to local storage (with timeout) to avoid redundant submission in a short period
-        - enum RollupTarget
-            - EVM(chain, address)
-            - Pallet(chain)
-    - TestOracle
-- Library
-    - OffchainRollup
-        - struct RollupManager
-            - offchain attestation
-            - RollupTarget
-        - Locks
-            - lock tree
-        - struct RollupTx
-            - claim_read(lock)
-            - claim_write(lock)
-        - struct RollupResult
-            - RollupTx
-            - signature of RollupTx
-            - RollupTarget
+- [ ] Refactor experimantal code as contracts
+    - [ ] Switch to OpenBrush's `ink-env` with the advanced unit test kits
+
+### Contract
+
+- [ ] SimpleScheduler
+    - [ ] Query `poll()`
+        - call all the ready targets
+        - should check health (trigger exactly one health worker)
+    - [ ] Tx `register(config, address, calldata)` owner-only (direct call, stateless)
+    - [ ] Tx `delete(id)` owner-only
+    - [ ] log the triggered events
+- [ ] RollupTransactor
+    - [ ] Account management: generate secret key & reveal public key
+    - [ ] Tx `set_target(address, calldata)` by owner
+    - [ ] Query `execute()`
+        - get `Result<RollupResult, Vec<u8>>` response
+        - submit tx to `RollupResult.target_id`
+            - use the latest nonce
+            - fire and forget
+    - [x] enum RollupTarget
+        - EVM(chain, address)
+        - Pallet(chain)
+    - [x] Raw tx submit
+    - [ ] Gas efficiency submit
+            - for gas efficiency, save the recent submitted tx to local storage (with timeout) to avoid redundant submission in a short period
+- [ ] TestOracle
+    - [x] Minimum implementation
+    - [ ] Real-time fetch price
+    - [ ] Refactor to strip SDK logic
+
+### SDK
+
+- [ ] Locks
+    - [x] Experimental lock tree (tx_read, tx_write)
+    - [ ] Correct implementation
+- [x] struct RollupTx
+    - [x] Condition
+    - [x] Updates
+    - [x] Actions
+- [x] struct RollupResult
+    - [x] RollupTx
+    - [x] RollupTarget
+    - [ ] (opt) signature of RollupTx
+- [ ] RollupClient
+    - [x] Read from EVM
+    - [ ] Cross validation
+- [ ] struct RollupManager (in ink! storage)
+    - [ ] Config RollupTarget (chain, address)
+    - [ ] Create `RollupClient` instance
+    - [ ] (opt) offchain attestation
+- [ ] (low) Cross-platform Rollup
+    - [x] Basic codec abstraction (`platform::Platform`)
+    - [ ] State reading abstraction
+    - [ ] RollupTx serialization
 
 ## Development Notes
 
