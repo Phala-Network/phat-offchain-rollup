@@ -1,5 +1,5 @@
-# phat-stateful-rollup
-Phat Contract Stateful Rollup implementation
+# phat-offchain-rollup
+Phat Contract Offchain Rollup implementation
 
 
 ## Phat Contract side
