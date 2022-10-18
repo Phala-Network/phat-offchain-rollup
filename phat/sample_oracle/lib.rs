@@ -6,6 +6,10 @@ use ink_lang as ink;
 
 #[ink::contract(env = pink_extension::PinkEnvironment)]
 mod sample_oracle {
+    use alloc::{
+        string::{String, ToString},
+        vec::Vec,
+    };
     use hex_literal::hex;
     use phat_offchain_rollup::{
         lock::{Locks, GLOBAL as GLOBAL_LOCK},
@@ -80,8 +84,11 @@ mod sample_oracle {
             // Read the queue pointer from the Anchor Contract
             let start: u32 = anchor.read_u256(b"qstart")?.try_into().unwrap();
             let end: u32 = anchor.read_u256(b"qend")?.try_into().unwrap();
-            println!("start: {}", start);
-            println!("end: {}", end);
+            #[cfg(feature = "std")]
+            {
+                println!("start: {}", start);
+                println!("end: {}", end);
+            }
             if start == end {
                 return Ok(None);
             }
@@ -102,6 +109,7 @@ mod sample_oracle {
             };
             // Print the human readable request
             let pair = String::from_utf8(pair.clone()).unwrap();
+            #[cfg(feature = "std")]
             println!("Got req ({}, {})", rid, pair);
 
             // Get the price from somewhere
@@ -131,6 +139,7 @@ mod sample_oracle {
         #[ink(message)]
         pub fn rollup(&self) -> Result<()> {
             if let Some(rollup) = self.handle_req()? {
+                #[cfg(feature = "std")]
                 println!("RollupTx: {:#?}", rollup);
                 // Connect to Ethereum RPC
                 let addr: H160 = hex!("b3083F961C729f1007a6A1265Ae6b97dC2Cc16f2").into();
@@ -140,8 +149,10 @@ mod sample_oracle {
                     addr,
                 )?;
                 // panic!("stop before finished");
+                #[cfg(feature = "std")]
                 println!("submitting rollup tx");
                 let tx_id = anchor.submit_rollup(rollup.tx)?;
+                #[cfg(feature = "std")]
                 println!("submitted: {:?}", tx_id);
             }
             Ok(())
@@ -211,6 +222,7 @@ mod sample_oracle {
                 None,
             ))
             .unwrap();
+            #[cfg(feature = "std")]
             println!("{:?}", value);
             // FIXME
             // ).or(Err(Error::FailedToGetStorage))?;

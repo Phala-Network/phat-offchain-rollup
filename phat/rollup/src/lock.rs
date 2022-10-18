@@ -78,6 +78,7 @@ impl<P: Platform> Locks<P> {
     }
 
     pub fn key(id: LockId) -> Raw {
+        use alloc::vec;
         vec![id].into()
     }
 

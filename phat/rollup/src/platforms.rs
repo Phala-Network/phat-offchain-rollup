@@ -1,4 +1,5 @@
 use crate::{Error, Result};
+use alloc::vec::Vec;
 use primitive_types::U256;
 
 pub trait Platform {
