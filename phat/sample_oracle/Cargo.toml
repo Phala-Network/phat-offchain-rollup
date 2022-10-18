@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["[your_name] <[your_email]>"]
 edition = "2021"
 
+# Necessary due to the cargo bug bug: https://github.com/rust-lang/cargo/issues/10118
+[profile.release]
+overflow-checks = false
+
 [dependencies]
 ink_primitives = { version = "3", default-features = false }
 ink_metadata = { version = "3", default-features = false, features = ["derive"], optional = true }
