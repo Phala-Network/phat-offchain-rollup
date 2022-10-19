@@ -80,6 +80,20 @@ pub enum Target {
     },
 }
 
+#[ink::trait_definition]
+pub trait RollupHandler {
+    #[ink(message)]
+    fn handle_rollup(&self) -> core::result::Result<Option<RollupResult>, Vec<u8>>;
+}
+
+// Make it easier to call an arbitrary contract that implements RollupHandler
+use ink::{codegen::TraitCallForwarder, reflect::TraitDefinitionRegistry};
+use ink_lang as ink;
+pub type RollupHandlerForwarder<Env> = <
+    <TraitDefinitionRegistry<Env> as RollupHandler>::__ink_TraitInfo
+    as TraitCallForwarder
+>::Forwarder;
+
 #[cfg(test)]
 mod tests {
     #[test]

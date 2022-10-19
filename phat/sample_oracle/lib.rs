@@ -4,17 +4,19 @@ extern crate alloc;
 
 use ink_lang as ink;
 
+pub use sample_oracle::*;
+
 #[ink::contract(env = pink_extension::PinkEnvironment)]
 mod sample_oracle {
     use alloc::{
         string::{String, ToString},
         vec::Vec,
     };
-    use hex_literal::hex;
+    use ink_storage::traits::{PackedLayout, SpreadLayout};
     use phat_offchain_rollup::{
         lock::{Locks, GLOBAL as GLOBAL_LOCK},
         platforms::Evm,
-        RollupResult, RollupTx, Target as RollupTarget,
+        RollupHandler, RollupResult, RollupTx, Target as RollupTarget,
     };
     use primitive_types::U256;
     use scale::{Decode, Encode};
@@ -25,13 +27,25 @@ mod sample_oracle {
     /// to add new static storage fields to your contract.
     #[ink(storage)]
     pub struct SampleOracle {
-        /// Stores a single `bool` value on the storage.
-        value: bool,
+        owner: AccountId,
+        config: Option<Config>,
+    }
+
+    #[derive(Encode, Decode, Debug, PackedLayout, SpreadLayout)]
+    #[cfg_attr(
+        feature = "std",
+        derive(scale_info::TypeInfo, ink_storage::traits::StorageLayout)
+    )]
+    struct Config {
+        rpc: String,
+        anchor: [u8; 20],
     }
 
     #[derive(Encode, Decode, Debug)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
+        BadOrigin,
+        NotConfigurated,
         BadAbi,
         FailedToGetStorage,
         FailedToDecodeStorage,
@@ -41,39 +55,33 @@ mod sample_oracle {
     type Result<T> = core::result::Result<T, Error>;
 
     impl SampleOracle {
-        /// Constructor that initializes the `bool` value to the given `init_value`.
-        #[ink(constructor)]
-        pub fn new(init_value: bool) -> Self {
-            Self { value: init_value }
-        }
-
-        /// Constructor that initializes the `bool` value to `false`.
-        ///
-        /// Constructors can delegate to other constructors.
         #[ink(constructor)]
         pub fn default() -> Self {
-            Self::new(Default::default())
+            Self {
+                owner: Self::env().caller(),
+                config: None,
+            }
         }
 
-        /// Simply returns the current value of our `bool`.
+        /// Configures the rollup target
         #[ink(message)]
-        pub fn handle_req(&self) -> Result<Option<RollupResult>> {
-            // FIXME: change to return `core::result::Result<RollupResult, Vec<u8>>`
+        pub fn config(&mut self, rpc: String, anchor: H160) -> Result<()> {
+            self.ensure_owner()?;
+            self.config = Some(Config {
+                rpc,
+                anchor: anchor.into(),
+            });
+            Ok(())
+        }
+
+        fn handle_req(&self) -> Result<Option<RollupResult>> {
+            let Config { rpc, anchor } = self.config.as_ref().ok_or(Error::NotConfigurated)?;
+
             let mut tx = RollupTx::default();
             let locks = locks();
 
-            /**
-             Deployed {
-                anchor: '0xb3083F961C729f1007a6A1265Ae6b97dC2Cc16f2',
-                oracle: '0x8Bf50F8d0B62017c9B83341CB936797f6B6235dd'
-            }
-            */
             // Connect to Ethereum RPC
-            let addr: H160 = hex!("b3083F961C729f1007a6A1265Ae6b97dC2Cc16f2").into();
-            let anchor = connect(
-                "https://eth-goerli.g.alchemy.com/v2/jIHxR3mmAe_x36nOylBoWRgPL_XoxaUb".to_string(),
-                addr,
-            )?;
+            let anchor = AnchorQueryClient::connect(rpc, anchor.into())?;
             let vstore = BlockingVersionStore { anchor: &anchor };
 
             // Declare write to global lock since it pops an element from the queue
@@ -136,34 +144,27 @@ mod sample_oracle {
             Ok(Some(result))
         }
 
-        #[ink(message)]
-        pub fn rollup(&self) -> Result<()> {
-            if let Some(rollup) = self.handle_req()? {
-                #[cfg(feature = "std")]
-                println!("RollupTx: {:#?}", rollup);
-                // Connect to Ethereum RPC
-                let addr: H160 = hex!("b3083F961C729f1007a6A1265Ae6b97dC2Cc16f2").into();
-                let anchor = connect(
-                    "https://eth-goerli.g.alchemy.com/v2/jIHxR3mmAe_x36nOylBoWRgPL_XoxaUb"
-                        .to_string(),
-                    addr,
-                )?;
-                // panic!("stop before finished");
-                #[cfg(feature = "std")]
-                println!("submitting rollup tx");
-                let tx_id = anchor.submit_rollup(rollup.tx)?;
-                #[cfg(feature = "std")]
-                println!("submitted: {:?}", tx_id);
+        /// Returns BadOrigin error if the caller is not the owner
+        fn ensure_owner(&self) -> Result<()> {
+            if self.env().caller() == self.owner {
+                Ok(())
+            } else {
+                Err(Error::BadOrigin)
             }
-            Ok(())
+        }
+    }
+
+    impl RollupHandler for SampleOracle {
+        #[ink(message)]
+        fn handle_rollup(&self) -> core::result::Result<Option<RollupResult>, Vec<u8>> {
+            self.handle_req().map_err(|e| Encode::encode(&e))
         }
     }
 
     use pink_web3::api::{Eth, Namespace};
     use pink_web3::contract::{Contract, Options};
     use pink_web3::transports::{resolve_ready, PinkHttp};
-    use pink_web3::types::TransactionParameters;
-    use pink_web3::types::{Bytes, FilterBuilder, H160};
+    use pink_web3::types::{Bytes, H160};
 
     enum Action {
         Reply(Vec<u8>),
@@ -190,17 +191,10 @@ mod sample_oracle {
         r
     }
 
-    struct Anchor {
+    /// The client to query anchor contract states
+    struct AnchorQueryClient {
         address: H160,
         contract: Contract<PinkHttp>,
-    }
-
-    fn connect(rpc: String, address: H160) -> Result<Anchor> {
-        let eth = Eth::new(PinkHttp::new(rpc));
-        let contract = Contract::from_json(eth, address, include_bytes!("res/anchor.abi.json"))
-            .or(Err(Error::BadAbi))?;
-
-        Ok(Anchor { address, contract })
     }
 
     fn queue_key(prefix: &[u8], idx: u32) -> Vec<u8> {
@@ -211,7 +205,15 @@ mod sample_oracle {
         key
     }
 
-    impl Anchor {
+    impl AnchorQueryClient {
+        fn connect(rpc: &String, address: H160) -> Result<Self> {
+            let eth = Eth::new(PinkHttp::new(rpc));
+            let contract = Contract::from_json(eth, address, include_bytes!("res/anchor.abi.json"))
+                .or(Err(Error::BadAbi))?;
+
+            Ok(Self { address, contract })
+        }
+
         fn read_raw(&self, key: &[u8]) -> Result<Vec<u8>> {
             let key: Bytes = key.into();
             let value: Bytes = resolve_ready(self.contract.query(
@@ -230,7 +232,7 @@ mod sample_oracle {
             Ok(value.0)
         }
 
-        fn read_typed<T: Decode + Default>(&self, key: &[u8]) -> Result<T> {
+        fn _read_typed<T: Decode + Default>(&self, key: &[u8]) -> Result<T> {
             let data = self.read_raw(key)?;
             if data.is_empty() {
                 return Ok(Default::default());
@@ -248,58 +250,6 @@ mod sample_oracle {
             }
             Ok(U256::from_big_endian(&data))
         }
-
-        fn submit_rollup(&self, tx: RollupTx) -> Result<primitive_types::H256> {
-            use ethabi::Token;
-            use pink_web3::signing::Key;
-
-            // FIXME: replace the key
-            let pair = pink_web3::keys::pink::KeyPair::from(hex![
-                "4c5d4f158b3d691328a1237d550748e019fe499ebf3df7467db6fa02a0818821"
-            ]);
-
-            // Prepare rollupU256CondEq params
-            let (cond_keys, cond_values): (Vec<Vec<u8>>, Vec<Vec<u8>>) = tx
-                .conds
-                .into_iter()
-                .map(|cond| {
-                    let phat_offchain_rollup::Cond::Eq(k, v) = cond;
-                    (k.into(), v.map(Into::into).unwrap_or_default())
-                })
-                .unzip();
-            let (update_keys, update_values): (Vec<Vec<u8>>, Vec<Vec<u8>>) = tx
-                .updates
-                .into_iter()
-                .map(|(k, v)| (k.into(), v.map(Into::into).unwrap_or_default()))
-                .unzip();
-            let actions: Vec<Vec<u8>> = tx.actions.into_iter().map(Into::into).collect();
-            let params = (
-                Token::Array(cond_keys.into_iter().map(Token::Bytes).collect()),
-                Token::Array(cond_values.into_iter().map(Token::Bytes).collect()),
-                Token::Array(update_keys.into_iter().map(Token::Bytes).collect()),
-                Token::Array(update_values.into_iter().map(Token::Bytes).collect()),
-                Token::Array(actions.into_iter().map(Token::Bytes).collect()),
-            );
-
-            // Estiamte gas before submission
-            let gas = resolve_ready(self.contract.estimate_gas(
-                "rollupU256CondEq",
-                params.clone(),
-                pair.address(),
-                Options::default(),
-            ))
-            .expect("FIXME: failed to estiamte gas");
-
-            // Actually submit the tx (no guarantee for success)
-            let tx_id = resolve_ready(self.contract.signed_call(
-                "rollupU256CondEq",
-                params,
-                Options::with(|opt| opt.gas = Some(gas)),
-                pair,
-            ))
-            .expect("FIXME: submit failed");
-            Ok(tx_id)
-        }
     }
 
     // TODO: mock locks
@@ -311,11 +261,10 @@ mod sample_oracle {
         locks
     }
 
-    use alloc::collections::BTreeMap;
     use phat_offchain_rollup::lock::{LockId, LockVersion, LockVersionReader};
 
     struct BlockingVersionStore<'a> {
-        anchor: &'a Anchor,
+        anchor: &'a AnchorQueryClient,
     }
     impl<'a> LockVersionReader for BlockingVersionStore<'a> {
         fn get_version(&self, id: LockId) -> phat_offchain_rollup::Result<LockVersion> {
@@ -329,33 +278,32 @@ mod sample_oracle {
         }
     }
 
-    /// Unit tests in Rust are normally defined within such a `#[cfg(test)]`
-    /// module and test functions are marked with a `#[test]` attribute.
-    /// The below code is technically just normal Rust code.
     #[cfg(test)]
     mod tests {
-        /// Imports all the definitions from the outer scope so we can use them here.
         use super::*;
 
-        /// Imports `ink_lang` so we can use `#[ink::test]`.
         use ink_lang as ink;
 
-        /// We test if the default constructor does its job.
         #[ink::test]
         fn default_works() {
             pink_extension_runtime::mock_ext::mock_all_ext();
-            let sample_oracle = SampleOracle::default();
-            // let res = sample_oracle.handle_req().unwrap();
-            let res = sample_oracle.rollup().unwrap();
-            println!("res: {:#?}", res);
-        }
 
-        /// We test a simple use case of our contract.
-        #[ink::test]
-        fn it_works() {
-            // let mut sample_oracle = SampleOracle::new(false);
-            // sample_oracle.flip();
-            // assert_eq!(sample_oracle.get(), true);
+            /*
+             Deployed {
+                anchor: '0xb3083F961C729f1007a6A1265Ae6b97dC2Cc16f2',
+                oracle: '0x8Bf50F8d0B62017c9B83341CB936797f6B6235dd'
+            }
+            */
+
+            let rpc =
+                "https://eth-goerli.g.alchemy.com/v2/68LXpUy0t0sLfZT2U-iYY5xh5OA8L6RV".to_string();
+            let anchor_addr: H160 = hex!("b3083F961C729f1007a6A1265Ae6b97dC2Cc16f2").into();
+
+            let mut sample_oracle = SampleOracle::default();
+            sample_oracle.config(rpc, anchor_addr).unwrap();
+
+            let res = sample_oracle.handle_req().unwrap();
+            println!("res: {:#?}", res);
         }
     }
 }

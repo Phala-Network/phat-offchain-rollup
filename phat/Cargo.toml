@@ -2,6 +2,7 @@
 members = [
     "rollup",
     "sample_oracle",
+    "evm_transactor",
     #"scheduler",
 ]
 

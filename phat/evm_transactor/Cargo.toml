@@ -1,5 +1,5 @@
 [package]
-name = "sample_oracle"
+name = "evm_transactor"
 version = "0.1.0"
 authors = ["[your_name] <[your_email]>"]
 edition = "2021"
@@ -30,15 +30,15 @@ ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false
 phat_offchain_rollup = { path = "../rollup", default-features = false }
 
 [dev-dependencies]
-pink-extension-runtime = { version = "0.1", default-features = false }
+pink-extension-runtime = { version = "0.1" }
+sample_oracle = { path = "../sample_oracle", features = ["ink-as-dependency"] }
 
 [lib]
-name = "sample_oracle"
+name = "evm_transactor"
 path = "lib.rs"
 crate-type = [
 	# Used for normal contract Wasm blobs.
 	"cdylib",
-    "lib",
 ]
 
 [features]

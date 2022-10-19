@@ -137,7 +137,7 @@ mod test {
         assert_eq!(
             tx,
             RollupTx {
-                conds: vec![Cond::Eq(key(1), Some(EvmLocks::value(0))),],
+                conds: vec![Cond::Eq(EvmLocks::key(1), Some(EvmLocks::value(0))),],
                 actions: vec![],
                 updates: vec![
                     (EvmLocks::key(1), Some(EvmLocks::value(1))),
