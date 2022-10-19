@@ -30,12 +30,13 @@ mod evm_transator {
         anchor: [u8; 20],
     }
 
-    #[derive(Encode, Decode, Debug)]
+    #[derive(Encode, Decode, Debug, PartialEq, Eq)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
         BadOrigin,
         NotConfigurated,
         KeyRetired,
+        KeyNotRetiredYet,
         UpstreamFailed,
         BadAbi,
         FailedToGetStorage,
@@ -72,6 +73,31 @@ mod evm_transator {
             Ok(())
         }
 
+        /// Returns the wallet address the transactor used to submit transactions
+        #[ink(message)]
+        pub fn wallet(&self) -> H160 {
+            use pink_web3::signing::Key;
+            Self::key_pair().address()
+        }
+
+        #[ink(message)]
+        pub fn retire_wallet(&mut self) -> Result<()> {
+            self.ensure_owner()?;
+            self.retired = true;
+            Ok(())
+        }
+
+        #[ink(message)]
+        pub fn get_retired_secret_key(&self) -> Result<[u8; 32]> {
+            self.ensure_owner()?;
+            if !self.retired {
+                return Err(Error::KeyNotRetiredYet);
+            }
+            // TODO: reveal the priv key when pink-web3 supports.
+            Ok([0u8; 32])
+        }
+
+        /// Called by a scheduler periodically
         #[ink(message)]
         pub fn poll(&self) -> Result<()> {
             if self.retired {
@@ -101,6 +127,8 @@ mod evm_transator {
                 Some(v) => v,
                 None => return Ok(()),
             };
+
+            // Submit the tx if necessary
 
             #[cfg(feature = "std")]
             println!("RollupTx: {:#?}", rollup);
@@ -218,8 +246,46 @@ mod evm_transator {
         use ink_lang as ink;
 
         #[ink::test]
+        fn wallet_works() {
+            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_extension::chain_extension::mock::mock_derive_sr25519_key(|_| {
+                hex!["4c5d4f158b3d691328a1237d550748e019fe499ebf3df7467db6fa02a0818821"].to_vec()
+            });
+
+            let hash1 = ink_env::Hash::try_from([10u8; 32]).unwrap();
+            ink_env::test::register_contract::<EvmTransactor>(hash1.as_ref());
+
+            // Deploy Transactor
+            let mut transactor = EvmTransactorRef::default()
+                .code_hash(hash1.clone())
+                .endowment(0)
+                .salt_bytes([0u8; 0])
+                .instantiate()
+                .expect("failed to deploy EvmTransactor");
+
+            // Can reproduce the wallet address
+            let expected_wallet: H160 = hex!("FFa0F188D8d332E0bB9b7E6fCB14874e08Ac06E7").into();
+            assert_eq!(transactor.wallet(), expected_wallet);
+
+            // TODO: enable the test below when the adv test framework supports
+
+            // Even the owner cannot read the secret key before retiring
+            // assert_eq!(transactor.get_retired_secret_key(), Err(Error::KeyNotRetiredYet));
+
+            // Owner can retire the wallet
+            transactor.retire_wallet().unwrap();
+            let sk = transactor.get_retired_secret_key().unwrap();
+            assert_eq!(sk, [0u8; 32]);
+
+            // Others cannot get the secret key
+        }
+
+        #[ink::test]
         fn it_works() {
             pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_extension::chain_extension::mock::mock_derive_sr25519_key(|_| {
+                hex!["4c5d4f158b3d691328a1237d550748e019fe499ebf3df7467db6fa02a0818821"].to_vec()
+            });
 
             // Register contracts
             let hash1 = ink_env::Hash::try_from([10u8; 32]).unwrap();
