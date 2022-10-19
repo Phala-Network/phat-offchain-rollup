@@ -8,19 +8,15 @@ pub use sample_oracle::*;
 
 #[ink::contract(env = pink_extension::PinkEnvironment)]
 mod sample_oracle {
-    use alloc::{
-        string::{String, ToString},
-        vec::Vec,
-    };
+    use alloc::{string::String, vec::Vec};
     use ink_storage::traits::{PackedLayout, SpreadLayout};
     use phat_offchain_rollup::{
         lock::{Locks, GLOBAL as GLOBAL_LOCK},
         platforms::Evm,
-        RollupHandler, RollupResult, RollupTx, Target as RollupTarget,
+        RollupHandler, RollupResult, RollupTx,
     };
     use primitive_types::U256;
     use scale::{Decode, Encode};
-    // use pink_extension as pink;
 
     /// Defines the storage of your contract.
     /// Add new fields to the below struct in order
@@ -135,11 +131,8 @@ mod sample_oracle {
 
             let result = RollupResult {
                 tx,
-                signature: Vec::new(),
-                target: RollupTarget::Evm {
-                    chain_id: "Ethereum".to_string(),
-                    contract: "0xDEADBEEF".to_string(),
-                },
+                signature: None,
+                target: None,
             };
             Ok(Some(result))
         }

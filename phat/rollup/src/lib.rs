@@ -42,8 +42,8 @@ impl From<Raw> for Vec<u8> {
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct RollupResult {
     pub tx: RollupTx,
-    pub signature: Vec<u8>,
-    pub target: Target,
+    pub signature: Option<Vec<u8>>,
+    pub target: Option<Target>,
 }
 
 #[derive(Debug, Default, PartialEq, Eq, Encode, Decode)]

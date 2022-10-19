@@ -7,7 +7,7 @@ Phat Contract Offchain Rollup implementation
 ### Misc
 
 - [ ] Refactor experimantal code as contracts
-    - [ ] Switch to OpenBrush's `ink-env` with the advanced unit test kits
+    - [x] Switch to OpenBrush's `ink-env` with the advanced unit test kits
 
 ### Contract
 
@@ -19,9 +19,9 @@ Phat Contract Offchain Rollup implementation
     - [ ] Tx `delete(id)` owner-only
     - [ ] log the triggered events
 - [ ] RollupTransactor
-    - [ ] Account management: generate secret key & reveal public key
-    - [ ] Tx `set_target(address, calldata)` by owner
-    - [ ] Query `execute()`
+    - [x] Account management: generate secret key & reveal public key
+    - [x] Tx `config(rpc, rollup_handler, anchor)` by owner
+    - [x] Query `poll()`
         - get `Result<RollupResult, Vec<u8>>` response
         - submit tx to `RollupResult.target_id`
             - use the latest nonce

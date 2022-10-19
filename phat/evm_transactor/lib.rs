@@ -80,6 +80,7 @@ mod evm_transator {
             Self::key_pair().address()
         }
 
+        /// Retires the wallet to allow the owner to extract the key
         #[ink(message)]
         pub fn retire_wallet(&mut self) -> Result<()> {
             self.ensure_owner()?;
@@ -87,6 +88,7 @@ mod evm_transator {
             Ok(())
         }
 
+        /// Extracts the retired secret key
         #[ink(message)]
         pub fn get_retired_secret_key(&self) -> Result<[u8; 32]> {
             self.ensure_owner()?;
@@ -94,6 +96,7 @@ mod evm_transator {
                 return Err(Error::KeyNotRetiredYet);
             }
             // TODO: reveal the priv key when pink-web3 supports.
+            // TODO: should we allow to renonce the key extraction?
             Ok([0u8; 32])
         }
 
@@ -123,17 +126,20 @@ mod evm_transator {
                 .fire()
                 .expect("rollup upstream failed");
             let rollup = result.or(Err(Error::UpstreamFailed))?;
+
+            // Only submit the tx if the results is not None
             let rollup = match rollup {
                 Some(v) => v,
                 None => return Ok(()),
             };
 
-            // Submit the tx if necessary
-
             #[cfg(feature = "std")]
             println!("RollupTx: {:#?}", rollup);
 
             // Connect to Ethereum RPC
+            //
+            // Note that currently we ignore `rollup.target` configuration because it's already
+            // configured in the transactor.
             let contract = AnchorTxClient::connect(rpc, anchor.clone().into())?;
             #[cfg(feature = "std")]
             println!("submitting rollup tx");
@@ -145,7 +151,6 @@ mod evm_transator {
             println!("submitted: {:?}", tx_id);
 
             // TODO: prevent redundant poll in a short period?
-
             Ok(())
         }
 
