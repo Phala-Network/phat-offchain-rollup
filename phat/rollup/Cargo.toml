@@ -36,4 +36,5 @@ std = [
     "scale/std",
     "scale-info/std",
 	"primitive-types/std",
+    "pink-web3/std",
 ]
