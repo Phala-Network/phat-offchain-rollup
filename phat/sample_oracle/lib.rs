@@ -185,7 +185,7 @@ mod sample_oracle {
                 oracle: '0x8Bf50F8d0B62017c9B83341CB936797f6B6235dd'
             }
             */
-            let rpc = env::var("RPC").unwrap().to_string();
+            let rpc = env::var("RPC").unwrap();
             let anchor_addr: [u8; 20] =
                 hex::decode(env::var("ANCHOR_ADDR").expect("env not found"))
                     .expect("hex decode failed")
