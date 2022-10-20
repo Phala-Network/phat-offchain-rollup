@@ -19,7 +19,6 @@ scale = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 primitive-types = { version = "0.11", default-features = false, features = ["codec", "scale-info"] }
 
-hex-literal = { version = "0.3", default-features = false }
 pink-extension = { version = "0.1", default-features = false }
 pink-web3 = { version = "0.19", default-features = false, features = ["pink", "signing"] }
 ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false, features = [
@@ -30,6 +29,8 @@ ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false
 phat_offchain_rollup = { path = "../rollup", default-features = false }
 
 [dev-dependencies]
+dotenvy = "0.15"
+hex = "0.4"
 pink-extension-runtime = { version = "0.1", default-features = false }
 
 [lib]

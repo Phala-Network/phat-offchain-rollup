@@ -29,7 +29,8 @@ ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false
 phat_offchain_rollup = { path = "../rollup", default-features = false }
 
 [dev-dependencies]
-hex-literal = "0.3"
+dotenvy = "0.15"
+hex = "0.4"
 pink-extension-runtime = "0.1"
 
 sample_oracle = { path = "../sample_oracle", features = ["ink-as-dependency"] }

@@ -7,6 +7,7 @@ use core::fmt::Debug;
 use alloc::{string::String, vec::Vec};
 use scale::{Decode, Encode};
 
+pub mod clients;
 pub mod lock;
 pub mod platforms;
 
@@ -16,6 +17,8 @@ pub enum Error {
     FailedToReadVersion,
     FailedToDecode,
     DecodeOverflow,
+    BadEvmAnchorAbi,
+    FailedToDecodeStorage,
 }
 pub type Result<T> = core::result::Result<T, Error>;
 

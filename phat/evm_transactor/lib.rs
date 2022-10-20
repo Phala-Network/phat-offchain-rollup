@@ -6,9 +6,12 @@ use ink_lang as ink;
 
 #[ink::contract(env = pink_extension::PinkEnvironment)]
 mod evm_transator {
-    use alloc::{string::String, vec::Vec};
+    use alloc::string::String;
     use ink_storage::traits::{PackedLayout, SpreadLayout};
-    use phat_offchain_rollup::{RollupHandler, RollupHandlerForwarder, RollupTx};
+    use phat_offchain_rollup::{
+        clients::evm::write::AnchorTxClient, RollupHandler, RollupHandlerForwarder,
+    };
+    use primitive_types::H160;
     use scale::{Decode, Encode};
 
     #[ink(storage)]
@@ -140,13 +143,16 @@ mod evm_transator {
             //
             // Note that currently we ignore `rollup.target` configuration because it's already
             // configured in the transactor.
-            let contract = AnchorTxClient::connect(rpc, anchor.clone().into())?;
+            let contract = AnchorTxClient::connect(rpc, anchor.clone().into())
+                .expect("FIXME: failed to connect to anchor");
             #[cfg(feature = "std")]
             println!("submitting rollup tx");
 
             // Submit to EVM
             let pair = Self::key_pair();
-            let tx_id = contract.submit_rollup(rollup.tx, pair)?;
+            let tx_id = contract
+                .submit_rollup(rollup.tx, pair)
+                .expect("FIXME: failed to submit rollup tx");
             #[cfg(feature = "std")]
             println!("submitted: {:?}", tx_id);
 
@@ -169,93 +175,44 @@ mod evm_transator {
         }
     }
 
-    use pink_web3::contract::{Contract, Options};
-    use pink_web3::transports::{resolve_ready, PinkHttp};
-    use pink_web3::types::H160;
-    use pink_web3::{
-        api::{Eth, Namespace},
-        keys::pink::KeyPair,
-    };
-
-    /// The client to submit transaction to the Evm anchor contract
-    struct AnchorTxClient {
-        contract: Contract<PinkHttp>,
-    }
-
-    impl AnchorTxClient {
-        fn connect(rpc: &String, address: H160) -> Result<AnchorTxClient> {
-            let eth = Eth::new(PinkHttp::new(rpc));
-            let contract = Contract::from_json(eth, address, include_bytes!("res/anchor.abi.json"))
-                .or(Err(Error::BadAbi))?;
-
-            Ok(AnchorTxClient { contract })
-        }
-
-        fn submit_rollup(&self, tx: RollupTx, pair: KeyPair) -> Result<primitive_types::H256> {
-            use ethabi::Token;
-            use pink_web3::signing::Key;
-
-            // Prepare rollupU256CondEq params
-            let (cond_keys, cond_values): (Vec<Vec<u8>>, Vec<Vec<u8>>) = tx
-                .conds
-                .into_iter()
-                .map(|cond| {
-                    let phat_offchain_rollup::Cond::Eq(k, v) = cond;
-                    (k.into(), v.map(Into::into).unwrap_or_default())
-                })
-                .unzip();
-            let (update_keys, update_values): (Vec<Vec<u8>>, Vec<Vec<u8>>) = tx
-                .updates
-                .into_iter()
-                .map(|(k, v)| (k.into(), v.map(Into::into).unwrap_or_default()))
-                .unzip();
-            let actions: Vec<Vec<u8>> = tx.actions.into_iter().map(Into::into).collect();
-            let params = (
-                Token::Array(cond_keys.into_iter().map(Token::Bytes).collect()),
-                Token::Array(cond_values.into_iter().map(Token::Bytes).collect()),
-                Token::Array(update_keys.into_iter().map(Token::Bytes).collect()),
-                Token::Array(update_values.into_iter().map(Token::Bytes).collect()),
-                Token::Array(actions.into_iter().map(Token::Bytes).collect()),
-            );
-
-            // Estiamte gas before submission
-            let gas = resolve_ready(self.contract.estimate_gas(
-                "rollupU256CondEq",
-                params.clone(),
-                pair.address(),
-                Options::default(),
-            ))
-            .expect("FIXME: failed to estiamte gas");
-
-            // Actually submit the tx (no guarantee for success)
-            let tx_id = resolve_ready(self.contract.signed_call(
-                "rollupU256CondEq",
-                params,
-                Options::with(|opt| opt.gas = Some(gas)),
-                pair,
-            ))
-            .expect("FIXME: submit failed");
-            Ok(tx_id)
-        }
-    }
-
     #[cfg(test)]
     mod tests {
         /// Imports all the definitions from the outer scope so we can use them here.
         use super::*;
 
-        use hex_literal::hex;
-
         use ink::ToAccountId;
-        /// Imports `ink_lang` so we can use `#[ink::test]`.
         use ink_lang as ink;
+
+        fn consts() -> (String, Vec<u8>, H160, H160) {
+            use std::env;
+            dotenvy::dotenv().ok();
+            /*
+             Deployed {
+                anchor: '0xb3083F961C729f1007a6A1265Ae6b97dC2Cc16f2',
+                oracle: '0x8Bf50F8d0B62017c9B83341CB936797f6B6235dd'
+            }
+            */
+            let rpc = env::var("RPC").unwrap();
+            let key = hex::decode(env::var("PRIVKEY").unwrap()).expect("hex decode failed");
+            let pubkey: [u8; 20] = hex::decode(env::var("PUBKEY").expect("env not found"))
+                .expect("hex decode failed")
+                .try_into()
+                .expect("invald length");
+            let pubkey: H160 = pubkey.into();
+            let anchor_addr: [u8; 20] =
+                hex::decode(env::var("ANCHOR_ADDR").expect("env not found"))
+                    .expect("hex decode failed")
+                    .try_into()
+                    .expect("invald length");
+            let anchor_addr: H160 = anchor_addr.into();
+            (rpc, key, pubkey, anchor_addr)
+        }
 
         #[ink::test]
         fn wallet_works() {
             pink_extension_runtime::mock_ext::mock_all_ext();
-            pink_extension::chain_extension::mock::mock_derive_sr25519_key(|_| {
-                hex!["4c5d4f158b3d691328a1237d550748e019fe499ebf3df7467db6fa02a0818821"].to_vec()
-            });
+            let (_rpc, key, pubkey, _anchor_addr) = consts();
+            pink_extension::chain_extension::mock::mock_derive_sr25519_key(move |_| key.clone());
 
             let hash1 = ink_env::Hash::try_from([10u8; 32]).unwrap();
             ink_env::test::register_contract::<EvmTransactor>(hash1.as_ref());
@@ -269,8 +226,7 @@ mod evm_transator {
                 .expect("failed to deploy EvmTransactor");
 
             // Can reproduce the wallet address
-            let expected_wallet: H160 = hex!("FFa0F188D8d332E0bB9b7E6fCB14874e08Ac06E7").into();
-            assert_eq!(transactor.wallet(), expected_wallet);
+            assert_eq!(transactor.wallet(), pubkey);
 
             // TODO: enable the test below when the adv test framework supports
 
@@ -288,9 +244,8 @@ mod evm_transator {
         #[ink::test]
         fn it_works() {
             pink_extension_runtime::mock_ext::mock_all_ext();
-            pink_extension::chain_extension::mock::mock_derive_sr25519_key(|_| {
-                hex!["4c5d4f158b3d691328a1237d550748e019fe499ebf3df7467db6fa02a0818821"].to_vec()
-            });
+            let (rpc, key, _pubkey, anchor_addr) = consts();
+            pink_extension::chain_extension::mock::mock_derive_sr25519_key(move |_| key.clone());
 
             // Register contracts
             let hash1 = ink_env::Hash::try_from([10u8; 32]).unwrap();
@@ -321,9 +276,6 @@ mod evm_transator {
             // );
 
             // Setup transactor
-            let rpc =
-                "https://eth-goerli.g.alchemy.com/v2/68LXpUy0t0sLfZT2U-iYY5xh5OA8L6RV".to_string();
-            let anchor_addr: H160 = hex!("b3083F961C729f1007a6A1265Ae6b97dC2Cc16f2").into();
             transactor
                 .config(rpc.clone(), oracle.to_account_id(), anchor_addr)
                 .unwrap();

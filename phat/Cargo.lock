@@ -415,6 +415,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dotenvy"
+version = "0.15.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03d8c417d7a8cb362e0c37e5d815f5eb7c37f79ff93707329d5a194e42e54ca0"
+
+[[package]]
 name = "downcast-rs"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -522,7 +528,8 @@ dependencies = [
 name = "evm_transactor"
 version = "0.1.0"
 dependencies = [
- "hex-literal",
+ "dotenvy",
+ "hex",
  "ink_env",
  "ink_lang",
  "ink_metadata",
@@ -771,12 +778,6 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
-
-[[package]]
-name = "hex-literal"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ebdb29d2ea9ed0083cd8cece49bbd968021bd99b0849edb4a9a7ee0fdf6a4e0"
 
 [[package]]
 name = "hmac"
@@ -1497,6 +1498,8 @@ dependencies = [
  "ink_primitives",
  "ink_storage",
  "parity-scale-codec",
+ "pink-ethabi",
+ "pink-web3",
  "primitive-types",
  "scale-info",
 ]
@@ -1960,7 +1963,8 @@ checksum = "4501abdff3ae82a1c1b477a17252eb69cee9e66eb915c1abaa4f44d873df9f09"
 name = "sample_oracle"
 version = "0.1.0"
 dependencies = [
- "hex-literal",
+ "dotenvy",
+ "hex",
  "ink_env",
  "ink_lang",
  "ink_metadata",
