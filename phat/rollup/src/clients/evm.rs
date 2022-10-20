@@ -160,13 +160,13 @@ pub mod write {
                 .into_iter()
                 .map(|(k, v)| (k.into(), v.map(Into::into).unwrap_or_default()))
                 .unzip();
-            let actions: Vec<Vec<u8>> = tx.actions.into_iter().map(Into::into).collect();
+            let actions = tx.actions.into_iter().map(Into::<Vec<u8>>::into);
             let params = (
                 Token::Array(cond_keys.into_iter().map(Token::Bytes).collect()),
                 Token::Array(cond_values.into_iter().map(Token::Bytes).collect()),
                 Token::Array(update_keys.into_iter().map(Token::Bytes).collect()),
                 Token::Array(update_values.into_iter().map(Token::Bytes).collect()),
-                Token::Array(actions.into_iter().map(Token::Bytes).collect()),
+                Token::Array(actions.map(Token::Bytes).collect()),
             );
 
             // Estiamte gas before submission
