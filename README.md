@@ -12,6 +12,7 @@ Phat Contract Offchain Rollup implementation
 ### Contract
 
 - [ ] SimpleScheduler
+    - [x] [Design](https://hackmd.io/vl7oVbUlQmW8a_rcxhk9JQ)
     - [ ] Query `poll()`
         - call all the ready targets
         - should check health (trigger exactly one health worker)
@@ -50,12 +51,12 @@ Phat Contract Offchain Rollup implementation
     - [x] RollupTx
     - [x] RollupTarget
     - [ ] (opt) signature of RollupTx
-- [ ] RollupClient
+- [ ] RollupReadClient
     - [x] Read from EVM
     - [ ] Cross validation
+- [x] RollupWriteClient
 - [ ] struct RollupManager (in ink! storage)
     - [ ] Config RollupTarget (chain, address)
-    - [ ] Create `RollupClient` instance
     - [ ] (opt) offchain attestation
 - [ ] (low) Cross-platform Rollup
     - [x] Basic codec abstraction (`platform::Platform`)
