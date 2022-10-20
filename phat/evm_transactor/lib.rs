@@ -143,7 +143,7 @@ mod evm_transator {
             //
             // Note that currently we ignore `rollup.target` configuration because it's already
             // configured in the transactor.
-            let contract = AnchorTxClient::connect(rpc, anchor.clone().into())
+            let contract = AnchorTxClient::connect(rpc, (*anchor).into())
                 .expect("FIXME: failed to connect to anchor");
             #[cfg(feature = "std")]
             println!("submitting rollup tx");
@@ -219,7 +219,7 @@ mod evm_transator {
 
             // Deploy Transactor
             let mut transactor = EvmTransactorRef::default()
-                .code_hash(hash1.clone())
+                .code_hash(hash1)
                 .endowment(0)
                 .salt_bytes([0u8; 0])
                 .instantiate()
@@ -255,7 +255,7 @@ mod evm_transator {
 
             // Deploy Transactor
             let mut transactor = EvmTransactorRef::default()
-                .code_hash(hash1.clone())
+                .code_hash(hash1)
                 .endowment(0)
                 .salt_bytes([0u8; 0])
                 .instantiate()
@@ -263,7 +263,7 @@ mod evm_transator {
 
             // Deploy Oracle
             let mut oracle = ::sample_oracle::SampleOracleRef::default()
-                .code_hash(hash2.clone())
+                .code_hash(hash2)
                 .endowment(0)
                 .salt_bytes([0u8; 0])
                 .instantiate()
