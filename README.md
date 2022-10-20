@@ -6,7 +6,7 @@ Phat Contract Offchain Rollup implementation
 
 ### Misc
 
-- [ ] Refactor experimantal code as contracts
+- [x] Refactor experimantal code as contracts
     - [x] Switch to OpenBrush's `ink-env` with the advanced unit test kits
 
 ### Contract
