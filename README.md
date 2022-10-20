@@ -53,6 +53,7 @@ Phat Contract Offchain Rollup implementation
     - [ ] (opt) signature of RollupTx
 - [ ] RollupReadClient
     - [x] Read from EVM
+    - [ ] Wrap as QueuedAnchorClient
     - [ ] Cross validation
 - [x] RollupWriteClient
 - [ ] struct RollupManager (in ink! storage)
