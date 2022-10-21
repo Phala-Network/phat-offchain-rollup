@@ -36,7 +36,7 @@ Phat Contract Offchain Rollup implementation
 - [ ] TestOracle
     - [x] Minimum implementation
     - [ ] Real-time fetch price
-    - [ ] Refactor to strip SDK logic
+    - [x] Refactor to strip SDK logic
 
 ### SDK
 
@@ -54,6 +54,7 @@ Phat Contract Offchain Rollup implementation
 - [ ] RollupReadClient
     - [x] Read from EVM
     - [x] Wrap as QueuedAnchorClient
+    - [ ] Consider block_hash when reading data
     - [ ] Cross validation
 - [ ] (low) Cross-platform Rollup
     - [x] Basic codec abstraction (`platform::Platform`)
