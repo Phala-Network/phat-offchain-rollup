@@ -208,13 +208,15 @@ pub mod read {
         }
 
         /// Gets the first element of the queue
-        pub fn queue_head(&self) -> Result<Option<Vec<u8>>> {
+        ///
+        /// Return `(element, idx)`
+        pub fn queue_head(&self) -> Result<(Option<Vec<u8>>, u32)> {
             let start: u32 = self.queue_start()?;
             let end: u32 = self.queue_end()?;
             if start == end {
-                return Ok(None);
+                return Ok((None, start));
             }
-            self.queue_get(start).map(|v| Some(v))
+            self.queue_get(start).map(|v| (Some(v), start))
         }
     }
 }

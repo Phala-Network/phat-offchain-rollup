@@ -15,6 +15,7 @@ mod sample_oracle {
         lock::GLOBAL as GLOBAL_LOCK,
         RollupHandler, RollupResult,
     };
+    use pink_extension as pink;
     use pink_web3::ethabi;
     use primitive_types::H160;
     use scale::{Decode, Encode};
@@ -81,10 +82,10 @@ mod sample_oracle {
                 .expect("FIXME: failed to fetch lock");
 
             // Read the first item in the queue (return if the queue is empty)
-            let raw_item = rollup
+            let (raw_item, idx) = rollup
                 .queue_head()
                 .expect("FIXME: failed to read queue head");
-            let raw_item = match entry {
+            let raw_item = match raw_item {
                 Some(v) => v,
                 _ => return Ok(None),
             };
@@ -101,8 +102,7 @@ mod sample_oracle {
             };
             // Print the human readable request
             let pair = String::from_utf8(pair.clone()).unwrap();
-            #[cfg(feature = "std")]
-            println!("Got req ({}, {})", rid, pair);
+            pink::debug!("Got req ({}, {})", rid, pair);
 
             // Get the price from somewhere
             // let price = get_price(pair);
@@ -117,7 +117,7 @@ mod sample_oracle {
             rollup
                 .tx_mut()
                 .action(Action::Reply(payload))
-                .action(Action::ProcessedTo(start + 1));
+                .action(Action::ProcessedTo(idx + 1));
 
             Ok(Some(rollup.build()))
         }
