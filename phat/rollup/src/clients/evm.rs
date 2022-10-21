@@ -17,10 +17,10 @@ pub mod read {
     }
 
     // conver to Vec<u8> for EVM
-    impl Into<Vec<u8>> for Action {
-        fn into(self) -> Vec<u8> {
+    impl From<Action> for Vec<u8> {
+        fn from(action: Action) -> Vec<u8> {
             use core::iter::once;
-            match self {
+            match action {
                 Action::Reply(data) => once(1u8).chain(data.into_iter()).collect(),
                 Action::ProcessedTo(n) => [2u8, 0u8]
                     .into_iter()
