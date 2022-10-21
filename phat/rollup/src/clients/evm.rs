@@ -1,8 +1,11 @@
 const ANCHOR_ABI: &[u8] = include_bytes!("../../res/anchor.abi.json");
 
 pub mod read {
-    use crate::{platforms::Evm, Error, Result};
-    use crate::{RollupResult, RollupTx};
+    use crate::{
+        lock::{LockId, LockVersion, LockVersionReader, Locks},
+        platforms::Evm,
+        Error, Result, RollupResult, RollupTx,
+    };
     use alloc::vec::Vec;
     use pink_web3::api::{Eth, Namespace};
     use pink_web3::contract::{Contract, Options};
@@ -11,12 +14,13 @@ pub mod read {
     use primitive_types::U256;
     use scale::Decode;
 
+    // TODO: move out out EVM since it's generic
     pub enum Action {
         Reply(Vec<u8>),
         ProcessedTo(u32),
     }
 
-    // conver to Vec<u8> for EVM
+    // Converts to Vec<u8> for EVM rollup anchor
     impl From<Action> for Vec<u8> {
         fn from(action: Action) -> Vec<u8> {
             use core::iter::once;
@@ -51,6 +55,7 @@ pub mod read {
     }
 
     impl AnchorQueryClient {
+        /// Connects to an Ethereum RPC endpoint and load the anchor contract
         pub fn connect(rpc: &String, address: H160) -> Result<Self> {
             let eth = Eth::new(PinkHttp::new(rpc));
             let contract = Contract::from_json(eth, address, super::ANCHOR_ABI)
@@ -59,6 +64,7 @@ pub mod read {
             Ok(Self { address, contract })
         }
 
+        /// Reads the raw bytes from the anchor kv store
         pub fn read_raw(&self, key: &[u8]) -> Result<Vec<u8>> {
             let key: Bytes = key.into();
             let value: Bytes = resolve_ready(self.contract.query(
@@ -85,6 +91,7 @@ pub mod read {
             T::decode(&mut &data[..]).or(Err(Error::FailedToDecodeStorage))
         }
 
+        /// Reads an u256 value from the anchor kv store
         pub fn read_u256(&self, key: &[u8]) -> Result<U256> {
             let data = self.read_raw(key)?;
             if data.is_empty() {
@@ -97,10 +104,9 @@ pub mod read {
         }
     }
 
-    use crate::lock::{LockId, LockVersion, LockVersionReader, Locks};
-
-    pub struct BlockingVersionStore<'a> {
-        pub anchor: &'a AnchorQueryClient,
+    /// Implements LockVersionReader to read version from the anchor contract
+    struct BlockingVersionStore<'a> {
+        anchor: &'a AnchorQueryClient,
     }
     impl<'a> LockVersionReader for BlockingVersionStore<'a> {
         fn get_version(&self, id: LockId) -> crate::Result<LockVersion> {
@@ -114,6 +120,7 @@ pub mod read {
         }
     }
 
+    /// The client to handle a QueuedRollupAnchor rollup session
     pub struct QueuedRollupSession {
         anchor: AnchorQueryClient,
         locks: Locks<Evm>,
@@ -122,6 +129,7 @@ pub mod read {
     }
 
     impl QueuedRollupSession {
+        /// Creates a new session that connects to the EVM anchor contract
         pub fn new<F>(rpc: &String, address: H160, queue_prefix: &[u8], lock_def: F) -> Self
         where
             F: FnOnce(&mut Locks<Evm>),
@@ -138,10 +146,12 @@ pub mod read {
             }
         }
 
+        /// Gets the RollupTx to write
         pub fn tx_mut(&mut self) -> &mut RollupTx {
             &mut self.tx
         }
 
+        /// Builds the final RollupResult
         pub fn build(self) -> RollupResult {
             RollupResult {
                 tx: self.tx,
@@ -150,6 +160,7 @@ pub mod read {
             }
         }
 
+        /// Requests a write lock
         pub fn lock_write(&mut self, lock: &str) -> Result<()> {
             let vstore = BlockingVersionStore {
                 anchor: &self.anchor,
@@ -157,6 +168,7 @@ pub mod read {
             self.locks.tx_write(&mut self.tx, &vstore, lock)
         }
 
+        /// Requests a read lock
         pub fn lock_read(&mut self, lock: &str) -> Result<()> {
             let vstore = BlockingVersionStore {
                 anchor: &self.anchor,
@@ -164,6 +176,7 @@ pub mod read {
             self.locks.tx_read(&mut self.tx, &vstore, lock)
         }
 
+        /// Gets the start index of the queue (inclusive)
         pub fn queue_start(&self) -> Result<u32> {
             let mut key = self.queue_prefix.clone();
             key.extend_from_slice(b"start");
@@ -174,6 +187,7 @@ pub mod read {
                 .expect("queue index overflow"))
         }
 
+        /// Gets the end index of the queue (non-inclusive)
         pub fn queue_end(&self) -> Result<u32> {
             let mut key = self.queue_prefix.clone();
             key.extend_from_slice(b"end");
@@ -184,6 +198,7 @@ pub mod read {
                 .expect("queue index overflow"))
         }
 
+        /// Gets the i-th element of the queue
         pub fn queue_get(&self, i: u32) -> Result<Vec<u8>> {
             let mut be_idx = [0u8; 32];
             U256::from(i).to_big_endian(&mut be_idx);
@@ -210,6 +225,7 @@ pub mod write {
     }
 
     impl AnchorTxClient {
+        /// Connects to an Ethereum RPC endpoint and load the anchor contract
         pub fn connect(rpc: &String, address: H160) -> Result<AnchorTxClient> {
             let eth = Eth::new(PinkHttp::new(rpc));
             let contract = Contract::from_json(eth, address, super::ANCHOR_ABI)
@@ -218,6 +234,9 @@ pub mod write {
             Ok(AnchorTxClient { contract })
         }
 
+        /// Submits a RollupTx to the anchor with a key pair
+        ///
+        /// Return the transaction hash but don't wait for the transaction confirmation.
         pub fn submit_rollup(
             &self,
             tx: crate::RollupTx,
