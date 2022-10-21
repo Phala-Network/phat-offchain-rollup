@@ -1,7 +1,8 @@
 const ANCHOR_ABI: &[u8] = include_bytes!("../../res/anchor.abi.json");
 
 pub mod read {
-    use crate::{Error, Result};
+    use crate::{platforms::Evm, Error, Result};
+    use crate::{RollupResult, RollupTx};
     use alloc::vec::Vec;
     use pink_web3::api::{Eth, Namespace};
     use pink_web3::contract::{Contract, Options};
@@ -96,7 +97,7 @@ pub mod read {
         }
     }
 
-    use crate::lock::{LockId, LockVersion, LockVersionReader};
+    use crate::lock::{LockId, LockVersion, LockVersionReader, Locks};
 
     pub struct BlockingVersionStore<'a> {
         pub anchor: &'a AnchorQueryClient,
@@ -110,6 +111,85 @@ pub mod read {
                 .expect("FIXME: assume successful");
             let value: u32 = value.try_into().expect("version musn't exceed u32");
             Ok(value)
+        }
+    }
+
+    pub struct QueuedRollupSession {
+        anchor: AnchorQueryClient,
+        locks: Locks<Evm>,
+        queue_prefix: Vec<u8>,
+        tx: RollupTx,
+    }
+
+    impl QueuedRollupSession {
+        pub fn new<F>(rpc: &String, address: H160, queue_prefix: &[u8], lock_def: F) -> Self
+        where
+            F: FnOnce(&mut Locks<Evm>),
+        {
+            let anchor =
+                AnchorQueryClient::connect(rpc, address).expect("FIXME: failed to connect");
+            let mut locks = Locks::default();
+            lock_def(&mut locks);
+            Self {
+                anchor,
+                locks,
+                queue_prefix: queue_prefix.to_vec(),
+                tx: RollupTx::default(),
+            }
+        }
+
+        pub fn tx_mut(&mut self) -> &mut RollupTx {
+            &mut self.tx
+        }
+
+        pub fn build(self) -> RollupResult {
+            RollupResult {
+                tx: self.tx,
+                signature: None,
+                target: None,
+            }
+        }
+
+        pub fn lock_write(&mut self, lock: &str) -> Result<()> {
+            let vstore = BlockingVersionStore {
+                anchor: &self.anchor,
+            };
+            self.locks.tx_write(&mut self.tx, &vstore, lock)
+        }
+
+        pub fn lock_read(&mut self, lock: &str) -> Result<()> {
+            let vstore = BlockingVersionStore {
+                anchor: &self.anchor,
+            };
+            self.locks.tx_read(&mut self.tx, &vstore, lock)
+        }
+
+        pub fn queue_start(&self) -> Result<u32> {
+            let mut key = self.queue_prefix.clone();
+            key.extend_from_slice(b"start");
+            Ok(self
+                .anchor
+                .read_u256(&key)?
+                .try_into()
+                .expect("queue index overflow"))
+        }
+
+        pub fn queue_end(&self) -> Result<u32> {
+            let mut key = self.queue_prefix.clone();
+            key.extend_from_slice(b"end");
+            Ok(self
+                .anchor
+                .read_u256(&key)?
+                .try_into()
+                .expect("queue index overflow"))
+        }
+
+        pub fn queue_get(&self, i: u32) -> Result<Vec<u8>> {
+            let mut be_idx = [0u8; 32];
+            U256::from(i).to_big_endian(&mut be_idx);
+            let mut key = self.queue_prefix.clone();
+            key.extend_from_slice(&be_idx);
+            self.anchor.read_raw(&key)
         }
     }
 }

@@ -11,16 +11,11 @@ mod sample_oracle {
     use alloc::{string::String, vec::Vec};
     use ink_storage::traits::{PackedLayout, SpreadLayout};
     use phat_offchain_rollup::{
-        clients::evm::read::{
-            queue_key, // FIXME
-            Action,
-            AnchorQueryClient,
-            BlockingVersionStore,
-        },
-        lock::{Locks, GLOBAL as GLOBAL_LOCK},
-        platforms::Evm,
-        RollupHandler, RollupResult, RollupTx,
+        clients::evm::read::{Action, QueuedRollupSession},
+        lock::GLOBAL as GLOBAL_LOCK,
+        RollupHandler, RollupResult,
     };
+    use pink_web3::ethabi;
     use primitive_types::H160;
     use scale::{Decode, Encode};
 
@@ -78,39 +73,28 @@ mod sample_oracle {
 
         fn handle_req(&self) -> Result<Option<RollupResult>> {
             let Config { rpc, anchor } = self.config.as_ref().ok_or(Error::NotConfigurated)?;
-
-            let mut tx = RollupTx::default();
-            let locks = locks();
-
-            // Connect to Ethereum RPC
-            let anchor =
-                AnchorQueryClient::connect(rpc, anchor.into()).expect("FIXME: failed to connect");
-            let vstore = BlockingVersionStore { anchor: &anchor };
+            let mut rollup = QueuedRollupSession::new(rpc, anchor.into(), b"q", |_locks| {});
 
             // Declare write to global lock since it pops an element from the queue
-            locks
-                .tx_write(&mut tx, &vstore, GLOBAL_LOCK)
-                .expect("lock must succeed");
+            rollup
+                .lock_write(GLOBAL_LOCK)
+                .expect("FIXME: failed to fetch lock");
 
             // Read the queue pointer from the Anchor Contract
-            let start: u32 = anchor.read_u256(b"qstart").unwrap().try_into().unwrap();
-            let end: u32 = anchor.read_u256(b"qend").unwrap().try_into().unwrap();
+            let start: u32 = rollup.queue_start().unwrap();
+            let end: u32 = rollup.queue_end().unwrap();
             #[cfg(feature = "std")]
-            {
-                println!("start: {}", start);
-                println!("end: {}", end);
-            }
+            println!("start: {}, end: {}", start, end);
             if start == end {
                 return Ok(None);
             }
 
             // Read the queue content
-            let queue_data = anchor
-                .read_raw(&queue_key(b"q", start))
+            let queue_data = rollup
+                .queue_get(start)
                 .expect("FIXME: failed to read queue data");
 
             // Decode the queue data by ethabi (u256, bytes)
-            use pink_web3::ethabi;
             let decoded = ethabi::decode(
                 &[ethabi::ParamType::Uint(32), ethabi::ParamType::Bytes],
                 &queue_data,
@@ -135,15 +119,12 @@ mod sample_oracle {
                 ethabi::Token::Uint(19800_000000_000000_000000u128.into()),
             ]);
 
-            tx.action(Action::Reply(payload))
+            rollup
+                .tx_mut()
+                .action(Action::Reply(payload))
                 .action(Action::ProcessedTo(start + 1));
 
-            let result = RollupResult {
-                tx,
-                signature: None,
-                target: None,
-            };
-            Ok(Some(result))
+            Ok(Some(rollup.build()))
         }
 
         /// Returns BadOrigin error if the caller is not the owner
@@ -161,14 +142,6 @@ mod sample_oracle {
         fn handle_rollup(&self) -> core::result::Result<Option<RollupResult>, Vec<u8>> {
             self.handle_req().map_err(|e| Encode::encode(&e))
         }
-    }
-
-    fn locks() -> Locks<Evm> {
-        let mut locks = Locks::default();
-        locks
-            .add("queue", GLOBAL_LOCK)
-            .expect("defining lock should succeed");
-        locks
     }
 
     #[cfg(test)]
