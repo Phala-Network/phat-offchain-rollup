@@ -1,6 +1,12 @@
 # phat-offchain-rollup
 Phat Contract Offchain Rollup implementation
 
+## Highlighted TODOs
+
+- E2E test script
+- Simple scheduler
+- Lock: the correct implementation; may require a rewrite
+- Optimization: Batch read from rollup anchor
 
 ## Phat Contract side
 
