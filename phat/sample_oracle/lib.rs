@@ -100,7 +100,8 @@ mod sample_oracle {
                 [ethabi::Token::Uint(reqid), ethabi::Token::Bytes(content)] => (reqid, content),
                 _ => return Err(Error::FailedToDecodeStorage),
             };
-            // Print the human readable request
+
+            // Log
             let pair = String::from_utf8(pair.clone()).unwrap();
             pink::debug!("Got req ({}, {})", rid, pair);
 
