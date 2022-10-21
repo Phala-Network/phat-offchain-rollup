@@ -28,6 +28,9 @@ contract TestOracle is PhatRollupReceiver, Ownable {
     function onPhatRollupReceived(address _from, bytes calldata action)
         public override returns(bytes4)
     {
+        // Always check the sender. Otherwise you can get fooled.
+        require(msg.sender == queuedAnchor, "bad caller");
+
         (uint id, uint256 price) = abi.decode(action, (uint, uint256));
         emit PriceReceived(id, requests[id], price);
         delete requests[id];
