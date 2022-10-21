@@ -80,24 +80,19 @@ mod sample_oracle {
                 .lock_write(GLOBAL_LOCK)
                 .expect("FIXME: failed to fetch lock");
 
-            // Read the queue pointer from the Anchor Contract
-            let start: u32 = rollup.queue_start().unwrap();
-            let end: u32 = rollup.queue_end().unwrap();
-            #[cfg(feature = "std")]
-            println!("start: {}, end: {}", start, end);
-            if start == end {
-                return Ok(None);
-            }
-
-            // Read the queue content
-            let queue_data = rollup
-                .queue_get(start)
-                .expect("FIXME: failed to read queue data");
+            // Read the first item in the queue (return if the queue is empty)
+            let raw_item = rollup
+                .queue_head()
+                .expect("FIXME: failed to read queue head");
+            let raw_item = match entry {
+                Some(v) => v,
+                _ => return Ok(None),
+            };
 
             // Decode the queue data by ethabi (u256, bytes)
             let decoded = ethabi::decode(
                 &[ethabi::ParamType::Uint(32), ethabi::ParamType::Bytes],
-                &queue_data,
+                &raw_item,
             )
             .or(Err(Error::FailedToDecodeStorage))?;
             let (rid, pair) = match decoded.as_slice() {

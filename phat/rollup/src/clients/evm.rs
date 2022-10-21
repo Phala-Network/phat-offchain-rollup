@@ -206,6 +206,16 @@ pub mod read {
             key.extend_from_slice(&be_idx);
             self.anchor.read_raw(&key)
         }
+
+        /// Gets the first element of the queue
+        pub fn queue_head(&self) -> Result<Option<Vec<u8>>> {
+            let start: u32 = self.queue_start()?;
+            let end: u32 = self.queue_end()?;
+            if start == end {
+                return Ok(None);
+            }
+            self.queue_get(start).map(|v| Some(v))
+        }
     }
 }
 
