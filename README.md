@@ -53,12 +53,8 @@ Phat Contract Offchain Rollup implementation
     - [ ] (opt) signature of RollupTx
 - [ ] RollupReadClient
     - [x] Read from EVM
-    - [ ] Wrap as QueuedAnchorClient
+    - [x] Wrap as QueuedAnchorClient
     - [ ] Cross validation
-- [x] RollupWriteClient
-- [ ] struct RollupManager (in ink! storage)
-    - [ ] Config RollupTarget (chain, address)
-    - [ ] (opt) offchain attestation
 - [ ] (low) Cross-platform Rollup
     - [x] Basic codec abstraction (`platform::Platform`)
     - [ ] State reading abstraction
