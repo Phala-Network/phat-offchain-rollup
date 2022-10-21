@@ -54,14 +54,14 @@ contract PhatRollupAnchor is ReentrancyGuard {
             }
         }
         
-        // apply actions
-        for (uint i = 0; i < actions.length; i++) {
-            handleAction(actions[i]);
-        }
-        
         // apply updates
         for (uint i = 0; i < updateKeys.length; i++) {
             phatStorage[updateKeys[i]] = updateValues[i];
+        }
+        
+        // apply actions
+        for (uint i = 0; i < actions.length; i++) {
+            handleAction(actions[i]);
         }
 
         return true;
