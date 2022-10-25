@@ -6,7 +6,7 @@ pub mod read {
         platforms::Evm,
         Error, Result, RollupResult, RollupTx,
     };
-    use alloc::vec::Vec;
+    use alloc::{vec::Vec, string::String};
     use pink_web3::api::{Eth, Namespace};
     use pink_web3::contract::{Contract, Options};
     use pink_web3::transports::{resolve_ready, PinkHttp};
@@ -223,6 +223,7 @@ pub mod read {
 
 pub mod write {
     use crate::{Error, Result};
+    use alloc::{vec::Vec, string::String};
     use pink_web3::contract::{Contract, Options};
     use pink_web3::transports::{resolve_ready, PinkHttp};
     use pink_web3::types::H160;
