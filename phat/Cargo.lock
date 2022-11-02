@@ -954,16 +954,16 @@ dependencies = [
 
 [[package]]
 name = "ink_allocator"
-version = "3.3.1"
-source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.3.1#d9629c6398dba66d15509bab8877f644330f1f99"
+version = "3.4.0"
+source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.4.0#1b83c17b7435815e56428bac57b2d59c44d5631a"
 dependencies = [
  "cfg-if",
 ]
 
 [[package]]
 name = "ink_engine"
-version = "3.3.1"
-source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.3.1#d9629c6398dba66d15509bab8877f644330f1f99"
+version = "3.4.0"
+source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.4.0#1b83c17b7435815e56428bac57b2d59c44d5631a"
 dependencies = [
  "blake2",
  "derive_more",
@@ -976,8 +976,8 @@ dependencies = [
 
 [[package]]
 name = "ink_env"
-version = "3.3.1"
-source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.3.1#d9629c6398dba66d15509bab8877f644330f1f99"
+version = "3.4.0"
+source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.4.0#1b83c17b7435815e56428bac57b2d59c44d5631a"
 dependencies = [
  "arrayref",
  "blake2",
@@ -1002,8 +1002,8 @@ dependencies = [
 
 [[package]]
 name = "ink_lang"
-version = "3.3.1"
-source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.3.1#d9629c6398dba66d15509bab8877f644330f1f99"
+version = "3.4.0"
+source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.4.0#1b83c17b7435815e56428bac57b2d59c44d5631a"
 dependencies = [
  "derive_more",
  "ink_env",
@@ -1017,8 +1017,8 @@ dependencies = [
 
 [[package]]
 name = "ink_lang_codegen"
-version = "3.3.1"
-source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.3.1#d9629c6398dba66d15509bab8877f644330f1f99"
+version = "3.4.0"
+source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.4.0#1b83c17b7435815e56428bac57b2d59c44d5631a"
 dependencies = [
  "blake2",
  "derive_more",
@@ -1035,8 +1035,8 @@ dependencies = [
 
 [[package]]
 name = "ink_lang_ir"
-version = "3.3.1"
-source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.3.1#d9629c6398dba66d15509bab8877f644330f1f99"
+version = "3.4.0"
+source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.4.0#1b83c17b7435815e56428bac57b2d59c44d5631a"
 dependencies = [
  "blake2",
  "either",
@@ -1048,8 +1048,8 @@ dependencies = [
 
 [[package]]
 name = "ink_lang_macro"
-version = "3.3.1"
-source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.3.1#d9629c6398dba66d15509bab8877f644330f1f99"
+version = "3.4.0"
+source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.4.0#1b83c17b7435815e56428bac57b2d59c44d5631a"
 dependencies = [
  "ink_lang_codegen",
  "ink_lang_ir",
@@ -1061,8 +1061,8 @@ dependencies = [
 
 [[package]]
 name = "ink_metadata"
-version = "3.3.1"
-source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.3.1#d9629c6398dba66d15509bab8877f644330f1f99"
+version = "3.4.0"
+source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.4.0#1b83c17b7435815e56428bac57b2d59c44d5631a"
 dependencies = [
  "derive_more",
  "impl-serde",
@@ -1074,16 +1074,16 @@ dependencies = [
 
 [[package]]
 name = "ink_prelude"
-version = "3.3.1"
-source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.3.1#d9629c6398dba66d15509bab8877f644330f1f99"
+version = "3.4.0"
+source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.4.0#1b83c17b7435815e56428bac57b2d59c44d5631a"
 dependencies = [
  "cfg-if",
 ]
 
 [[package]]
 name = "ink_primitives"
-version = "3.3.1"
-source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.3.1#d9629c6398dba66d15509bab8877f644330f1f99"
+version = "3.4.0"
+source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.4.0#1b83c17b7435815e56428bac57b2d59c44d5631a"
 dependencies = [
  "cfg-if",
  "ink_prelude",
@@ -1093,8 +1093,8 @@ dependencies = [
 
 [[package]]
 name = "ink_storage"
-version = "3.3.1"
-source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.3.1#d9629c6398dba66d15509bab8877f644330f1f99"
+version = "3.4.0"
+source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.4.0#1b83c17b7435815e56428bac57b2d59c44d5631a"
 dependencies = [
  "array-init",
  "cfg-if",
@@ -1110,8 +1110,8 @@ dependencies = [
 
 [[package]]
 name = "ink_storage_derive"
-version = "3.3.1"
-source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.3.1#d9629c6398dba66d15509bab8877f644330f1f99"
+version = "3.4.0"
+source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-3.4.0#1b83c17b7435815e56428bac57b2d59c44d5631a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2689,7 +2689,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
  "cfg-if",
- "rand 0.8.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 

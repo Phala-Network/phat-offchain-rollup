@@ -1,18 +1,18 @@
 [workspace]
 members = [
     "rollup",
-    "sample_oracle",
-    "evm_transactor",
+    "contracts/sample_oracle",
+    "contracts/evm_transactor",
     #"scheduler",
 ]
 
 # Sneak peek of the new test engine!
 [patch.crates-io]
-ink_primitives = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.3.1" }
-ink_metadata = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.3.1" }
-ink_env = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.3.1" }
-ink_storage = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.3.1" }
-ink_lang = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.3.1" }
-ink_lang_codegen = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.3.1" }
-ink_lang_ir = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.3.1" }
-ink_lang_macro = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.3.1" }
+ink_primitives = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.4.0" }
+ink_metadata = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.4.0" }
+ink_env = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.4.0" }
+ink_storage = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.4.0" }
+ink_lang = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.4.0" }
+ink_lang_codegen = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.4.0" }
+ink_lang_ir = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.4.0" }
+ink_lang_macro = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-3.4.0" }
