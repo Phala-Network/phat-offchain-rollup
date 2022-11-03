@@ -982,10 +982,10 @@ des.js@^1.0.0:
     inherits "^2.0.1"
     minimalistic-assert "^1.0.0"
 
-devphase@^0.0.7:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/devphase/-/devphase-0.0.7.tgz#bd1fa7e642b35126787b19ccb4f265659ebb1d5b"
-  integrity sha512-aE3jJ/n7hug0CFvDy6llf7JSo2iZrBx1naG27bSH+et8mBt+5+v8zzjcH6g9Kq6lHAlPlxlyZTfQYHUr2q0ztw==
+devphase@^0.0.11:
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/devphase/-/devphase-0.0.11.tgz#7d7027132e600be3378b00ddb15060a274477ea4"
+  integrity sha512-w62jqncyKJj1zY+XUGf14fEqtHRXi4KSbElvMDNhKKH0ulf32YmCXzwU30pTnR2RY8p42xUQrxYbgsz/ONOOCg==
   dependencies:
     "@phala/sdk" "^0.3.3"
     "@phala/typedefs" "^0.2.31"
@@ -1005,6 +1005,7 @@ devphase@^0.0.7:
     lodash "^4.17.21"
     mocha "^10.0.0"
     ts-morph "^16.0.0"
+    tsconfig-paths "^4.1.0"
 
 diff@5.0.0:
   version "5.0.0"
