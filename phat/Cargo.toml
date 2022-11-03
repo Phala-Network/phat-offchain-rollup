@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "rollup",
-    "contracts/sample_oracle",
+    #"contracts/sample_oracle",
     "contracts/evm_transactor",
     #"scheduler",
 ]
