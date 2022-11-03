@@ -1,3 +1,4 @@
+[workspace]
 [package]
 name = "sample_oracle"
 version = "0.1.0"
@@ -56,3 +57,6 @@ std = [
     "pink-web3/std",
 ]
 ink-as-dependency = []
+
+[patch.crates-io]
+serde = { git = "https://github.com/kvinwang/serde.git", branch = "pink" }
