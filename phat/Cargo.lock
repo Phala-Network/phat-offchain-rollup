@@ -3032,3 +3032,8 @@ dependencies = [
  "syn",
  "synstructure",
 ]
+
+[[patch.unused]]
+name = "serde"
+version = "1.0.147"
+source = "git+https://github.com/kvinwang/serde.git?branch=pink#0d6920a81befce8e44b854dc67738b0c640247e6"
