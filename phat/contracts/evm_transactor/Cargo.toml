@@ -57,3 +57,7 @@ std = [
     "pink-web3/std",
 ]
 ink-as-dependency = []
+
+# Leave for `cargo contract` build.
+[patch.crates-io]
+serde = { git = "https://github.com/kvinwang/serde.git", branch = "pink" }

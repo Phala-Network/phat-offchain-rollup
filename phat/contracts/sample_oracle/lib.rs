@@ -61,6 +61,12 @@ mod sample_oracle {
             }
         }
 
+        /// Gets the owner of the contract
+        #[ink(message)]
+        pub fn owner(&self) -> AccountId {
+            self.owner
+        }
+
         /// Configures the rollup target
         #[ink(message)]
         pub fn config(&mut self, rpc: String, anchor: H160) -> Result<()> {

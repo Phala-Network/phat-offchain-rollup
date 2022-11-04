@@ -10,6 +10,10 @@ function rel(p: string): string {
 
 async function initChain(devphase: any): Promise<void> {
     console.log('######################## Initializing blockchain ########################');
+    // Necessary to run; copied from devphase `defaultSetupenv()`
+    devphase.mainClusterId = devphase.options.clusterId;
+    await devphase.prepareWorker(devphase.options.workerUrl);
+    // Run our custom init script
     return new Promise((resolve) => {
         const init = spawn('bash', ['tmp/scripts/init-blockchain.sh'], { stdio: 'inherit' });
         // function onData(data: Buffer) {

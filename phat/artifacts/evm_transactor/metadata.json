@@ -1,0 +1,494 @@
+{
+  "source": {
+    "hash": "0x018950b84355212ecd5524bd629302dd7c463e254564388b65e0afcc93a179e5",
+    "language": "ink! 3.4.0",
+    "compiler": "rustc 1.67.0-nightly"
+  },
+  "contract": {
+    "name": "evm_transactor",
+    "version": "0.1.0",
+    "authors": [
+      "[your_name] <[your_email]>"
+    ]
+  },
+  "V3": {
+    "spec": {
+      "constructors": [
+        {
+          "args": [],
+          "docs": [],
+          "label": "default",
+          "payable": false,
+          "selector": "0xed4b9d1b"
+        }
+      ],
+      "docs": [],
+      "events": [],
+      "messages": [
+        {
+          "args": [],
+          "docs": [
+            " Gets the owner of the contract"
+          ],
+          "label": "owner",
+          "mutates": false,
+          "payable": false,
+          "returnType": {
+            "displayName": [
+              "AccountId"
+            ],
+            "type": 0
+          },
+          "selector": "0xfeaea4fa"
+        },
+        {
+          "args": [
+            {
+              "label": "rpc",
+              "type": {
+                "displayName": [
+                  "String"
+                ],
+                "type": 3
+              }
+            },
+            {
+              "label": "rollup_handler",
+              "type": {
+                "displayName": [
+                  "AccountId"
+                ],
+                "type": 0
+              }
+            },
+            {
+              "label": "anchor",
+              "type": {
+                "displayName": [
+                  "H160"
+                ],
+                "type": 5
+              }
+            }
+          ],
+          "docs": [
+            " Configures the transactor"
+          ],
+          "label": "config",
+          "mutates": true,
+          "payable": false,
+          "returnType": {
+            "displayName": [
+              "Result"
+            ],
+            "type": 7
+          },
+          "selector": "0x70714744"
+        },
+        {
+          "args": [],
+          "docs": [
+            " Returns the wallet address the transactor used to submit transactions"
+          ],
+          "label": "wallet",
+          "mutates": false,
+          "payable": false,
+          "returnType": {
+            "displayName": [
+              "H160"
+            ],
+            "type": 5
+          },
+          "selector": "0x053ffe7f"
+        },
+        {
+          "args": [],
+          "docs": [
+            " Retires the wallet to allow the owner to extract the key"
+          ],
+          "label": "retire_wallet",
+          "mutates": true,
+          "payable": false,
+          "returnType": {
+            "displayName": [
+              "Result"
+            ],
+            "type": 7
+          },
+          "selector": "0x64063d34"
+        },
+        {
+          "args": [],
+          "docs": [
+            " Extracts the retired secret key"
+          ],
+          "label": "get_retired_secret_key",
+          "mutates": false,
+          "payable": false,
+          "returnType": {
+            "displayName": [
+              "Result"
+            ],
+            "type": 10
+          },
+          "selector": "0x5a112b67"
+        },
+        {
+          "args": [],
+          "docs": [
+            " Called by a scheduler periodically"
+          ],
+          "label": "poll",
+          "mutates": false,
+          "payable": false,
+          "returnType": {
+            "displayName": [
+              "Result"
+            ],
+            "type": 7
+          },
+          "selector": "0x1e44dfc6"
+        },
+        {
+          "args": [
+            {
+              "label": "key",
+              "type": {
+                "displayName": [],
+                "type": 1
+              }
+            }
+          ],
+          "docs": [
+            " For test only. Call with an injected key."
+          ],
+          "label": "test_poll_with_key",
+          "mutates": false,
+          "payable": false,
+          "returnType": {
+            "displayName": [
+              "Result"
+            ],
+            "type": 7
+          },
+          "selector": "0xf9ba4a9b"
+        }
+      ]
+    },
+    "storage": {
+      "struct": {
+        "fields": [
+          {
+            "layout": {
+              "cell": {
+                "key": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "ty": 0
+              }
+            },
+            "name": "owner"
+          },
+          {
+            "layout": {
+              "enum": {
+                "dispatchKey": "0x0100000000000000000000000000000000000000000000000000000000000000",
+                "variants": {
+                  "0": {
+                    "fields": [
+                      {
+                        "layout": {
+                          "struct": {
+                            "fields": [
+                              {
+                                "layout": {
+                                  "cell": {
+                                    "key": "0x0200000000000000000000000000000000000000000000000000000000000000",
+                                    "ty": 0
+                                  }
+                                },
+                                "name": "rollup_handler"
+                              },
+                              {
+                                "layout": {
+                                  "cell": {
+                                    "key": "0x0300000000000000000000000000000000000000000000000000000000000000",
+                                    "ty": 3
+                                  }
+                                },
+                                "name": "rpc"
+                              },
+                              {
+                                "layout": {
+                                  "array": {
+                                    "cellsPerElem": 1,
+                                    "layout": {
+                                      "cell": {
+                                        "key": "0x1800000000000000000000000000000000000000000000000000000000000000",
+                                        "ty": 2
+                                      }
+                                    },
+                                    "len": 20,
+                                    "offset": "0x0400000000000000000000000000000000000000000000000000000000000000"
+                                  }
+                                },
+                                "name": "anchor"
+                              }
+                            ]
+                          }
+                        },
+                        "name": null
+                      }
+                    ]
+                  },
+                  "1": {
+                    "fields": []
+                  }
+                }
+              }
+            },
+            "name": "config"
+          },
+          {
+            "layout": {
+              "cell": {
+                "key": "0x0200000000000000000000000000000000000000000000000000000000000000",
+                "ty": 4
+              }
+            },
+            "name": "retired"
+          }
+        ]
+      }
+    },
+    "types": [
+      {
+        "id": 0,
+        "type": {
+          "def": {
+            "composite": {
+              "fields": [
+                {
+                  "type": 1,
+                  "typeName": "[u8; 32]"
+                }
+              ]
+            }
+          },
+          "path": [
+            "ink_env",
+            "types",
+            "AccountId"
+          ]
+        }
+      },
+      {
+        "id": 1,
+        "type": {
+          "def": {
+            "array": {
+              "len": 32,
+              "type": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "type": {
+          "def": {
+            "primitive": "u8"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "type": {
+          "def": {
+            "primitive": "str"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "type": {
+          "def": {
+            "primitive": "bool"
+          }
+        }
+      },
+      {
+        "id": 5,
+        "type": {
+          "def": {
+            "composite": {
+              "fields": [
+                {
+                  "type": 6,
+                  "typeName": "[u8; 20]"
+                }
+              ]
+            }
+          },
+          "path": [
+            "primitive_types",
+            "H160"
+          ]
+        }
+      },
+      {
+        "id": 6,
+        "type": {
+          "def": {
+            "array": {
+              "len": 20,
+              "type": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "type": {
+          "def": {
+            "variant": {
+              "variants": [
+                {
+                  "fields": [
+                    {
+                      "type": 8
+                    }
+                  ],
+                  "index": 0,
+                  "name": "Ok"
+                },
+                {
+                  "fields": [
+                    {
+                      "type": 9
+                    }
+                  ],
+                  "index": 1,
+                  "name": "Err"
+                }
+              ]
+            }
+          },
+          "params": [
+            {
+              "name": "T",
+              "type": 8
+            },
+            {
+              "name": "E",
+              "type": 9
+            }
+          ],
+          "path": [
+            "Result"
+          ]
+        }
+      },
+      {
+        "id": 8,
+        "type": {
+          "def": {
+            "tuple": []
+          }
+        }
+      },
+      {
+        "id": 9,
+        "type": {
+          "def": {
+            "variant": {
+              "variants": [
+                {
+                  "index": 0,
+                  "name": "BadOrigin"
+                },
+                {
+                  "index": 1,
+                  "name": "NotConfigurated"
+                },
+                {
+                  "index": 2,
+                  "name": "KeyRetired"
+                },
+                {
+                  "index": 3,
+                  "name": "KeyNotRetiredYet"
+                },
+                {
+                  "index": 4,
+                  "name": "UpstreamFailed"
+                },
+                {
+                  "index": 5,
+                  "name": "BadAbi"
+                },
+                {
+                  "index": 6,
+                  "name": "FailedToGetStorage"
+                },
+                {
+                  "index": 7,
+                  "name": "FailedToDecodeStorage"
+                },
+                {
+                  "index": 8,
+                  "name": "FailedToEstimateGas"
+                }
+              ]
+            }
+          },
+          "path": [
+            "evm_transactor",
+            "evm_transator",
+            "Error"
+          ]
+        }
+      },
+      {
+        "id": 10,
+        "type": {
+          "def": {
+            "variant": {
+              "variants": [
+                {
+                  "fields": [
+                    {
+                      "type": 1
+                    }
+                  ],
+                  "index": 0,
+                  "name": "Ok"
+                },
+                {
+                  "fields": [
+                    {
+                      "type": 9
+                    }
+                  ],
+                  "index": 1,
+                  "name": "Err"
+                }
+              ]
+            }
+          },
+          "params": [
+            {
+              "name": "T",
+              "type": 1
+            },
+            {
+              "name": "E",
+              "type": 9
+            }
+          ],
+          "path": [
+            "Result"
+          ]
+        }
+      }
+    ]
+  }
+}

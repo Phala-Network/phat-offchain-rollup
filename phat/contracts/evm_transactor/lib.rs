@@ -13,6 +13,7 @@ mod evm_transator {
     };
     use primitive_types::H160;
     use scale::{Decode, Encode};
+    use pink_web3::keys::pink::KeyPair;
 
     #[ink(storage)]
     pub struct EvmTransactor {
@@ -57,6 +58,12 @@ mod evm_transator {
                 config: None,
                 retired: false,
             }
+        }
+
+        /// Gets the owner of the contract
+        #[ink(message)]
+        pub fn owner(&self) -> AccountId {
+            self.owner
         }
 
         /// Configures the transactor
@@ -106,6 +113,16 @@ mod evm_transator {
         /// Called by a scheduler periodically
         #[ink(message)]
         pub fn poll(&self) -> Result<()> {
+            self.poll_with_key(Self::key_pair())
+        }
+
+        /// For test only. Call with an injected key.
+        #[ink(message)]
+        pub fn test_poll_with_key(&self, key: [u8; 32]) -> Result<()> {
+            self.poll_with_key(KeyPair::from(key))
+        }
+
+        fn poll_with_key(&self, pair: KeyPair) -> Result<()> {
             if self.retired {
                 return Err(Error::KeyRetired);
             }
@@ -149,7 +166,6 @@ mod evm_transator {
             println!("submitting rollup tx");
 
             // Submit to EVM
-            let pair = Self::key_pair();
             let tx_id = contract
                 .submit_rollup(rollup.tx, pair)
                 .expect("FIXME: failed to submit rollup tx");
