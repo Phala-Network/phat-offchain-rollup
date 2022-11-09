@@ -21,6 +21,7 @@ import "./Interfaces.sol";
 /// - `<prefix>/end`: `uint` - index of the next element to push to the queue
 /// - `<prefix/<n>`: `bytes` - the `n`-th message
 contract PhatQueuedAnchor is PhatRollupAnchor, IPhatQueuedAnchor, Ownable {
+    event Configured(bytes queuePrefix, bytes lockKey);
     event RequestQueued(uint256 idx, bytes data);
     event RequestProcessedTo(uint256);
 
@@ -36,6 +37,15 @@ contract PhatQueuedAnchor is PhatRollupAnchor, IPhatQueuedAnchor, Ownable {
         // future.
         lockKey = hex"00";
         queuePrefix = queuePrefix_;
+        emit Configured(queuePrefix, lockKey);
+    }
+
+    function getLockKey() public view returns (bytes memory) {
+        return lockKey;
+    }
+
+    function getPrefix() public view returns (bytes memory) {
+        return queuePrefix;
     }
 
     function getUint(bytes memory key) public view returns (uint256) {
@@ -84,6 +94,7 @@ contract PhatQueuedAnchor is PhatRollupAnchor, IPhatQueuedAnchor, Ownable {
             removeBytes(itemKey);
         }
         setUint("start", end);
+        incLock();
         emit RequestProcessedTo(end);
     }
 
