@@ -53,6 +53,11 @@ contract PhatQueuedAnchor is PhatRollupAnchor, IPhatQueuedAnchor, Ownable {
         return toUint256Strict(phatStorage[storageKey], 0);
     }
 
+    function getBytes(bytes memory key) public view returns (bytes memory) {
+        bytes memory storageKey = bytes.concat(queuePrefix, key);
+        return phatStorage[storageKey];
+    }
+
     function setUint(bytes memory key, uint256 value) internal {
         bytes memory storageKey = bytes.concat(queuePrefix, key);
         phatStorage[storageKey] = abi.encode(value);

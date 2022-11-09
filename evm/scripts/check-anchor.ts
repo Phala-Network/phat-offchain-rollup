@@ -18,20 +18,15 @@ async function main() {
   const rawStart = await anchor.getStorage('0x71000000000000000000000000000000000000000000000000000000000000007374617274');
   const rawEnd = await anchor.getStorage('0x7100000000000000000000000000000000000000000000000000000000000000656e64');
 
-  const rawStorage = await Promise.all([
-    ethers.provider.getStorageAt(anchorAddr, 0),
-    ethers.provider.getStorageAt(anchorAddr, 1),
-    ethers.provider.getStorageAt(anchorAddr, 2),
-    ethers.provider.getStorageAt(anchorAddr, 3),
-    ethers.provider.getStorageAt(anchorAddr, 4),
-    ethers.provider.getStorageAt(anchorAddr, 5),
-    ethers.provider.getStorageAt(anchorAddr, 6),
-    ethers.provider.getStorageAt(anchorAddr, 7),
-    ethers.provider.getStorageAt(anchorAddr, 8),
-    ethers.provider.getStorageAt(anchorAddr, 9),
-  ]);
+//   const rawStorage = await Promise.all([
+//     ethers.provider.getStorageAt(anchorAddr, 0),
+//     ethers.provider.getStorageAt(anchorAddr, 1),
+//     ethers.provider.getStorageAt(anchorAddr, 2),
+//     ethers.provider.getStorageAt(anchorAddr, 3),
+//     ethers.provider.getStorageAt(anchorAddr, 4),
+//   ]);
 
-  console.log({start, end, globalLock, rawStart, rawEnd, rawStorage});
+  console.log({start, end, globalLock, rawStart, rawEnd});
 }
 
 function hex(str: string): string {
