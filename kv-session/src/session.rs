@@ -24,6 +24,18 @@ where
             updates: Default::default(),
         }
     }
+
+    pub fn commit(self) -> (KvTransaction<Key, Val>, Snap) {
+        let (accessed_keys, version_updates) = self.tracker.collect_into();
+        (
+            KvTransaction {
+                accessed_keys,
+                version_updates,
+                value_updates: self.updates.into_iter().collect(),
+            },
+            self.kvdb,
+        )
+    }
 }
 
 impl<Snap, Key, Val, Track> KvSession for Session<Snap, Key, Val, Track>
@@ -55,13 +67,6 @@ where
         let key = key.to_owned();
         self.tracker.write(&key);
         self.updates.insert(key, None);
-    }
-
-    fn commit(self) -> KvTransaction<Self::Key, Self::Value> {
-        KvTransaction {
-            accessed_keys: self.tracker.collect_into(),
-            updates: self.updates.into_iter().collect(),
-        }
     }
 }
 
@@ -107,27 +112,30 @@ mod tests {
         session.delete(&42);
         assert_eq!(session.get(&42).unwrap(), None);
 
-        session.commit()
+        session.commit().0
     }
 
     #[test]
     fn session_with_one_lock_works() {
-        let tx = with_tracker(OneLock(999));
+        let tx = with_tracker(OneLock::new(999, true));
         assert_eq!(tx.accessed_keys, vec![999]);
-        assert_eq!(tx.updates, vec![(42, None), (43, Some(34)),]);
+        assert_eq!(tx.value_updates, vec![(42, None), (43, Some(34)),]);
+        assert_eq!(tx.version_updates, vec![999]);
     }
 
     #[test]
     fn session_with_read_tracker_works() {
         let tx = with_tracker(ReadTracker::new());
         assert_eq!(tx.accessed_keys, vec![0, 42]);
-        assert_eq!(tx.updates, vec![(42, None), (43, Some(34)),]);
+        assert_eq!(tx.value_updates, vec![(42, None), (43, Some(34)),]);
+        assert_eq!(tx.version_updates, vec![42, 43]);
     }
 
     #[test]
     fn session_with_rw_tracker_works() {
         let tx = with_tracker(RwTracker::new());
         assert_eq!(tx.accessed_keys, vec![0, 42, 43]);
-        assert_eq!(tx.updates, vec![(42, None), (43, Some(34)),]);
+        assert_eq!(tx.value_updates, vec![(42, None), (43, Some(34)),]);
+        assert_eq!(tx.version_updates, vec![42, 43]);
     }
 }

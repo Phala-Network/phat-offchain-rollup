@@ -1,10 +1,12 @@
-#![cfg_attr(not(test), no_std)]
+#![no_std]
 extern crate alloc;
 
 mod error;
-mod rollup;
 mod session;
 mod trackers;
+
+pub mod queue;
+pub mod rollup;
 pub mod traits;
 
 pub use error::{Error, Result};

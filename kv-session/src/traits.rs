@@ -4,11 +4,11 @@ use crate::Result;
 
 pub struct KvTransaction<K, V> {
     pub accessed_keys: Vec<K>,
-    pub updates: Vec<(K, Option<V>)>,
+    pub version_updates: Vec<K>,
+    pub value_updates: Vec<(K, Option<V>)>,
 }
 
 pub trait BumpVersion<V> {
-    //
     fn bump_version(&self, version: Option<V>) -> Result<V>;
 }
 
@@ -23,11 +23,12 @@ pub trait KvSnapshot {
     fn get(&self, key: &impl ToOwned<Owned = Self::Key>) -> Result<Option<Self::Value>>;
 
     /// Batch get storage values from the snapshot
+    #[allow(clippy::type_complexity)]
     fn batch_get(&self, keys: &[Self::Key]) -> Result<Vec<(Self::Key, Option<Self::Value>)>>
     where
         Self::Key: Clone,
     {
-        keys.into_iter()
+        keys.iter()
             .map(|key| {
                 let key = key.clone();
                 Ok((key.clone(), self.get(&key)?))
@@ -37,7 +38,7 @@ pub trait KvSnapshot {
 }
 
 pub trait KvSnapshotExt: KvSnapshot {
-    fn prefixed(self, prefix: Self::Key) -> PrefixedKvSnapshot<Self::Key, Self::Value, Self>
+    fn prefixed(self, prefix: Self::Key) -> PrefixedKvSnapshot<Self::Key, Self>
     where
         Self: Sized;
 }
@@ -47,7 +48,7 @@ where
     K: Concat + Clone,
     T: KvSnapshot<Key = K, Value = V>,
 {
-    fn prefixed(self, prefix: Self::Key) -> PrefixedKvSnapshot<K, V, Self> {
+    fn prefixed(self, prefix: Self::Key) -> PrefixedKvSnapshot<K, Self> {
         PrefixedKvSnapshot {
             inner: self,
             prefix,
@@ -55,12 +56,13 @@ where
     }
 }
 
-pub struct PrefixedKvSnapshot<K, V, DB: KvSnapshot<Key = K, Value = V>> {
+#[derive(Clone)]
+pub struct PrefixedKvSnapshot<K, DB> {
     inner: DB,
     prefix: K,
 }
 
-impl<K, V, DB> KvSnapshot for PrefixedKvSnapshot<K, V, DB>
+impl<K, V, DB> KvSnapshot for PrefixedKvSnapshot<K, DB>
 where
     K: Concat + Clone,
     DB: KvSnapshot<Key = K, Value = V>,
@@ -88,14 +90,14 @@ pub trait KvSession {
     ) -> Result<Option<Self::Value>>;
     fn put(&mut self, key: &(impl ToOwned<Owned = Self::Key> + ?Sized), value: Self::Value);
     fn delete(&mut self, key: &(impl ToOwned<Owned = Self::Key> + ?Sized));
-    fn commit(self) -> KvTransaction<Self::Key, Self::Value>;
 }
 
 pub trait AccessTracking {
     type Key;
     fn read(&mut self, key: &Self::Key);
     fn write(&mut self, key: &Self::Key);
-    fn collect_into(self) -> Vec<Self::Key>;
+    /// Returns (access list, version updates)
+    fn collect_into(self) -> (Vec<Self::Key>, Vec<Self::Key>);
 }
 
 pub trait Concat {

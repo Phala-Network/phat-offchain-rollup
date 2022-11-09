@@ -42,7 +42,6 @@ pub fn rollup<K, V, DB>(
     kvdb: DB,
     tx: KvTransaction<K, V>,
     layout: VersionLayout<K>,
-    update_versions: bool,
 ) -> Result<RollUpTransaction<K, V>>
 where
     DB: KvSnapshot<Key = K, Value = V> + BumpVersion<V>,
@@ -53,17 +52,18 @@ where
         key_postfix: postfix,
     } = layout;
 
-    let mut lookup_keys: BTreeSet<_> = tx.accessed_keys.iter().cloned().collect();
-
-    if update_versions {
-        let update_keys = tx.updates.iter().map(|x| x.0.clone());
-        lookup_keys.extend(update_keys);
-    }
+    let lookup_keys: BTreeSet<_> = tx
+        .accessed_keys
+        .iter()
+        .chain(tx.version_updates.iter())
+        .cloned()
+        .collect();
 
     let version_keys: Vec<_> = lookup_keys
         .into_iter()
         .map(|k| k.concat(postfix.clone()))
         .collect();
+
     let versions: BTreeMap<_, _> = kvdb.batch_get(&version_keys)?.into_iter().collect();
 
     let conditions: Vec<_> = tx
@@ -74,30 +74,26 @@ where
                 k.clone(),
                 versions
                     .get(&k.concat(postfix.clone()))
-                    .map(Clone::clone)
-                    .flatten(),
+                    .and_then(Clone::clone),
             )
         })
         .collect();
 
-    let updates = if update_versions {
+    let mut updates = tx.value_updates;
+    {
         // Auto bump the versions of keys we have written to
         let version_updates: Result<Vec<_>> = tx
-            .updates
+            .version_updates
             .iter()
-            .map(|(k, _)| {
+            .map(|k| {
                 let key = k.clone().concat(postfix.clone());
-                let ver = versions.get(&key).map(Clone::clone).flatten();
+                let ver = versions.get(&key).and_then(Clone::clone);
                 kvdb.bump_version(ver).map(|ver| (key, Some(ver)))
             })
             .collect();
         let mut version_updates = version_updates?;
-        let mut updates = tx.updates;
         updates.append(&mut version_updates);
-        updates
-    } else {
-        tx.updates
-    };
+    }
 
     Ok(RollUpTransaction {
         conditions,
@@ -110,7 +106,7 @@ where
 mod tests {
     use super::*;
 
-    use alloc::{borrow::ToOwned, sync::Arc};
+    use alloc::{borrow::ToOwned, string::String, sync::Arc};
     use core::cell::RefCell;
 
     use crate::{traits::KvSession, ReadTracker, Session};
@@ -180,7 +176,7 @@ mod tests {
             session.delete("B");
             assert_eq!(session.get("B").unwrap(), None);
 
-            session.commit()
+            session.commit().0
         };
 
         let rollup = rollup(
@@ -189,7 +185,6 @@ mod tests {
             VersionLayout::Standalone {
                 key_postfix: "_ver".into(),
             },
-            true,
         )
         .unwrap();
         assert_eq!(
