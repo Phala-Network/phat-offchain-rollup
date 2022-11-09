@@ -6,7 +6,7 @@ pub mod read {
         platforms::Evm,
         Error, Result, RollupResult, RollupTx,
     };
-    use alloc::{vec::Vec, string::String};
+    use alloc::{string::String, vec::Vec};
     use pink_web3::api::{Eth, Namespace};
     use pink_web3::contract::{Contract, Options};
     use pink_web3::transports::{resolve_ready, PinkHttp};
@@ -46,14 +46,6 @@ pub mod read {
         contract: Contract<PinkHttp>,
     }
 
-    pub fn queue_key(prefix: &[u8], idx: u32) -> Vec<u8> {
-        let mut be_idx = [0u8; 32];
-        U256::from(idx).to_big_endian(&mut be_idx);
-        let mut key = Vec::from(prefix);
-        key.extend(&be_idx);
-        key
-    }
-
     impl AnchorQueryClient {
         /// Connects to an Ethereum RPC endpoint and load the anchor contract
         pub fn connect(rpc: &String, address: H160) -> Result<Self> {
@@ -65,8 +57,8 @@ pub mod read {
         }
 
         /// Reads the raw bytes from the anchor kv store
-        pub fn read_raw(&self, key: &[u8]) -> Result<Vec<u8>> {
-            let key: Bytes = key.into();
+        pub fn read_raw(&self, key_slice: &[u8]) -> Result<Vec<u8>> {
+            let key: Bytes = key_slice.into();
             let value: Bytes = resolve_ready(self.contract.query(
                 "getStorage",
                 (key,),
@@ -76,7 +68,11 @@ pub mod read {
             ))
             .unwrap();
             #[cfg(feature = "std")]
-            println!("{:?}", value);
+            println!(
+                "Read(0x{}) = 0x{}",
+                hex::encode(key_slice),
+                hex::encode(&value.0)
+            );
             // FIXME
             // ).or(Err(Error::FailedToGetStorage))?;
 
@@ -91,9 +87,35 @@ pub mod read {
             T::decode(&mut &data[..]).or(Err(Error::FailedToDecodeStorage))
         }
 
-        /// Reads an u256 value from the anchor kv store
-        pub fn read_u256(&self, key: &[u8]) -> Result<U256> {
+        /// Reads an u256 value from the anchor raw kv store
+        pub fn read_raw_u256(&self, key: &[u8]) -> Result<U256> {
             let data = self.read_raw(key)?;
+            if data.is_empty() {
+                return Ok(Default::default());
+            }
+            if data.len() != 32 {
+                return Err(Error::FailedToDecodeStorage);
+            }
+            Ok(U256::from_big_endian(&data))
+        }
+
+        /// Reads the raw bytes value from the QueuedAnchor.getBytes API
+        pub fn read_queue_bytes(&self, key_slice: &[u8]) -> Result<Vec<u8>> {
+            let key: Bytes = key_slice.into();
+            let value: Bytes = resolve_ready(self.contract.query(
+                "getBytes",
+                (key,),
+                self.address,
+                Options::default(),
+                None,
+            ))
+            .unwrap();
+            Ok(value.0)
+        }
+
+        /// Reads an u256 value from the QueuedAnchor.getBytes API
+        pub fn read_queue_u256(&self, key_slice: &[u8]) -> Result<U256> {
+            let data = self.read_queue_bytes(key_slice)?;
             if data.is_empty() {
                 return Ok(Default::default());
             }
@@ -113,7 +135,7 @@ pub mod read {
             let id: Vec<u8> = crate::lock::EvmLocks::key(id).into();
             let value = self
                 .anchor
-                .read_u256(&id)
+                .read_raw_u256(&id)
                 .expect("FIXME: assume successful");
             let value: u32 = value.try_into().expect("version musn't exceed u32");
             Ok(value)
@@ -124,13 +146,12 @@ pub mod read {
     pub struct QueuedRollupSession {
         anchor: AnchorQueryClient,
         locks: Locks<Evm>,
-        queue_prefix: Vec<u8>,
         tx: RollupTx,
     }
 
     impl QueuedRollupSession {
         /// Creates a new session that connects to the EVM anchor contract
-        pub fn new<F>(rpc: &String, address: H160, queue_prefix: &[u8], lock_def: F) -> Self
+        pub fn new<F>(rpc: &String, address: H160, lock_def: F) -> Self
         where
             F: FnOnce(&mut Locks<Evm>),
         {
@@ -141,7 +162,6 @@ pub mod read {
             Self {
                 anchor,
                 locks,
-                queue_prefix: queue_prefix.to_vec(),
                 tx: RollupTx::default(),
             }
         }
@@ -178,22 +198,18 @@ pub mod read {
 
         /// Gets the start index of the queue (inclusive)
         pub fn queue_start(&self) -> Result<u32> {
-            let mut key = self.queue_prefix.clone();
-            key.extend_from_slice(b"start");
             Ok(self
                 .anchor
-                .read_u256(&key)?
+                .read_queue_u256(b"start")?
                 .try_into()
                 .expect("queue index overflow"))
         }
 
         /// Gets the end index of the queue (non-inclusive)
         pub fn queue_end(&self) -> Result<u32> {
-            let mut key = self.queue_prefix.clone();
-            key.extend_from_slice(b"end");
             Ok(self
                 .anchor
-                .read_u256(&key)?
+                .read_queue_u256(b"end")?
                 .try_into()
                 .expect("queue index overflow"))
         }
@@ -202,9 +218,7 @@ pub mod read {
         pub fn queue_get(&self, i: u32) -> Result<Vec<u8>> {
             let mut be_idx = [0u8; 32];
             U256::from(i).to_big_endian(&mut be_idx);
-            let mut key = self.queue_prefix.clone();
-            key.extend_from_slice(&be_idx);
-            self.anchor.read_raw(&key)
+            self.anchor.read_queue_bytes(&be_idx)
         }
 
         /// Gets the first element of the queue
@@ -223,7 +237,7 @@ pub mod read {
 
 pub mod write {
     use crate::{Error, Result};
-    use alloc::{vec::Vec, string::String};
+    use alloc::{string::String, vec::Vec};
     use pink_web3::contract::{Contract, Options};
     use pink_web3::transports::{resolve_ready, PinkHttp};
     use pink_web3::types::H160;

@@ -11,9 +11,9 @@ mod evm_transator {
     use phat_offchain_rollup::{
         clients::evm::write::AnchorTxClient, RollupHandler, RollupHandlerForwarder,
     };
+    use pink_web3::keys::pink::KeyPair;
     use primitive_types::H160;
     use scale::{Decode, Encode};
-    use pink_web3::keys::pink::KeyPair;
 
     #[ink(storage)]
     pub struct EvmTransactor {

@@ -80,11 +80,11 @@ mod sample_oracle {
 
         fn handle_req(&self) -> Result<Option<RollupResult>> {
             let Config { rpc, anchor } = self.config.as_ref().ok_or(Error::NotConfigurated)?;
-            let mut rollup = QueuedRollupSession::new(rpc, anchor.into(), b"q", |_locks| {});
+            let mut rollup = QueuedRollupSession::new(rpc, anchor.into(), |_locks| {});
 
             // Declare write to global lock since it pops an element from the queue
             rollup
-                .lock_write(GLOBAL_LOCK)
+                .lock_read(GLOBAL_LOCK)
                 .expect("FIXME: failed to fetch lock");
 
             // Read the first item in the queue (return if the queue is empty)
@@ -93,7 +93,10 @@ mod sample_oracle {
                 .expect("FIXME: failed to read queue head");
             let raw_item = match raw_item {
                 Some(v) => v,
-                _ => return Ok(None),
+                _ => {
+                    pink::debug!("No items in the queue. Returning.");
+                    return Ok(None);
+                }
             };
 
             // Decode the queue data by ethabi (u256, bytes)
