@@ -96,7 +96,7 @@ describe('Full Test', () => {
             this.timeout(1000*30_000);
 
             await delay(3*1000);
-            const response = await evmTx.query.testPollWithKey(certAlice, {}, rollupKey);
+            const response = await evmTx.query.testPollWithKey(certAlice, {}, rollupKey as any);
 
             console.log('result', response.result.toHuman());
             if (response.output) {

@@ -210,24 +210,24 @@ mod evm_transator {
             */
             let rpc = env::var("RPC").unwrap();
             let key = hex::decode(env::var("PRIVKEY").unwrap()).expect("hex decode failed");
-            let pubkey: [u8; 20] = hex::decode(env::var("PUBKEY").expect("env not found"))
+            let address: [u8; 20] = hex::decode(env::var("ADDRESS").expect("env not found"))
                 .expect("hex decode failed")
                 .try_into()
                 .expect("invald length");
-            let pubkey: H160 = pubkey.into();
+            let address: H160 = address.into();
             let anchor_addr: [u8; 20] =
                 hex::decode(env::var("ANCHOR_ADDR").expect("env not found"))
                     .expect("hex decode failed")
                     .try_into()
                     .expect("invald length");
             let anchor_addr: H160 = anchor_addr.into();
-            (rpc, key, pubkey, anchor_addr)
+            (rpc, key, address, anchor_addr)
         }
 
         #[ink::test]
         fn wallet_works() {
             pink_extension_runtime::mock_ext::mock_all_ext();
-            let (_rpc, key, pubkey, _anchor_addr) = consts();
+            let (_rpc, key, address, _anchor_addr) = consts();
             pink_extension::chain_extension::mock::mock_derive_sr25519_key(move |_| key.clone());
 
             let hash1 = ink_env::Hash::try_from([10u8; 32]).unwrap();
@@ -242,7 +242,7 @@ mod evm_transator {
                 .expect("failed to deploy EvmTransactor");
 
             // Can reproduce the wallet address
-            assert_eq!(transactor.wallet(), pubkey);
+            assert_eq!(transactor.wallet(), address);
 
             // TODO: enable the test below when the adv test framework supports
 
@@ -260,7 +260,7 @@ mod evm_transator {
         #[ink::test]
         fn it_works() {
             pink_extension_runtime::mock_ext::mock_all_ext();
-            let (rpc, key, _pubkey, anchor_addr) = consts();
+            let (rpc, key, _address, anchor_addr) = consts();
             pink_extension::chain_extension::mock::mock_derive_sr25519_key(move |_| key.clone());
 
             // Register contracts
