@@ -8,6 +8,7 @@ const config: HardhatUserConfig = {
     goerli: {
       url: process.env['GOERLI_API'],
       accounts: [process.env['GOERLI_SK']!],
+      chainId: 5,
     }
   },
   etherscan: {
