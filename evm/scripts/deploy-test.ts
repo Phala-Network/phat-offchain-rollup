@@ -7,8 +7,9 @@ async function main() {
   const [deployer] = await ethers.getSigners();
 
   console.log('Deploying...');
+  const phatEvmTransactor = deployer.address;  // When deploy for real e2e test, change it to the EvmTransactor Phat Contract wallet.
   const oracle = await TestOracle.deploy();
-  const anchor = await Anchor.deploy(deployer.address, oracle.address, "0x71"); // q
+  const anchor = await Anchor.deploy(phatEvmTransactor, oracle.address, "0x71"); // q
   await Promise.all([
     oracle.deployed(),
     anchor.deployed(),
