@@ -6,22 +6,22 @@ import type { ContractCallOutcome, ContractOptions } from "@polkadot/api-contrac
 import type { Codec } from "@polkadot/types/types";
 
 export namespace EvmTransactor {
-    type ink_env$types$AccountId = any;
-    type primitive_types$H160 = any;
+    type InkEnv_Types_AccountId = any;
+    type PrimitiveTypes_H160 = any;
 
     /** */
     /** Queries */
     /** */
     namespace ContractQuery {
         export interface Owner extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<ink_env$types$AccountId>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.ICompact<InkEnv_Types_AccountId>>>;
         }
 
         export interface Wallet extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<primitive_types$H160>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.ICompact<PrimitiveTypes_H160>>>;
         }
 
-        export interface Get_retired_secret_key extends DPT.ContractQuery {
+        export interface GetRetiredSecretKey extends DPT.ContractQuery {
             (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<any>>;
         }
 
@@ -29,7 +29,7 @@ export namespace EvmTransactor {
             (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<any>>;
         }
 
-        export interface Test_poll_with_key extends DPT.ContractQuery {
+        export interface TestPollWithKey extends DPT.ContractQuery {
             (certificateData: PhalaSdk.CertificateData, options: ContractOptions, key: DPT.FixedArray<number, 32>): DPT.CallResult<DPT.CallOutcome<any>>;
         }
     }
@@ -37,9 +37,9 @@ export namespace EvmTransactor {
     export interface MapMessageQuery extends DPT.MapMessageQuery {
         owner: ContractQuery.Owner;
         wallet: ContractQuery.Wallet;
-        get_retired_secret_key: ContractQuery.Get_retired_secret_key;
+        getRetiredSecretKey: ContractQuery.GetRetiredSecretKey;
         poll: ContractQuery.Poll;
-        test_poll_with_key: ContractQuery.Test_poll_with_key;
+        testPollWithKey: ContractQuery.TestPollWithKey;
     }
 
     /** */
@@ -47,17 +47,17 @@ export namespace EvmTransactor {
     /** */
     namespace ContractTx {
         export interface Config extends DPT.ContractTx {
-            (options: ContractOptions, rpc: string, rollup_handler: ink_env$types$AccountId, anchor: primitive_types$H160): DPT.SubmittableExtrinsic;
+            (options: ContractOptions, rpc: string, rollup_handler: InkEnv_Types_AccountId, anchor: PrimitiveTypes_H160): DPT.SubmittableExtrinsic;
         }
 
-        export interface Retire_wallet extends DPT.ContractTx {
+        export interface RetireWallet extends DPT.ContractTx {
             (options: ContractOptions): DPT.SubmittableExtrinsic;
         }
     }
 
     export interface MapMessageTx extends DPT.MapMessageTx {
         config: ContractTx.Config;
-        retire_wallet: ContractTx.Retire_wallet;
+        retireWallet: ContractTx.RetireWallet;
     }
 
     /** */

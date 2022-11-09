@@ -1,8 +1,8 @@
 {
   "source": {
-    "hash": "0x018950b84355212ecd5524bd629302dd7c463e254564388b65e0afcc93a179e5",
+    "hash": "0x64854042ee0178fd704816ee98b59f6b8121afbf36dbc35f90c9bc6bfe366ec9",
     "language": "ink! 3.4.0",
-    "compiler": "rustc 1.67.0-nightly"
+    "compiler": "rustc 1.62.0-nightly"
   },
   "contract": {
     "name": "evm_transactor",

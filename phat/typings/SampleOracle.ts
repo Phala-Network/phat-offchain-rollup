@@ -6,28 +6,28 @@ import type { ContractCallOutcome, ContractOptions } from "@polkadot/api-contrac
 import type { Codec } from "@polkadot/types/types";
 
 export namespace SampleOracle {
-    type ink_env$types$AccountId = any;
-    type primitive_types$H160 = any;
-    type phat_offchain_rollup$Raw = any;
-    type phat_offchain_rollup$RollupTx = { conds: any[], actions: phat_offchain_rollup$Raw[], updates: [ phat_offchain_rollup$Raw, any ][] };
-    type phat_offchain_rollup$RollupResult = { tx: phat_offchain_rollup$RollupTx, signature: any, target: any };
+    type InkEnv_Types_AccountId = any;
+    type PrimitiveTypes_H160 = any;
+    type PhatOffchainRollup_Raw = any;
+    type PhatOffchainRollup_RollupTx = { conds: any[], actions: PhatOffchainRollup_Raw[], updates: [ PhatOffchainRollup_Raw, any ][] };
+    type PhatOffchainRollup_RollupResult = { tx: PhatOffchainRollup_RollupTx, signature: any, target: any };
 
     /** */
     /** Queries */
     /** */
     namespace ContractQuery {
         export interface Owner extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<ink_env$types$AccountId>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.ICompact<InkEnv_Types_AccountId>>>;
         }
 
-        export interface RollupHandler$$handle_rollup extends DPT.ContractQuery {
+        export interface RollupHandler_HandleRollup extends DPT.ContractQuery {
             (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<any>>;
         }
     }
 
     export interface MapMessageQuery extends DPT.MapMessageQuery {
         owner: ContractQuery.Owner;
-        RollupHandler$$handle_rollup: ContractQuery.RollupHandler$$handle_rollup;
+        'rollupHandler::handleRollup': ContractQuery.RollupHandler_HandleRollup;
     }
 
     /** */
@@ -35,7 +35,7 @@ export namespace SampleOracle {
     /** */
     namespace ContractTx {
         export interface Config extends DPT.ContractTx {
-            (options: ContractOptions, rpc: string, anchor: primitive_types$H160): DPT.SubmittableExtrinsic;
+            (options: ContractOptions, rpc: string, anchor: PrimitiveTypes_H160): DPT.SubmittableExtrinsic;
         }
     }
 

@@ -2,8 +2,6 @@ import { ProjectConfigOptions } from 'devphase';
 import { join } from 'path';
 import { spawn } from 'child_process';
 
-console.log('PWD', )
-
 function rel(p: string): string {
     return join(process.cwd(), p);
 }
@@ -15,7 +13,11 @@ async function initChain(devphase: any): Promise<void> {
     await devphase.prepareWorker(devphase.options.workerUrl);
     // Run our custom init script
     return new Promise((resolve) => {
-        const init = spawn('bash', ['tmp/scripts/init-blockchain.sh'], { stdio: 'inherit' });
+        const init = spawn(
+            'bash',
+            ['tmp/scripts/init-blockchain.sh', devphase.options.nodeUrl, devphase.options.workerUrl],
+            { stdio: 'inherit' }
+        );
         // function onData(data: Buffer) {
         //     console.log('[INIT]', data.toString());
         // }
@@ -29,14 +31,18 @@ async function initChain(devphase: any): Promise<void> {
 }
 
 const config : ProjectConfigOptions = {
+    directories: {
+        logs: './tmp/phala-dev-stack/logs'
+    },
     stack: {
         node: {
-            port: 9944,
+            port: 39944,
             binary: rel('tmp/phala-dev-stack/bin/node'),
             workingDir: rel('tmp/phala-dev-stack/.data/node'),
             envs: {},
             args: {
                 '--dev': true,
+                '--port': 33333,
                 '--ws-port': '{{stack.node.port}}',
                 '--ws-external': true,
                 '--unsafe-ws-external': true,
@@ -46,7 +52,7 @@ const config : ProjectConfigOptions = {
             timeout: 10000,
         },
         pruntime: {
-            port: 8000, // server port
+            port: 38000, // server port
             binary: rel('tmp/phala-dev-stack/bin/pruntime'),
             workingDir: rel('tmp/phala-dev-stack/.data/pruntime'),
             envs: {
@@ -61,20 +67,20 @@ const config : ProjectConfigOptions = {
             timeout: 2000,
         },
         pherry: {
-            suMnemonic: '//Ferdie', // super user mnemonic
+            gkMnemonic: '//Ferdie', // super user mnemonic
             binary: rel('tmp/phala-dev-stack/bin/pherry'),
             workingDir: rel('tmp/phala-dev-stack/.data/pherry'),
             envs: {},
             args: {
                 '--no-wait': true,
-                '--mnemonic': '{{stack.pherry.suMnemonic}}',
+                '--mnemonic': '{{stack.pherry.gkMnemonic}}',
                 '--inject-key': '0000000000000000000000000000000000000000000000000000000000000001',
                 '--substrate-ws-endpoint': 'ws://localhost:{{stack.node.port}}',
                 '--pruntime-endpoint': 'http://localhost:{{stack.pruntime.port}}',
                 '--dev-wait-block-ms': 1000,
                 '--attestation-provider': 'none',
             },
-            timeout: 2000,
+            timeout: 5000,
         }
     },
     /**
@@ -95,12 +101,25 @@ const config : ProjectConfigOptions = {
         sudoAccount: 'alice',
         ss58Prefix: 30,
         clusterId: '0x0000000000000000000000000000000000000000000000000000000000000000',
-        customEnvSetup: initChain,
     },
     /**
-     * Custom mocha configuration
+     * Testing configuration
      */
-    mocha: {}
+     testing: {
+        mocha: {}, // custom mocha configuration
+        envSetup: { // environment setup
+            setup: {
+                custom: initChain, // custom setup procedure callback; (devPhase) => Promise<void>
+                timeout: 60 * 1000,
+            },
+            teardown: {
+                custom: undefined, // custom teardown procedure callback ; (devPhase) => Promise<void>
+                timeout: 10 * 1000,
+            }
+        },
+        blockTime: 500, // overrides block time specified in node (and pherry) component
+        stackLogOutput : true, // if specifed pipes output of all stack component to file (by default it is ignored)
+    },
 };
 
 export default config;

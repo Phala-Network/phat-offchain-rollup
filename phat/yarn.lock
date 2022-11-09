@@ -81,7 +81,7 @@
     protobufjs "^6.11.3"
     rxjs "^7.5.6"
 
-"@phala/typedefs@^0.2.31":
+"@phala/typedefs@^0.2.31", "@phala/typedefs@^0.2.32":
   version "0.2.32"
   resolved "https://registry.yarnpkg.com/@phala/typedefs/-/typedefs-0.2.32.tgz#4c66dce9b5a975226bbbdbdef09bccfde2e54878"
   integrity sha512-G1ifICDNW6NtixqCVfJHBI82Detwzzmzs4gpE1RrMsTxfoKIbxkX8nx3DxZUhFYqikGEkQVxNmEi3jpC0zDrsw==
@@ -982,13 +982,13 @@ des.js@^1.0.0:
     inherits "^2.0.1"
     minimalistic-assert "^1.0.0"
 
-devphase@^0.0.11:
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/devphase/-/devphase-0.0.11.tgz#7d7027132e600be3378b00ddb15060a274477ea4"
-  integrity sha512-w62jqncyKJj1zY+XUGf14fEqtHRXi4KSbElvMDNhKKH0ulf32YmCXzwU30pTnR2RY8p42xUQrxYbgsz/ONOOCg==
+devphase@^0.0.15:
+  version "0.0.15"
+  resolved "https://registry.yarnpkg.com/devphase/-/devphase-0.0.15.tgz#6e5a8a07a61976d3896ee54ba9c05efbdeeece31"
+  integrity sha512-KCHpsqXG9mZ3CEcdpjdqaAjBJu32/RUqhmXpBk3SrhSGFlvum4LsXCXpR6gA8Yn7QzyyybwgcHk1ETT4vRRSaw==
   dependencies:
     "@phala/sdk" "^0.3.3"
-    "@phala/typedefs" "^0.2.31"
+    "@phala/typedefs" "^0.2.32"
     "@polkadot/api" "^9.6.2"
     "@polkadot/api-contract" "^9.6.2"
     "@polkadot/keyring" "^10.1.11"
@@ -1025,6 +1025,11 @@ diffie-hellman@^5.0.0:
     bn.js "^4.1.0"
     miller-rabin "^4.0.0"
     randombytes "^2.0.0"
+
+dotenv@^16.0.3:
+  version "16.0.3"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.0.3.tgz#115aec42bac5053db3c456db30cc243a5a836a07"
+  integrity sha512-7GO6HghkA5fYG9TYnNxi14/7K9f5occMlp3zXAuSxn7CKCxt9xbNWG7yF8hTCSUchlfWSe3uLmlPfigevRItzQ==
 
 ed2curve@^0.3.0:
   version "0.3.0"

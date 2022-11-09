@@ -1,8 +1,8 @@
 {
   "source": {
-    "hash": "0x4bc2f33ae5dd242cd51273c642a2e26be33872fb6bd9efc93f1a7eca3d17d58b",
+    "hash": "0x5086f1a9fdb84d2a88689b175698d3e694e6c56572904fbb751b45d1fe34028f",
     "language": "ink! 3.4.0",
-    "compiler": "rustc 1.67.0-nightly"
+    "compiler": "rustc 1.62.0-nightly"
   },
   "contract": {
     "name": "sample_oracle",
@@ -27,7 +27,9 @@
       "messages": [
         {
           "args": [],
-          "docs": [],
+          "docs": [
+            " Gets the owner of the contract"
+          ],
           "label": "owner",
           "mutates": false,
           "payable": false,
