@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0x5086f1a9fdb84d2a88689b175698d3e694e6c56572904fbb751b45d1fe34028f",
+    "hash": "0x4006de5b4883eeb500c47c2b55cbbb339f6710b03335b549e99ab6a2dda1d8cd",
     "language": "ink! 3.4.0",
     "compiler": "rustc 1.62.0-nightly"
   },
@@ -317,6 +317,18 @@
                 {
                   "index": 5,
                   "name": "FailedToEstimateGas"
+                },
+                {
+                  "index": 6,
+                  "name": "FailedToCreateRollupSession"
+                },
+                {
+                  "index": 7,
+                  "name": "FailedToFetchLock"
+                },
+                {
+                  "index": 8,
+                  "name": "FailedToReadQueueHead"
                 }
               ]
             }

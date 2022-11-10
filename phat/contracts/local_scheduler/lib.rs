@@ -6,7 +6,7 @@ use ink_lang as ink;
 
 #[ink::contract(env = pink_extension::PinkEnvironment)]
 mod local_scheduler {
-    use alloc::string::String;
+    use alloc::{string::String, vec::Vec};
     use ink_storage::{
         traits::{PackedLayout, SpreadAllocate, SpreadLayout},
         Mapping,

@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0x64854042ee0178fd704816ee98b59f6b8121afbf36dbc35f90c9bc6bfe366ec9",
+    "hash": "0x0ac6150d768ae96e9f7522dc9181f08f85703484959a56dc9a59e174315f6755",
     "language": "ink! 3.4.0",
     "compiler": "rustc 1.62.0-nightly"
   },
@@ -419,23 +419,35 @@
                 },
                 {
                   "index": 4,
-                  "name": "UpstreamFailed"
+                  "name": "UpstreamCallFailed"
                 },
                 {
                   "index": 5,
-                  "name": "BadAbi"
+                  "name": "UpstreamFailed"
                 },
                 {
                   "index": 6,
-                  "name": "FailedToGetStorage"
+                  "name": "BadAbi"
                 },
                 {
                   "index": 7,
-                  "name": "FailedToDecodeStorage"
+                  "name": "FailedToGetStorage"
                 },
                 {
                   "index": 8,
+                  "name": "FailedToDecodeStorage"
+                },
+                {
+                  "index": 9,
                   "name": "FailedToEstimateGas"
+                },
+                {
+                  "index": 10,
+                  "name": "FailedToConnectAnchor"
+                },
+                {
+                  "index": 11,
+                  "name": "FailedToSubmitTx"
                 }
               ]
             }
