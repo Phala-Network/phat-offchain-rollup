@@ -1,12 +1,8 @@
 [package]
-name = "evm_transactor"
+name = "local_scheduler"
 version = "0.1.0"
 authors = ["[your_name] <[your_email]>"]
 edition = "2021"
-
-# Necessary due to the cargo bug bug: https://github.com/rust-lang/cargo/issues/10118
-[profile.release]
-overflow-checks = false
 
 [dependencies]
 ink_primitives = { version = "3", default-features = false }
@@ -17,24 +13,17 @@ ink_lang = { version = "3", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-primitive-types = { version = "0.11", default-features = false, features = ["codec", "scale-info"] }
+# primitive-types = { version = "0.11", default-features = false, features = ["codec", "scale-info"] }
 
 pink-extension = { version = "0.1", default-features = false }
-pink-web3 = { version = "0.19", default-features = false, features = ["pink", "signing"] }
-ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false, features = [
-    "serde",
-    "rlp",
-] }
-
-phat_offchain_rollup = { path = "../../rollup", default-features = false, features = ["logging"] }
+saffron = { version = "0.1" default-features = false }
 
 [dev-dependencies]
-dotenvy = "0.15"
-hex = "0.4"
+# dotenvy = "0.15"
+# hex = "0.4"
 pink-extension-runtime = "0.1"
-env_logger = "0.9"
 
-sample_oracle = { path = "../sample_oracle", features = ["ink-as-dependency"] }
+# sample_oracle = { path = "../sample_oracle", features = ["ink-as-dependency"] }
 
 [lib]
 name = "evm_transactor"
@@ -56,9 +45,15 @@ std = [
     "phat_offchain_rollup/std",
     "pink-extension/std",
     "pink-web3/std",
+    "saffron/std",
 ]
 ink-as-dependency = []
+
 
 # Leave for `cargo contract` build.
 [patch.crates-io]
 serde = { git = "https://github.com/kvinwang/serde.git", branch = "pink" }
+
+# Necessary due to the cargo bug bug: https://github.com/rust-lang/cargo/issues/10118
+[profile.release]
+overflow-checks = false

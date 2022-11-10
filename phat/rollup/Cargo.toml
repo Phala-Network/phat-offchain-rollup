@@ -19,6 +19,7 @@ scale-info = { version = "2", default-features = false, features = ["derive"], o
 primitive-types = { version = "0.11", default-features = false, features = ["codec", "scale-info"] }
 hex = { version = "0.4", default-features = false, features = ["alloc"] }
 
+pink-extension = { version = "0.1", default-features = false, optional = true }
 pink-web3 = { version = "0.19", default-features = false, features = ["pink", "signing"] }
 ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false, features = [
     "serde",
@@ -26,7 +27,7 @@ ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false
 ] }
 
 [features]
-default = ["std"]
+default = ["std", "logging"]
 std = [
     "ink_metadata/std",
     "ink_env/std",
@@ -37,4 +38,7 @@ std = [
     "scale-info/std",
 	"primitive-types/std",
     "pink-web3/std",
+]
+logging = [
+    "pink-extension",
 ]

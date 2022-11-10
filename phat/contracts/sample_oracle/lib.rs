@@ -48,6 +48,9 @@ mod sample_oracle {
         FailedToGetStorage,
         FailedToDecodeStorage,
         FailedToEstimateGas,
+        FailedToCreateRollupSession,
+        FailedToFetchLock,
+        FailedToReadQueueHead,
     }
 
     type Result<T> = core::result::Result<T, Error>;
@@ -80,17 +83,23 @@ mod sample_oracle {
 
         fn handle_req(&self) -> Result<Option<RollupResult>> {
             let Config { rpc, anchor } = self.config.as_ref().ok_or(Error::NotConfigurated)?;
-            let mut rollup = QueuedRollupSession::new(rpc, anchor.into(), |_locks| {});
+            let mut rollup =
+                QueuedRollupSession::new(rpc, anchor.into(), |_locks| {}).map_err(|e| {
+                    pink::warn!("Failed to create rollup session: {e:?}");
+                    Error::FailedToCreateRollupSession
+                })?;
 
             // Declare write to global lock since it pops an element from the queue
-            rollup
-                .lock_read(GLOBAL_LOCK)
-                .expect("FIXME: failed to fetch lock");
+            rollup.lock_read(GLOBAL_LOCK).map_err(|e| {
+                pink::warn!("Failed to fetch lock: {e:?}");
+                Error::FailedToFetchLock
+            })?;
 
             // Read the first item in the queue (return if the queue is empty)
-            let (raw_item, idx) = rollup
-                .queue_head()
-                .expect("FIXME: failed to read queue head");
+            let (raw_item, idx) = rollup.queue_head().map_err(|e| {
+                pink::warn!("Failed to read queue head: {e:?}");
+                Error::FailedToReadQueueHead
+            })?;
             let raw_item = match raw_item {
                 Some(v) => v,
                 _ => {
@@ -175,6 +184,7 @@ mod sample_oracle {
 
         #[ink::test]
         fn default_works() {
+            let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();
 
             let (rpc, anchor_addr) = consts();

@@ -66,16 +66,13 @@ pub mod read {
                 Options::default(),
                 None,
             ))
-            .unwrap();
-            #[cfg(feature = "std")]
-            println!(
+            .map_err(Error::FailedToGetStorage)?;
+            #[cfg(feature = "logging")]
+            pink_extension::debug!(
                 "Read(0x{}) = 0x{}",
                 hex::encode(key_slice),
                 hex::encode(&value.0)
             );
-            // FIXME
-            // ).or(Err(Error::FailedToGetStorage))?;
-
             Ok(value.0)
         }
 
@@ -109,7 +106,7 @@ pub mod read {
                 Options::default(),
                 None,
             ))
-            .unwrap();
+            .map_err(Error::FailedToGetStorage)?;
             Ok(value.0)
         }
 
@@ -131,14 +128,15 @@ pub mod read {
         anchor: &'a AnchorQueryClient,
     }
     impl<'a> LockVersionReader for BlockingVersionStore<'a> {
+        #[allow(unused_variables)]
         fn get_version(&self, id: LockId) -> crate::Result<LockVersion> {
             let id: Vec<u8> = crate::lock::EvmLocks::key(id).into();
-            let value = self
-                .anchor
-                .read_raw_u256(&id)
-                .expect("FIXME: assume successful");
-            let value: u32 = value.try_into().expect("version musn't exceed u32");
-            Ok(value)
+            let value = self.anchor.read_raw_u256(&id).map_err(|err| {
+                #[cfg(feature = "logging")]
+                pink_extension::warn!("LockVersionReader::get_version failed: {err:?}");
+                Error::FailedToReadVersion
+            })?;
+            value.try_into().or(Err(Error::LockVersionOverflow))
         }
     }
 
@@ -151,19 +149,18 @@ pub mod read {
 
     impl QueuedRollupSession {
         /// Creates a new session that connects to the EVM anchor contract
-        pub fn new<F>(rpc: &String, address: H160, lock_def: F) -> Self
+        pub fn new<F>(rpc: &String, address: H160, lock_def: F) -> Result<Self>
         where
             F: FnOnce(&mut Locks<Evm>),
         {
-            let anchor =
-                AnchorQueryClient::connect(rpc, address).expect("FIXME: failed to connect");
+            let anchor = AnchorQueryClient::connect(rpc, address)?;
             let mut locks = Locks::default();
             lock_def(&mut locks);
-            Self {
+            Ok(Self {
                 anchor,
                 locks,
                 tx: RollupTx::default(),
-            }
+            })
         }
 
         /// Gets the RollupTx to write
@@ -198,20 +195,18 @@ pub mod read {
 
         /// Gets the start index of the queue (inclusive)
         pub fn queue_start(&self) -> Result<u32> {
-            Ok(self
-                .anchor
+            self.anchor
                 .read_queue_u256(b"start")?
                 .try_into()
-                .expect("queue index overflow"))
+                .or(Err(Error::QueueIndexOverflow))
         }
 
         /// Gets the end index of the queue (non-inclusive)
         pub fn queue_end(&self) -> Result<u32> {
-            Ok(self
-                .anchor
+            self.anchor
                 .read_queue_u256(b"end")?
                 .try_into()
-                .expect("queue index overflow"))
+                .or(Err(Error::QueueIndexOverflow))
         }
 
         /// Gets the i-th element of the queue
@@ -302,7 +297,7 @@ pub mod write {
                 pair.address(),
                 Options::default(),
             ))
-            .expect("FIXME: failed to estiamte gas");
+            .map_err(Error::FailedToEstimateGas)?;
 
             // Actually submit the tx (no guarantee for success)
             let tx_id = resolve_ready(self.contract.signed_call(
@@ -311,7 +306,7 @@ pub mod write {
                 Options::with(|opt| opt.gas = Some(gas)),
                 pair,
             ))
-            .expect("FIXME: submit failed");
+            .map_err(Error::FailedToSubmitTx)?;
             Ok(tx_id)
         }
     }

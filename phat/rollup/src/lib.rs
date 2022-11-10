@@ -19,6 +19,12 @@ pub enum Error {
     DecodeOverflow,
     BadEvmAnchorAbi,
     FailedToDecodeStorage,
+    FailedToSubmitTx(pink_web3::Error),
+    FailedToEstimateGas(pink_web3::contract::Error),
+    FailedToGetStorage(pink_web3::contract::Error),
+    QueueIndexOverflow,
+    LockVersionOverflow,
+    RpcNetworkError,
 }
 pub type Result<T> = core::result::Result<T, Error>;
 

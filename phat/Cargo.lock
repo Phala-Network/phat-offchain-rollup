@@ -82,6 +82,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "atty"
+version = "0.2.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
+dependencies = [
+ "hermit-abi",
+ "libc",
+ "winapi",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -492,6 +503,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "env_logger"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a12e6657c4c97ebab115a42dcee77225f7f482cdd841cf7088c657a42e9e00e7"
+dependencies = [
+ "atty",
+ "humantime",
+ "log",
+ "regex",
+ "termcolor",
+]
+
+[[package]]
 name = "environmental"
 version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -529,6 +553,7 @@ name = "evm_transactor"
 version = "0.1.0"
 dependencies = [
  "dotenvy",
+ "env_logger",
  "hex",
  "ink_env",
  "ink_lang",
@@ -832,6 +857,12 @@ name = "httpdate"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4a1e36c821dbe04574f602848a19f742f4fb3c98d40449f11bcad18d6b17421"
+
+[[package]]
+name = "humantime"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "hyper"
@@ -1499,6 +1530,7 @@ dependencies = [
  "ink_storage",
  "parity-scale-codec",
  "pink-ethabi",
+ "pink-extension",
  "pink-web3",
  "primitive-types",
  "scale-info",
@@ -1964,6 +1996,7 @@ name = "sample_oracle"
 version = "0.1.0"
 dependencies = [
  "dotenvy",
+ "env_logger",
  "hex",
  "ink_env",
  "ink_lang",
@@ -2099,18 +2132,16 @@ checksum = "e25dfac463d778e353db5be2449d1cce89bd6fd23c9f1ea21310ce6e5a1b29c4"
 
 [[package]]
 name = "serde"
-version = "1.0.145"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "728eb6351430bccb993660dfffc5a72f91ccc1295abaa8ce19b27ebe4f75568b"
+version = "1.0.147"
+source = "git+https://github.com/kvinwang/serde.git?branch=pink#0d6920a81befce8e44b854dc67738b0c640247e6"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.145"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81fa1584d3d1bcacd84c277a0dfe21f5b0f6accf4a23d04d4c6d61f1af522b4c"
+version = "1.0.147"
+source = "git+https://github.com/kvinwang/serde.git?branch=pink#0d6920a81befce8e44b854dc67738b0c640247e6"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2689,7 +2720,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
  "cfg-if",
- "rand 0.7.3",
+ "rand 0.8.5",
  "static_assertions",
 ]
 
@@ -3032,8 +3063,3 @@ dependencies = [
  "syn",
  "synstructure",
 ]
-
-[[patch.unused]]
-name = "serde"
-version = "1.0.147"
-source = "git+https://github.com/kvinwang/serde.git?branch=pink#0d6920a81befce8e44b854dc67738b0c640247e6"

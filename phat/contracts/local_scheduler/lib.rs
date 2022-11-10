@@ -5,19 +5,18 @@ extern crate alloc;
 use ink_lang as ink;
 
 #[ink::contract(env = pink_extension::PinkEnvironment)]
-mod evm_transator {
+mod local_scheduler {
     use alloc::string::String;
     use ink_storage::traits::{PackedLayout, SpreadLayout};
     use phat_offchain_rollup::{
         clients::evm::write::AnchorTxClient, RollupHandler, RollupHandlerForwarder,
     };
-    use pink_extension as pink;
     use pink_web3::keys::pink::KeyPair;
     use primitive_types::H160;
     use scale::{Decode, Encode};
 
     #[ink(storage)]
-    pub struct EvmTransactor {
+    pub struct LocalScheduler {
         owner: AccountId,
         config: Option<Config>,
         /// If the key is banned forever, prevent the use of it in the future.
@@ -42,19 +41,16 @@ mod evm_transator {
         NotConfigurated,
         KeyRetired,
         KeyNotRetiredYet,
-        UpstreamCallFailed,
         UpstreamFailed,
         BadAbi,
         FailedToGetStorage,
         FailedToDecodeStorage,
         FailedToEstimateGas,
-        FailedToConnectAnchor,
-        FailedToSubmitTx,
     }
 
     type Result<T> = core::result::Result<T, Error>;
 
-    impl EvmTransactor {
+    impl LocalScheduler {
         #[ink(constructor)]
         pub fn default() -> Self {
             Self {
@@ -143,22 +139,13 @@ mod evm_transator {
             let rollup_handler =
                 RollupHandlerForwarder::<PinkEnvironment>::from_account_id(*rollup_handler);
 
-            let result = match rollup_handler
+            let result = rollup_handler
                 .call()
                 .handle_rollup()
                 .call_flags(CallFlags::default())
                 .fire()
-            {
-                Ok(r) => r,
-                Err(e) => {
-                    pink::warn!("Rollup upstream call failed: {:?}", e);
-                    return Err(Error::UpstreamCallFailed);
-                }
-            };
-            let rollup = result.map_err(|e| {
-                pink::warn!("Rollup upstream returns failed: {:?}", e);
-                Error::UpstreamFailed
-            })?;
+                .expect("rollup upstream failed");
+            let rollup = result.or(Err(Error::UpstreamFailed))?;
 
             // Only submit the tx if the results is not None
             let rollup = match rollup {
@@ -166,24 +153,24 @@ mod evm_transator {
                 None => return Ok(()),
             };
 
-            pink::info!("RollupTx: {:#?}", rollup);
+            #[cfg(feature = "std")]
+            println!("RollupTx: {:#?}", rollup);
 
             // Connect to Ethereum RPC
             //
             // Note that currently we ignore `rollup.target` configuration because it's already
             // configured in the transactor.
-            let contract = AnchorTxClient::connect(rpc, (*anchor).into()).map_err(|e| {
-                pink::warn!("Failed to connect to anchor: {e:?}");
-                Error::FailedToConnectAnchor
-            })?;
-            pink::info!("submitting rollup tx");
+            let contract = AnchorTxClient::connect(rpc, (*anchor).into())
+                .expect("FIXME: failed to connect to anchor");
+            #[cfg(feature = "std")]
+            println!("submitting rollup tx");
 
             // Submit to EVM
-            let tx_id = contract.submit_rollup(rollup.tx, pair).map_err(|e| {
-                pink::warn!("Failed to submit rollup tx: {e:?}");
-                Error::FailedToSubmitTx
-            })?;
-            pink::info!("submitted: {:?}", tx_id);
+            let tx_id = contract
+                .submit_rollup(rollup.tx, pair)
+                .expect("FIXME: failed to submit rollup tx");
+            #[cfg(feature = "std")]
+            println!("submitted: {:?}", tx_id);
 
             // TODO: prevent redundant poll in a short period?
             Ok(())
@@ -212,68 +199,8 @@ mod evm_transator {
         use ink::ToAccountId;
         use ink_lang as ink;
 
-        fn consts() -> (String, Vec<u8>, H160, H160) {
-            use std::env;
-            dotenvy::dotenv().ok();
-            /*
-             Deployed {
-                anchor: '0xb3083F961C729f1007a6A1265Ae6b97dC2Cc16f2',
-                oracle: '0x8Bf50F8d0B62017c9B83341CB936797f6B6235dd'
-            }
-            */
-            let rpc = env::var("RPC").unwrap();
-            let key = hex::decode(env::var("PRIVKEY").unwrap()).expect("hex decode failed");
-            let address: [u8; 20] = hex::decode(env::var("ADDRESS").expect("env not found"))
-                .expect("hex decode failed")
-                .try_into()
-                .expect("invald length");
-            let address: H160 = address.into();
-            let anchor_addr: [u8; 20] =
-                hex::decode(env::var("ANCHOR_ADDR").expect("env not found"))
-                    .expect("hex decode failed")
-                    .try_into()
-                    .expect("invald length");
-            let anchor_addr: H160 = anchor_addr.into();
-            (rpc, key, address, anchor_addr)
-        }
-
-        #[ink::test]
-        fn wallet_works() {
-            let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
-            let (_rpc, key, address, _anchor_addr) = consts();
-            pink_extension::chain_extension::mock::mock_derive_sr25519_key(move |_| key.clone());
-
-            let hash1 = ink_env::Hash::try_from([10u8; 32]).unwrap();
-            ink_env::test::register_contract::<EvmTransactor>(hash1.as_ref());
-
-            // Deploy Transactor
-            let mut transactor = EvmTransactorRef::default()
-                .code_hash(hash1)
-                .endowment(0)
-                .salt_bytes([0u8; 0])
-                .instantiate()
-                .expect("failed to deploy EvmTransactor");
-
-            // Can reproduce the wallet address
-            assert_eq!(transactor.wallet(), address);
-
-            // TODO: enable the test below when the adv test framework supports
-
-            // Even the owner cannot read the secret key before retiring
-            // assert_eq!(transactor.get_retired_secret_key(), Err(Error::KeyNotRetiredYet));
-
-            // Owner can retire the wallet
-            transactor.retire_wallet().unwrap();
-            let sk = transactor.get_retired_secret_key().unwrap();
-            assert_eq!(sk, [0u8; 32]);
-
-            // Others cannot get the secret key
-        }
-
         #[ink::test]
         fn it_works() {
-            let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();
             let (rpc, key, _address, anchor_addr) = consts();
             pink_extension::chain_extension::mock::mock_derive_sr25519_key(move |_| key.clone());
