@@ -16,14 +16,15 @@ scale-info = { version = "2", default-features = false, features = ["derive"], o
 # primitive-types = { version = "0.11", default-features = false, features = ["codec", "scale-info"] }
 
 pink-extension = { version = "0.1", default-features = false }
-saffron = { version = "0.1" default-features = false }
+saffron = { version = "0.1", default-features = false }
+chrono = { version = "0.4", default-features = false }
 
 [dev-dependencies]
-# dotenvy = "0.15"
-# hex = "0.4"
+env_logger = "0.9"
+hex-literal = "0.3"
 pink-extension-runtime = "0.1"
 
-# sample_oracle = { path = "../sample_oracle", features = ["ink-as-dependency"] }
+sample_oracle = { path = "../sample_oracle", features = ["ink-as-dependency"] }
 
 [lib]
 name = "evm_transactor"
@@ -42,9 +43,7 @@ std = [
     "ink_primitives/std",
     "scale/std",
     "scale-info/std",
-    "phat_offchain_rollup/std",
     "pink-extension/std",
-    "pink-web3/std",
     "saffron/std",
 ]
 ink-as-dependency = []

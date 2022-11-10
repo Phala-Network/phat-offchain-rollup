@@ -3,7 +3,7 @@ members = [
     "rollup",
     "contracts/sample_oracle",
     "contracts/evm_transactor",
-    #"scheduler",
+    "contracts/local_scheduler",
 ]
 
 # Sneak peek of the new test engine!
