@@ -70,6 +70,10 @@ Phat Contract Offchain Rollup implementation
 
 - To run Phat Contract unit tests, you need to configure `.env` file under each contract directory. It's suggested to copy `.env_sample` to `.env` and config it based on the comments.
 - `abi.decode()` doesn't have any error handling currently. When it failed, the transaction will get revereted silently, which is hard to debug. So it's always a good habit to verify the raw input to `decode()` beforehand.
+- In unit tests, you can enable logging output (e.g. from `pink::info!()`) by:
+    1. Add `env_logger` as the `[dev-dependency]` in the Cargo.toml file
+    2. Call `env_logger::try_init()` at the beginning of each test function
+    3. Launch the unit test with additional flags: `RUST_LOG=debug cargo test -- --nocapture`
 
 ## Manual Full Test
 
