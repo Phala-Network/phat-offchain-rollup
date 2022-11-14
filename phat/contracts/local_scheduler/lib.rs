@@ -154,12 +154,9 @@ mod local_scheduler {
             // TODO: should check owner?
             let job_key = generate_job_key(id);
             let job = self.ensure_job(id).ok()?;
-            pink::warn!("1");
 
             let value = pink::ext().cache_get(&job_key)?;
-            pink::warn!("2");
             let (next_ms, cron): (u64, String) = Decode::decode(&mut &value[..]).ok()?;
-            pink::warn!("3");
             if cron != job.cron_expr {
                 return None;
             }
