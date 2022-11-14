@@ -171,7 +171,7 @@ describe('Full Test', () => {
             expect(resSchedule3.output.isSome).to.be.true;
             // Schedule details
             const [nextScheudled3, _job0] = resSchedule3.output.unwrap();
-            expect(nextScheudled3.toNumber()).to.be.greaterThan(scheduled);
+            expect(nextScheudled3.toNumber()).to.be.greaterThan(scheduled); // FIXME: now falling
         });
     });
 
