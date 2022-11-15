@@ -95,6 +95,21 @@ Phat Contract Offchain Rollup implementation
 5. Call Phat Contract `EvmTransactor::poll()` to answer the request
     - It should results in an rollup transaction like [this](https://goerli.etherscan.io/tx/0x888a84c2964b9eac7923f9daa59446e12a9d93414fe63a964004de515bab9f02)
 
+## Deploy with scheduler
+
+1. Follow the "Manual Full Test" section to setup `SampleOracle`, `EvmTransactor`, and the EVM contracts.
+2. Deploy `LocalScheduler` with `default()` constructor
+3. Call `LocalScheduler::add_job()` to add the automation job to trigger `EvmTransactor::poll()`
+    - `name`: an arbitrary name
+    - `cron_expr`: a cron-like expression of the automation. `* * * * *` means trigger per minute.
+    - `target`: the address of `EvmTransactor`
+    - `call`: the encoded call data of `EvmTransactor::poll()`, which is `0x1e44dfc6`
+4. Call `poll()` repeatedly. It will trigger the job according to the cron expression.
+5. You can check `LocalScheduler::getJobSchedule(n)` to check the scheduled task
+    - `n` is the job id, starting from 0.
+    - Tasks are scheduled after the first `poll()`. So a newly added task will have `None` output until the first `poll()`.
+6. The scheduler prints logs to indicate how it trigger the events. Can read it from the UI.
+
 ## Phat Contract E2E test caveats
 
 The [E2E test script](./phat/tests/e2e.test.ts) covers the Phat Contract deployment and rollup test. To run the test, you will need to copy `phat/.env_sample` to `phat/.env` and configure it before running the test.
