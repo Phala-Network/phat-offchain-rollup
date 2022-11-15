@@ -226,6 +226,7 @@ mod local_scheduler {
                         }
                     } else {
                         // Wait for the next time to fire
+                        pink::debug!("[Job-{id}] not fired ({now_ms} < {next_ms}). Skipping...");
                         return Ok(());
                     }
                 }
@@ -241,10 +242,10 @@ mod local_scheduler {
                 let value = Encode::encode(&(next_ts, &job.cron_expr));
                 // TODO: handle StorageQuotaExceeded error here?
                 pink::ext().cache_set(&job_key, &value);
-                pink::debug!("Scheduling job {id} at timestamp {next_ts}");
+                pink::debug!("[Job-{id}] Scheduling at timestamp {next_ts}");
             } else {
                 pink::ext().cache_remove(&job_key);
-                pink::debug!("Remove job {id}");
+                pink::debug!("[Job-{id}] Removed");
             }
             Ok(())
         }

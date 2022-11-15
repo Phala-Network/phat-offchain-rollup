@@ -55,7 +55,6 @@ describe('Full Test', () => {
     describe('the full stack', () => {
         before(async function() {
             this.timeout(30_000);
-
             // Deploy contract
             oracle = await oracleFactory.instantiate('default', []);
             evmTx = await evmTxFactory.instantiate('default', []);
@@ -63,16 +62,24 @@ describe('Full Test', () => {
             console.log('SampleOracle deployed at', oracle.address.toString());
             console.log('EvmTransactor deployed at', evmTx.address.toString());
             console.log('LocalScheduler deployed at', scheduler.address.toString());
+        });
 
-            // Check owner
+        it('should has correct owners', async function() {
+            // Oracle
             const oracleOwner = await oracle.query.owner(certAlice, {});
             expect(oracleOwner.result.isOk).to.be.true;
             expect(oracleOwner.output.toString()).to.be.equal(alice.address.toString());
-
+            // EvmTransactor
             const evmTxOwner = await evmTx.query.owner(certAlice, {});
             expect(evmTxOwner.result.isOk).to.be.true;
             expect(evmTxOwner.output.toString()).to.be.equal(alice.address.toString());
+            // LocalScheduler
+            const schedulerOwner = await scheduler.query.owner(certAlice, {});
+            expect(schedulerOwner.result.isOk).to.be.true;
+            expect(schedulerOwner.output.toString()).to.be.equal(alice.address.toString());
+        });
 
+        it('should be configurable', async function() {
             // Config the oracle
             const configOracle = await oracle.tx
                 .config({}, rpc, anchorAddr)
@@ -157,7 +164,8 @@ describe('Full Test', () => {
             const scheduled = nextScheudled.toNumber();
             const now = Date.now();
             if (scheduled > now + 100) {
-                await delay(scheduled - now + 100);
+                // wait 2 additional blocks since the scheduler 
+                await delay(scheduled - now + 100 + 2 * 3000);
             }
 
             // Poll again, and trigger the scheduled action

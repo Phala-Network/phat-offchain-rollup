@@ -1,6 +1,7 @@
 import { ProjectConfigOptions } from 'devphase';
 import { join } from 'path';
 import { spawn } from 'child_process';
+import * as fs from 'fs';
 
 function rel(p: string): string {
     return join(process.cwd(), p);
@@ -14,9 +15,17 @@ async function initChain(devphase: any): Promise<void> {
     // Run our custom init script
     return new Promise((resolve) => {
         const init = spawn(
-            'bash',
-            ['tmp/scripts/init-blockchain.sh', devphase.options.nodeUrl, devphase.options.workerUrl],
-            { stdio: 'inherit' }
+            'node',
+            ['src/setup-logserver.js'],
+            {
+                stdio: 'inherit',
+                cwd: '../tmp/setup',
+                env: {
+                    'ENDPOINT': devphase.options.nodeUrl,
+                    'WORKERS': devphase.options.workerUrl,
+                    'GKS': devphase.options.workerUrl,
+                },
+            },
         );
         // function onData(data: Buffer) {
         //     console.log('[INIT]', data.toString());
@@ -27,7 +36,32 @@ async function initChain(devphase: any): Promise<void> {
             console.log('initChain script exited with code', code);
             resolve();
         });
-    })
+    });
+}
+
+async function saveLog(devphase: any, outPath): Promise<void> {
+    console.log('######################## Saving worker logs ########################');
+    const logging = fs.createWriteStream(outPath, { flags: 'w'});
+    await new Promise((resolve: (_: void) => void) => {
+        const readLog = spawn(
+            'node', ['src/read-log.js'],
+            {
+                // stdio: 'inherit',
+                cwd: '../tmp/setup',
+                env: {
+                    'ENDPOINT': devphase.options.nodeUrl,
+                    'WORKERS': devphase.options.workerUrl,
+                    'CLUSTER': devphase.options.clusterId,
+                }
+            }
+        );
+        readLog.stdout.pipe(logging);
+        readLog.stderr.pipe(logging);
+        readLog.on('exit', code => {
+            console.log('saveLog script exited with code', code);
+            resolve();
+        });
+    });
 }
 
 const config : ProjectConfigOptions = {
@@ -109,11 +143,14 @@ const config : ProjectConfigOptions = {
         mocha: {}, // custom mocha configuration
         envSetup: { // environment setup
             setup: {
-                custom: initChain, // custom setup procedure callback; (devPhase) => Promise<void>
+                // custom setup procedure callback; (devPhase) => Promise<void>
+                custom: initChain,
                 timeout: 60 * 1000,
             },
             teardown: {
-                custom: undefined, // custom teardown procedure callback ; (devPhase) => Promise<void>
+                // custom teardown procedure callback ; (devPhase) => Promise<void>
+                custom: devphase =>
+                    saveLog(devphase, './tmp/phala-dev-stack/logs/worker.log'),
                 timeout: 10 * 1000,
             }
         },
