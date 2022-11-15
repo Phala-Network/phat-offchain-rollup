@@ -16,14 +16,14 @@ Phat Contract Offchain Rollup implementation
 
 ### Contract
 
-- [ ] SimpleScheduler
+- [x] SimpleScheduler
     - [x] [Design](https://hackmd.io/vl7oVbUlQmW8a_rcxhk9JQ)
-    - [ ] Query `poll()`
+    - [x] Query `poll()`
         - call all the ready targets
         - should check health (trigger exactly one health worker)
-    - [ ] Tx `register(config, address, calldata)` owner-only (direct call, stateless)
-    - [ ] Tx `delete(id)` owner-only
-    - [ ] log the triggered events
+    - [x] Tx `register(config, address, calldata)` owner-only (direct call, stateless)
+    - [x] Tx `delete(id)` owner-only
+    - [x] log the triggered events
 - [ ] RollupTransactor
     - [x] Account management: generate secret key & reveal public key
     - [x] Tx `config(rpc, rollup_handler, anchor)` by owner
