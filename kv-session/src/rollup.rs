@@ -21,6 +21,7 @@ pub struct RollUpTransaction<K, V> {
 }
 
 impl<K: Concat + Clone, V> RollUpTransaction<K, V> {
+    /// Give all keys in this transaction a prefix
     pub fn prefixed_with(self, prefix: K) -> Self {
         Self {
             conditions: self
@@ -38,6 +39,7 @@ impl<K: Concat + Clone, V> RollUpTransaction<K, V> {
     }
 }
 
+/// Rollup version conditions and updates with given R/W tracking data and user updates
 pub fn rollup<K, V, DB>(
     kvdb: DB,
     tx: KvTransaction<K, V>,

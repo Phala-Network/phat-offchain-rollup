@@ -24,6 +24,7 @@ impl<Key> OneLock<Key> {
 impl<Key: Clone> AccessTracking for OneLock<Key> {
     type Key = Key;
 
+    // One key tracker tracks nothing
     fn read(&mut self, _key: &Self::Key) {}
 
     fn write(&mut self, _key: &Self::Key) {}

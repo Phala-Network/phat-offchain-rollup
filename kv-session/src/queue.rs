@@ -22,9 +22,9 @@ pub struct MessageQueueSession<Snap, Cod> {
     prefix: String,
     session: InnerSession<Snap>,
     // The pos of first pushed message
-    start: u128,
+    head: u128,
     // The pos to push the next message
-    next: u128,
+    tail: u128,
     codec: PhantomData<Cod>,
 }
 
@@ -37,24 +37,24 @@ where
         let prefix = prefix.into();
         let session = Session::new(
             snapshot.prefixed(prefix.clone()),
-            // Treat the cursor start as lock
-            OneLock::new("start".into(), false),
+            // Treat the head cursor as lock
+            OneLock::new("head".into(), false),
         );
 
         Self {
             prefix,
             session,
             codec: PhantomData,
-            start: 0,
-            next: 0,
+            head: 0,
+            tail: 0,
         }
         .init()
     }
 
     fn init(mut self) -> Result<Self> {
-        self.start = self.get_number("start")?.unwrap_or(0);
-        self.next = self.get_number("next")?.unwrap_or(0);
-        if self.next < self.start {
+        self.head = self.get_number("head")?.unwrap_or(0);
+        self.tail = self.get_number("tail")?.unwrap_or(0);
+        if self.tail < self.head {
             return Err(crate::Error::FailedToDecode);
         }
         Ok(self)
@@ -65,18 +65,18 @@ where
     }
 
     pub fn length(&self) -> u128 {
-        self.next - self.start
+        self.tail - self.head
     }
 
     pub fn pop(&mut self) -> Result<Option<Vec<u8>>> {
-        if self.start == self.next {
+        if self.head == self.tail {
             return Ok(None);
         }
-        let front_key = self.start.to_string();
+        let front_key = self.head.to_string();
         let data = self.session.get(&front_key)?;
         self.session.delete(&front_key);
-        self.start += 1;
-        self.session.put("start", C::encode_u128(self.start));
+        self.head += 1;
+        self.session.put("head", C::encode_u128(self.head));
         Ok(data)
     }
 
@@ -149,8 +149,8 @@ mod tests {
         assert_eq!(queue.length(), 0);
         assert_eq!(queue.pop(), Ok(None));
         let tx = queue.commit().unwrap();
-        // Should lock the "TestQ/start"
-        assert_eq!(tx.conditions, vec![("TestQ/start".to_owned(), None)]);
+        // Should lock the "TestQ/head"
+        assert_eq!(tx.conditions, vec![("TestQ/head".to_owned(), None)]);
         assert_eq!(tx.updates, vec![]);
     }
 
@@ -159,8 +159,8 @@ mod tests {
         let kvdb = MockSnapshot::default();
 
         // Set up some test data
-        kvdb.set("TestQ/start", &0_u128.encode());
-        kvdb.set("TestQ/next", &2_u128.encode());
+        kvdb.set("TestQ/head", &0_u128.encode());
+        kvdb.set("TestQ/tail", &2_u128.encode());
         kvdb.set("TestQ/0", b"foo");
         kvdb.set("TestQ/1", b"bar");
 
@@ -173,17 +173,18 @@ mod tests {
 
         assert_eq!(
             tx.conditions,
-            // Should lock on the cursor start
-            vec![("TestQ/start".to_owned(), Some(0_u128.encode()))]
+            // Should lock on the head cursor
+            vec![("TestQ/head".to_owned(), Some(0_u128.encode()))]
         );
         assert_eq!(
             tx.updates,
             vec![
-                // Should remove the poped keys
+                // Should remove the poped keys. This is not performant if there are many elements
+                // in the queue. Use ACTION_QUEUE_PROCESSED_TO is light weight, .
                 ("TestQ/0".to_owned(), None),
                 ("TestQ/1".to_owned(), None),
-                // Should modify the cursor start (also treat as lock)
-                ("TestQ/start".to_owned(), Some(2_u128.encode())),
+                // Should modify the head cursor (also treat as lock)
+                ("TestQ/head".to_owned(), Some(2_u128.encode())),
             ]
         );
     }
