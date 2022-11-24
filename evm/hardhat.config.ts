@@ -9,6 +9,11 @@ const config: HardhatUserConfig = {
       url: process.env['GOERLI_API'],
       accounts: [process.env['GOERLI_SK']!],
       chainId: 5,
+    },
+    moonbase: {
+      url: 'https://rpc.api.moonbase.moonbeam.network',
+      accounts: [process.env['GOERLI_SK']!],
+      chainId: 1287,
     }
   },
   etherscan: {

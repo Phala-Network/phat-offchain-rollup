@@ -12,11 +12,18 @@ async function main() {
   console.log(anchorAddr, process.argv);
 
   const anchor = Anchor.attach(anchorAddr);
+  const lockKey = await anchor.getLockKey();
+  const prefix = await anchor.getPrefix();
   const start = await anchor.getUint(hex('start'));
   const end = await anchor.getUint(hex('end'));
   const globalLock = await anchor.getStorage('0x00');
-  const rawStart = await anchor.getStorage('0x71000000000000000000000000000000000000000000000000000000000000007374617274');
-  const rawEnd = await anchor.getStorage('0x7100000000000000000000000000000000000000000000000000000000000000656e64');
+  // const rawStart = await anchor.getStorage('0x71000000000000000000000000000000000000000000000000000000000000007374617274');
+  // const rawEnd = await anchor.getStorage('0x7100000000000000000000000000000000000000000000000000000000000000656e64');
+  const items = [
+    await anchor.getBytes('0x0000000000000000000000000000000000000000000000000000000000000003'),
+    await anchor.getBytes('0x0000000000000000000000000000000000000000000000000000000000000004'),
+    await anchor.getBytes('0x0000000000000000000000000000000000000000000000000000000000000005'),
+  ];
 
 //   const rawStorage = await Promise.all([
 //     ethers.provider.getStorageAt(anchorAddr, 0),
@@ -26,7 +33,7 @@ async function main() {
 //     ethers.provider.getStorageAt(anchorAddr, 4),
 //   ]);
 
-  console.log({start, end, globalLock, rawStart, rawEnd});
+  console.log({lockKey, prefix, start, end, globalLock, items});
 }
 
 function hex(str: string): string {
