@@ -59,6 +59,14 @@ pub mod read {
         /// Reads the raw bytes from the anchor kv store
         pub fn read_raw(&self, key_slice: &[u8]) -> Result<Vec<u8>> {
             let key: Bytes = key_slice.into();
+
+            #[cfg(feature = "logging")]
+            pink_extension::debug!(
+                "Read(addr: {}, key: 0x{})",
+                hex::encode(&self.address),
+                hex::encode(key_slice),
+            );
+
             let value: Bytes = resolve_ready(self.contract.query(
                 "getStorage",
                 (key,),

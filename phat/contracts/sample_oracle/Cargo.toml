@@ -33,6 +33,7 @@ dotenvy = "0.15"
 hex = "0.4"
 env_logger = "0.9"
 pink-extension-runtime = { version = "0.1", default-features = false }
+phat_offchain_rollup = { path = "../../rollup", features = ["logging"] }
 
 [lib]
 name = "sample_oracle"

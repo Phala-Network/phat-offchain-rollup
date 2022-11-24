@@ -1688,9 +1688,9 @@ dependencies = [
 
 [[package]]
 name = "pink-web3"
-version = "0.19.3"
+version = "0.19.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7763e5dec324af873cd6ca068f162c57f72f5a13b45c7e7a3f219b8bc110c231"
+checksum = "91ad995f8324d572e9e59896c713fe827e0e2a55ad8ae1caf93de3a45e8c77a5"
 dependencies = [
  "arrayvec 0.7.2",
  "derive_more",
@@ -2766,7 +2766,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
  "cfg-if",
- "rand 0.8.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
