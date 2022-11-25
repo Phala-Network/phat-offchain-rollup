@@ -1,0 +1,66 @@
+[package]
+name = "sub_price_feed"
+version = "0.1.0"
+authors = ["[your_name] <[your_email]>"]
+edition = "2021"
+
+# Necessary due to the cargo bug bug: https://github.com/rust-lang/cargo/issues/10118
+[profile.release]
+overflow-checks = false
+
+[dependencies]
+ink_primitives = { version = "3", default-features = false }
+ink_metadata = { version = "3", default-features = false, features = ["derive"], optional = true }
+ink_env = { version = "3", default-features = false }
+ink_storage = { version = "3", default-features = false }
+ink_lang = { version = "3", default-features = false }
+
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
+primitive-types = { version = "0.11", default-features = false, features = ["codec", "scale-info"] }
+
+pink-extension = { version = "0.1", default-features = false }
+ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false, features = [
+    "serde",
+    "rlp",
+] }
+
+phat_offchain_rollup = { path = "../../crates/rollup", default-features = false }
+
+subrpc = { path = "../../crates/subrpc", default-features = false }
+hex = { version = "0.4", default-features = false }
+
+[dev-dependencies]
+dotenvy = "0.15"
+env_logger = "0.9"
+pink-extension-runtime = { version = "0.1", default-features = false }
+phat_offchain_rollup = { path = "../../crates/rollup", features = ["logging"] }
+hex-literal = "0.3"
+
+[lib]
+name = "sub_price_feed"
+path = "lib.rs"
+crate-type = [
+	# Used for normal contract Wasm blobs.
+	"cdylib",
+    "lib",
+]
+
+[features]
+default = ["std"]
+std = [
+    "ink_metadata/std",
+    "ink_env/std",
+    "ink_storage/std",
+    "ink_primitives/std",
+    "scale/std",
+    "scale-info/std",
+    "phat_offchain_rollup/std",
+    "pink-extension/std",
+    "subrpc/std",
+]
+ink-as-dependency = []
+
+# Leave for `cargo contract` build.
+[patch.crates-io]
+serde = { git = "https://github.com/kvinwang/serde.git", branch = "pink" }

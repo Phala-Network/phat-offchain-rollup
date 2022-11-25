@@ -640,9 +640,9 @@ dependencies = [
  "parity-scale-codec",
  "phat_offchain_rollup",
  "pink-ethabi",
- "pink-extension",
- "pink-extension-runtime",
- "pink-web3 0.19.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pink-extension 0.1.19",
+ "pink-extension-runtime 0.1.5",
+ "pink-web3",
  "primitive-types",
  "sample_oracle",
  "scale-info",
@@ -895,6 +895,12 @@ name = "hex-literal"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ebdb29d2ea9ed0083cd8cece49bbd968021bd99b0849edb4a9a7ee0fdf6a4e0"
+
+[[package]]
+name = "hex_fmt"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b07f60793ff0a4d9cef0f18e63b5357e06209987153a64648c972c1e5aff336f"
 
 [[package]]
 name = "hmac"
@@ -1387,8 +1393,8 @@ dependencies = [
  "ink_primitives",
  "ink_storage",
  "parity-scale-codec",
- "pink-extension",
- "pink-extension-runtime",
+ "pink-extension 0.1.19",
+ "pink-extension-runtime 0.1.5",
  "saffron",
  "sample_oracle",
  "scale-info",
@@ -1728,8 +1734,8 @@ dependencies = [
  "ink_storage",
  "parity-scale-codec",
  "pink-ethabi",
- "pink-extension",
- "pink-web3 0.19.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pink-extension 0.1.19",
+ "pink-web3",
  "primitive-types",
  "scale-info",
 ]
@@ -1802,7 +1808,24 @@ dependencies = [
  "ink_storage",
  "log",
  "parity-scale-codec",
- "pink-extension-macro",
+ "pink-extension-macro 0.1.6",
+ "scale-info",
+]
+
+[[package]]
+name = "pink-extension"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dadd07886572dc3f1ea709e81c5c71e600dee15e33bc2f17e7b2d668fbcbab1f"
+dependencies = [
+ "ink_env",
+ "ink_lang",
+ "ink_metadata",
+ "ink_primitives",
+ "ink_storage",
+ "log",
+ "parity-scale-codec",
+ "pink-extension-macro 0.2.0",
  "scale-info",
 ]
 
@@ -1823,6 +1846,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pink-extension-macro"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "82d61042acb661b628821b189b76c9b68577e311fbd077eff9d909ebcddd277e"
+dependencies = [
+ "heck",
+ "ink_lang_ir",
+ "ink_lang_macro",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "unzip3",
+]
+
+[[package]]
 name = "pink-extension-runtime"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1830,7 +1869,25 @@ checksum = "312bcb6e8944889e3e860755b1b370ef4a2610dda9ff7cc4f4888d3046b0622b"
 dependencies = [
  "getrandom 0.2.7",
  "log",
- "pink-extension",
+ "pink-extension 0.1.19",
+ "reqwest",
+ "reqwest-env-proxy",
+ "ring",
+ "sp-core 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-runtime-interface 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "pink-extension-runtime"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d108f7511a5456a3ec1a83f1b818e2e09144f71488a2efedcaf017c24ba8201"
+dependencies = [
+ "getrandom 0.2.7",
+ "hex_fmt",
+ "log",
+ "once_cell",
+ "pink-extension 0.2.0",
  "reqwest",
  "reqwest-env-proxy",
  "ring",
@@ -1872,28 +1929,7 @@ dependencies = [
  "pin-project",
  "pink-erased-serde",
  "pink-ethabi",
- "pink-extension",
- "pink-json 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rlp",
- "serde",
- "tiny-keccak",
-]
-
-[[package]]
-name = "pink-web3"
-version = "0.19.4"
-source = "git+https://github.com/Phala-Network/pink-web3.git?branch=pink#1e4ed3018a319dea34a127aad13de5a36ad143d7"
-dependencies = [
- "arrayvec 0.7.2",
- "derive_more",
- "ethereum-types",
- "futures",
- "hex",
- "ink_env",
- "pin-project",
- "pink-erased-serde",
- "pink-ethabi",
- "pink-extension",
+ "pink-extension 0.1.19",
  "pink-json 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rlp",
  "serde",
@@ -2250,9 +2286,9 @@ dependencies = [
  "parity-scale-codec",
  "phat_offchain_rollup",
  "pink-ethabi",
- "pink-extension",
- "pink-extension-runtime",
- "pink-web3 0.19.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pink-extension 0.1.19",
+ "pink-extension-runtime 0.1.5",
+ "pink-web3",
  "primitive-types",
  "scale-info",
 ]
@@ -2990,21 +3026,39 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
-name = "subrpc"
+name = "sub_price_feed"
 version = "0.1.0"
 dependencies = [
- "base58",
- "blake2-rfc",
+ "dotenvy",
+ "env_logger",
  "hex",
  "hex-literal",
+ "ink_env",
+ "ink_lang",
  "ink_metadata",
  "ink_primitives",
  "ink_storage",
  "parity-scale-codec",
- "pink-extension",
- "pink-extension-runtime",
+ "phat_offchain_rollup",
+ "pink-ethabi",
+ "pink-extension 0.1.19",
+ "pink-extension-runtime 0.1.5",
+ "primitive-types",
+ "scale-info",
+ "subrpc",
+]
+
+[[package]]
+name = "subrpc"
+version = "0.1.0"
+dependencies = [
+ "base58",
+ "hex",
+ "hex-literal",
+ "parity-scale-codec",
+ "pink-extension 0.2.0",
+ "pink-extension-runtime 0.2.0",
  "pink-json 0.4.0 (git+https://github.com/Phala-Network/pink-json.git?branch=pink)",
- "pink-web3 0.19.4 (git+https://github.com/Phala-Network/pink-web3.git?branch=pink)",
  "primitive-types",
  "scale-info",
  "serde",
