@@ -2,6 +2,7 @@
 members = [
     "crates/rollup",
     "crates/kv-session",
+    "crates/subrpc",
     "contracts/sample_oracle",
     "contracts/evm_transactor",
     "contracts/local_scheduler",
