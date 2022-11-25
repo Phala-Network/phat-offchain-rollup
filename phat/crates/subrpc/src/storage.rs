@@ -4,11 +4,11 @@ use alloc::vec::Vec;
 pub fn storage_prefix(pallet_name: &str, storage_name: &str) -> [u8; 32] {
     // Copied from Substrate function: `storage_prefix()`
     let pallet_hash = sp_core_hashing::twox_128(pallet_name.as_bytes());
-	let storage_hash = sp_core_hashing::twox_128(storage_name.as_bytes());
+    let storage_hash = sp_core_hashing::twox_128(storage_name.as_bytes());
 
-	let mut final_key = [0u8; 32];
-	final_key[..16].copy_from_slice(&pallet_hash);
-	final_key[16..].copy_from_slice(&storage_hash);
+    let mut final_key = [0u8; 32];
+    final_key[..16].copy_from_slice(&pallet_hash);
+    final_key[16..].copy_from_slice(&storage_hash);
     final_key
 }
 
@@ -18,7 +18,11 @@ pub fn storage_double_map_blake2_128_prefix(prefix: &[u8], key1: &[u8], key2: &[
     let key2_hashed = sp_core_hashing::blake2_128(key2);
 
     let mut final_key = Vec::with_capacity(
-        prefix.len() + key1_hashed.as_ref().len() + key1.len() + key2_hashed.as_ref().len() + key2.len(),
+        prefix.len()
+            + key1_hashed.as_ref().len()
+            + key1.len()
+            + key2_hashed.as_ref().len()
+            + key2.len(),
     );
 
     final_key.extend_from_slice(prefix);
@@ -36,7 +40,9 @@ mod tests {
     #[test]
     fn storage_key_is_correct() {
         use scale::Encode;
-        let map_key = hex_literal::hex!("0202020202020202020202020202020202020202020202020202020202020202").to_vec();
+        let map_key =
+            hex_literal::hex!("0202020202020202020202020202020202020202020202020202020202020202")
+                .to_vec();
         let key = storage_double_map_blake2_128_prefix(
             &storage_prefix("PhatRollupAnchor", "States")[..],
             &hex_literal::hex!("0101010101010101010101010101010101010101010101010101010101010101"),

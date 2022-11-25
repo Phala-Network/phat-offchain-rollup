@@ -56,8 +56,9 @@ mod tests {
         assert_eq!(30, version.prefix());
 
         // Alice in Phala
-        let alice = hex_literal::hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
-            .to_ss58check_with_version(30);
+        let alice =
+            hex_literal::hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
+                .to_ss58check_with_version(30);
         assert_eq!(alice, "45R2pfjQUW2s9PQRHU48HQKLKHVMaDja7N3wpBtmF28UYDs2");
     }
 }

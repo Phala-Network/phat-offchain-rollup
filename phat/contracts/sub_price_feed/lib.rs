@@ -62,9 +62,7 @@ mod sub_price_feed {
         #[ink(message)]
         pub fn config(&mut self, rpc: String) -> Result<()> {
             self.ensure_owner()?;
-            self.config = Some(Config {
-                rpc,
-            });
+            self.config = Some(Config { rpc });
             Ok(())
         }
 
@@ -74,9 +72,10 @@ mod sub_price_feed {
             let contract_id = self.env().account_id();
             let key1: &[u8] = contract_id.as_ref();
             let key2: &[u8] = &key.to_vec().encode();
-            let storage_key = subrpc::storage::storage_double_map_blake2_128_prefix(&prefix, key1, key2);
-            let value = subrpc::get_storage(rpc, &storage_key, None)
-                .or(Err(Error::FailedToGetStorage))?;
+            let storage_key =
+                subrpc::storage::storage_double_map_blake2_128_prefix(&prefix, key1, key2);
+            let value =
+                subrpc::get_storage(rpc, &storage_key, None).or(Err(Error::FailedToGetStorage))?;
             pink::warn!(
                 "Storage[{}][{}] = {:?}",
                 hex::encode(key1),
@@ -105,27 +104,19 @@ mod sub_price_feed {
                 sk,
                 "khala",
                 rpc,
-                100,  // pallet idx
-                1,  // method 1: rollup
-                (contract_id, tx, 1u128),  // (name, tx, nonce)
-            ).or(Err(Error::FailedToCreateTransaction))?;
+                100,                      // pallet idx
+                1,                        // method 1: rollup
+                (contract_id, tx, 1u128), // (name, tx, nonce)
+            )
+            .or(Err(Error::FailedToCreateTransaction))?;
 
-            pink::warn!(
-                "ContractId = {}",
-                hex::encode(&contract_id),
-            );
-            pink::warn!(
-                "SignedTx = {}",
-                hex::encode(&signed_tx),
-            );
+            pink::warn!("ContractId = {}", hex::encode(&contract_id),);
+            pink::warn!("SignedTx = {}", hex::encode(&signed_tx),);
 
             let tx_hash = subrpc::send_transaction(rpc, &signed_tx)
                 .or(Err(Error::FailedToSendTransaction))?;
-            
-            pink::warn!(
-                "Sent = {}",
-                hex::encode(&tx_hash),
-            );
+
+            pink::warn!("Sent = {}", hex::encode(&tx_hash),);
 
             Ok(Default::default())
         }
@@ -172,7 +163,9 @@ mod sub_price_feed {
             let (rpc, anchor_addr) = consts();
 
             let mut price_feed = SubPriceFeed::default();
-            let sk_alice = hex_literal::hex!("e5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a");
+            let sk_alice = hex_literal::hex!(
+                "e5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a"
+            );
             price_feed.send_tx(&sk_alice);
             price_feed.read_storage(&[1, 1]);
             // price_feed.config(rpc, anchor_addr).unwrap();

@@ -11,19 +11,19 @@ use alloc::vec::Vec;
 use pink_extension::chain_extension::{signing, SigType};
 use scale::{Compact, Encode};
 
-use sp_runtime::generic::Era;
 use pink_json as json;
+use sp_runtime::generic::Era;
 
 mod objects;
 mod rpc;
-mod transaction;
 mod ss58;
 pub mod storage;
+mod transaction;
 
 use objects::*;
 use rpc::call_rpc;
 use ss58::{get_ss58addr_version, Ss58Codec};
-use transaction::{MultiAddress, MultiSignature, UnsignedExtrinsic, Signature};
+use transaction::{MultiAddress, MultiSignature, Signature, UnsignedExtrinsic};
 
 pub mod traits {
     pub mod common {
@@ -69,7 +69,7 @@ pub fn get_storage(rpc_node: &str, key: &[u8], at: Option<H256>) -> Result<Optio
     let resp: GetStorageResponse = json::from_slice(&resp_body).or(Err(Error::InvalidBody))?;
     match resp.result {
         Some(h) => hex::decode(&h[2..]).map(Some).or(Err(Error::InvalidBody)),
-        None => Ok(None)
+        None => Ok(None),
     }
 }
 
@@ -457,23 +457,23 @@ mod tests {
         use std::str::FromStr;
         pink_extension_runtime::mock_ext::mock_all_ext();
 
-        let some_block = H256::from_str("0xbaa0b58522c8af4acaa147604839230a57aad53b9c9f67652feeeea8a0c04679").unwrap();
+        let some_block =
+            H256::from_str("0xbaa0b58522c8af4acaa147604839230a57aad53b9c9f67652feeeea8a0c04679")
+                .unwrap();
         let r = read_storage(
-            "https://rhala-api.phala.network/api", 
+            "https://rhala-api.phala.network/api",
             &hex_literal::hex!("f0c365c3cf59d671eb72da0e7a4113c49f1f0515f462cdcf84e0f1d6045dfcbb"),
             Some(some_block),
-        ).map(|b| {
-            b.map(|data| hex::encode(&data))
-        });
+        )
+        .map(|b| b.map(|data| hex::encode(&data)));
         dbg!(r);
 
         let r = get_storage(
-            "https://rhala-api.phala.network/api", 
+            "https://rhala-api.phala.network/api",
             &hex_literal::hex!("f0c365c3cf59d671eb72da0e7a4113c49f1f0515f462cdcf84e0f1d6045dfcbc"),
             None,
-        ).map(|b| {
-            b.map(|data| hex::encode(&data))
-        });
+        )
+        .map(|b| b.map(|data| hex::encode(&data)));
         dbg!(r);
     }
 }

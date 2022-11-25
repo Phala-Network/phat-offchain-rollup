@@ -91,7 +91,6 @@ pub struct ExtraParam {
     tip: u128,
 }
 
-
 #[derive(Deserialize, Encode, Clone, Debug, PartialEq)]
 pub struct GetStorageResponse<'a> {
     pub(crate) jsonrpc: &'a str,
