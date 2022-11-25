@@ -25,6 +25,7 @@ describe('Full Test', () => {
 
     let alice : KeyringPair;
     let certAlice : PhalaSdk.CertificateData;
+    const txConf = { gasLimit: "10000000000000", storageDepositLimit: null };
 
     before(async function() {
         oracleFactory = await this.devPhase.getFactory(
@@ -56,12 +57,19 @@ describe('Full Test', () => {
         before(async function() {
             this.timeout(30_000);
             // Deploy contract
-            oracle = await oracleFactory.instantiate('default', []);
-            evmTx = await evmTxFactory.instantiate('default', []);
-            scheduler = await schedulerFactory.instantiate('default', []);
+            oracle = await oracleFactory.instantiate('default', [], {transferToCluster: 1e12});
+            evmTx = await evmTxFactory.instantiate('default', [], {transferToCluster: 1e12});
+            scheduler = await schedulerFactory.instantiate('default', [], {transferToCluster: 1e12});
             console.log('SampleOracle deployed at', oracle.address.toString());
             console.log('EvmTransactor deployed at', evmTx.address.toString());
             console.log('LocalScheduler deployed at', scheduler.address.toString());
+
+            // // Stake to contracts
+            // const api = this.devPhase.api;
+            // await api.tx.utility.batchAll(
+            //     [oracle, evmTx, scheduler]
+            //         .map(c => api.tx.phalaFatTokenomic.adjustStake(c.address, '1000000000000'))
+            // ).signAndSend(alice, {nonce: -1});
         });
 
         it('should has correct owners', async function() {
@@ -82,12 +90,12 @@ describe('Full Test', () => {
         it('should be configurable', async function() {
             // Config the oracle
             const configOracle = await oracle.tx
-                .config({}, rpc, anchorAddr)
+                .config(txConf, rpc, anchorAddr)
                 .signAndSend(alice, {nonce: -1});
             console.log('Oracle configured', configOracle.toHuman());
 
             const configEvmTx = await evmTx.tx
-                .config({}, rpc, oracle.address, anchorAddr)
+                .config(txConf, rpc, oracle.address, anchorAddr)
                 .signAndSend(alice, {nonce: -1});
             console.log('EvmTransactor configured', configEvmTx.toHuman());
         });
@@ -130,7 +138,7 @@ describe('Full Test', () => {
             this.timeout(180_000);
 
             // addJob(EvmTransactor.poll())
-            await scheduler.tx.addJob({}, 'job1', '* * * * *', evmTx.address, '0x1e44dfc6' as any)
+            await scheduler.tx.addJob(txConf, 'job1', '* * * * *', evmTx.address, '0x1e44dfc6' as any)
                 .signAndSend(alice, {nonce: -1});
             await delay(6000);
 

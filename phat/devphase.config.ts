@@ -11,12 +11,11 @@ async function initChain(devphase: any): Promise<void> {
     console.log('######################## Initializing blockchain ########################');
     // Necessary to run; copied from devphase `defaultSetupenv()`
     devphase.mainClusterId = devphase.options.clusterId;
-    await devphase.prepareWorker(devphase.options.workerUrl);
     // Run our custom init script
     return new Promise((resolve) => {
         const init = spawn(
             'node',
-            ['src/setup-logserver.js'],
+            ['src/setup-drivers.js'],
             {
                 stdio: 'inherit',
                 cwd: '../tmp/setup',
@@ -65,14 +64,13 @@ async function saveLog(devphase: any, outPath): Promise<void> {
 }
 
 const config : ProjectConfigOptions = {
-    directories: {
-        logs: './tmp/phala-dev-stack/logs'
-    },
     stack: {
+        blockTime: 500,
+        version: 'nightly-2022-11-24',
         node: {
             port: 39944,
-            binary: rel('tmp/phala-dev-stack/bin/node'),
-            workingDir: rel('tmp/phala-dev-stack/.data/node'),
+            binary: '{{directories.stacks}}/{{stack.version}}/phala-node',
+            workingDir: '{{directories.stacks}}/.data/node',
             envs: {},
             args: {
                 '--dev': true,
@@ -81,16 +79,16 @@ const config : ProjectConfigOptions = {
                 '--ws-external': true,
                 '--unsafe-ws-external': true,
                 '--rpc-methods': 'Unsafe',
-                '--block-millisecs': 1000,
+                '--block-millisecs': '{{stack.blockTime}}',
             },
             timeout: 10000,
         },
         pruntime: {
             port: 38000, // server port
-            binary: rel('tmp/phala-dev-stack/bin/pruntime'),
-            workingDir: rel('tmp/phala-dev-stack/.data/pruntime'),
+            binary: '{{directories.stacks}}/{{stack.version}}/pruntime',
+            workingDir: '{{directories.stacks}}/.data/pruntime',
             envs: {
-                'RUST_LOG': 'info,runtime=trace'
+                'RUST_LOG': 'debug,runtime=trace'
             },
             args: {
                 '--allow-cors': true,
@@ -102,8 +100,8 @@ const config : ProjectConfigOptions = {
         },
         pherry: {
             gkMnemonic: '//Ferdie', // super user mnemonic
-            binary: rel('tmp/phala-dev-stack/bin/pherry'),
-            workingDir: rel('tmp/phala-dev-stack/.data/pherry'),
+            binary: '{{directories.stacks}}/{{stack.version}}/pherry',
+            workingDir: '{{directories.stacks}}/.data/pherry',
             envs: {},
             args: {
                 '--no-wait': true,
@@ -111,7 +109,7 @@ const config : ProjectConfigOptions = {
                 '--inject-key': '0000000000000000000000000000000000000000000000000000000000000001',
                 '--substrate-ws-endpoint': 'ws://localhost:{{stack.node.port}}',
                 '--pruntime-endpoint': 'http://localhost:{{stack.pruntime.port}}',
-                '--dev-wait-block-ms': 1000,
+                '--dev-wait-block-ms': '{{stack.blockTime}}',
                 '--attestation-provider': 'none',
             },
             timeout: 5000,
@@ -145,12 +143,12 @@ const config : ProjectConfigOptions = {
             setup: {
                 // custom setup procedure callback; (devPhase) => Promise<void>
                 custom: initChain,
-                timeout: 60 * 1000,
+                timeout: 120 * 1000,
             },
             teardown: {
                 // custom teardown procedure callback ; (devPhase) => Promise<void>
                 custom: devphase =>
-                    saveLog(devphase, './tmp/phala-dev-stack/logs/worker.log'),
+                    saveLog(devphase, `${devphase.runtimeContext.paths.currentLog}/worker.log`),
                 timeout: 10 * 1000,
             }
         },
