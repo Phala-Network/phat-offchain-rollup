@@ -5,27 +5,25 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
 
-use crate::transaction::Signature;
-
-use objects::*;
-use ss58::get_ss58addr_version;
-use transaction::{MultiAddress, MultiSignature};
-
-use sp_runtime::generic::Era;
-
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use pink_extension::chain_extension::{signing, SigType};
 use scale::{Compact, Encode};
+
+use sp_runtime::generic::Era;
+use pink_json as json;
+
 mod objects;
 mod rpc;
 mod transaction;
-use pink_json as json;
-use rpc::call_rpc;
 mod ss58;
-use ss58::Ss58Codec;
-pub use transaction::UnsignedExtrinsic;
+pub mod storage;
+
+use objects::*;
+use rpc::call_rpc;
+use ss58::{get_ss58addr_version, Ss58Codec};
+use transaction::{MultiAddress, MultiSignature, UnsignedExtrinsic, Signature};
 
 pub mod traits {
     pub mod common {
@@ -55,6 +53,25 @@ pub mod traits {
     }
 }
 use traits::common::Error;
+
+use primitive_types::H256;
+pub type Result<T> = core::result::Result<T, Error>;
+
+/// Gets the storage from the give RPC node
+pub fn get_storage(rpc_node: &str, key: &[u8], at: Option<H256>) -> Result<Option<Vec<u8>>> {
+    let hex_key = format!("0x{}", hex::encode(key));
+    let maybe_hex_at = at.map_or("null".to_string(), |h| format!("\"0x{:x}\"", h));
+    let data = format!(
+        r#"{{"id":1,"jsonrpc":"2.0","method":"state_getStorage","params":["{hex_key}", {maybe_hex_at}]}}"#
+    )
+    .into_bytes();
+    let resp_body = call_rpc(rpc_node, data)?;
+    let resp: GetStorageResponse = json::from_slice(&resp_body).or(Err(Error::InvalidBody))?;
+    match resp.result {
+        Some(h) => hex::decode(&h[2..]).map(Some).or(Err(Error::InvalidBody)),
+        None => Ok(None)
+    }
+}
 
 /// Gets the next nonce of the target account
 ///
@@ -432,5 +449,31 @@ mod tests {
         //  block: https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frhala-api.phala.network%2Fws#/explorer/query/0x0586620d60fd5ec5d92a75ca5a095ac8a0cb66bcb4d2ff147d93e532d4d67e95
         //     or: https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frhala-api.phala.network%2Fws#/explorer/query/0xa4188ef17ad0a170e5c0054191013e202cc2437f0462523e9a13989ef7829517
         dbg!(hex::encode(tx_id));
+    }
+
+    #[test]
+    #[ignore = "this is very expensive so we don't test it often"]
+    fn test_read_storage() {
+        use std::str::FromStr;
+        pink_extension_runtime::mock_ext::mock_all_ext();
+
+        let some_block = H256::from_str("0xbaa0b58522c8af4acaa147604839230a57aad53b9c9f67652feeeea8a0c04679").unwrap();
+        let r = read_storage(
+            "https://rhala-api.phala.network/api", 
+            &hex_literal::hex!("f0c365c3cf59d671eb72da0e7a4113c49f1f0515f462cdcf84e0f1d6045dfcbb"),
+            Some(some_block),
+        ).map(|b| {
+            b.map(|data| hex::encode(&data))
+        });
+        dbg!(r);
+
+        let r = get_storage(
+            "https://rhala-api.phala.network/api", 
+            &hex_literal::hex!("f0c365c3cf59d671eb72da0e7a4113c49f1f0515f462cdcf84e0f1d6045dfcbc"),
+            None,
+        ).map(|b| {
+            b.map(|data| hex::encode(&data))
+        });
+        dbg!(r);
     }
 }

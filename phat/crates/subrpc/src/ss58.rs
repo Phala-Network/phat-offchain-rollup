@@ -22,18 +22,18 @@ pub trait Ss58Codec: Sized + AsMut<[u8]> + AsRef<[u8]> {
         };
         v.extend(self.as_ref());
         let r = ss58hash(&v);
-        v.extend(&r.as_bytes()[0..2]);
+        v.extend(&r[0..2]);
         v.to_base58()
     }
 }
 
 const PREFIX: &[u8] = b"SS58PRE";
 
-fn ss58hash(data: &[u8]) -> blake2_rfc::blake2b::Blake2bResult {
-    let mut context = blake2_rfc::blake2b::Blake2b::new(64);
-    context.update(PREFIX);
-    context.update(data);
-    context.finalize()
+fn ss58hash(data: &[u8]) -> [u8; 64] {
+    let mut preimage: Vec<u8> = Vec::with_capacity(PREFIX.len() + data.len());
+    preimage.extend_from_slice(PREFIX);
+    preimage.extend_from_slice(data);
+    sp_core_hashing::blake2_512(&preimage)
 }
 
 impl Ss58Codec for [u8; 32] {}
@@ -51,8 +51,13 @@ pub fn get_ss58addr_version(chain: &str) -> core::result::Result<Ss58AddressForm
 mod tests {
     use super::*;
     #[test]
-    fn it_works() {
+    fn ss58_works() {
         let version = get_ss58addr_version("khala").unwrap();
         assert_eq!(30, version.prefix());
+
+        // Alice in Phala
+        let alice = hex_literal::hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
+            .to_ss58check_with_version(30);
+        assert_eq!(alice, "45R2pfjQUW2s9PQRHU48HQKLKHVMaDja7N3wpBtmF28UYDs2");
     }
 }
