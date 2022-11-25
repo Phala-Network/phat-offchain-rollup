@@ -73,6 +73,8 @@ pub fn get_storage(rpc_node: &str, key: &[u8], at: Option<H256>) -> Result<Optio
     }
 }
 
+
+
 /// Gets the next nonce of the target account
 ///
 /// Nonce represents how many transactions the account has successfully issued
@@ -133,20 +135,24 @@ pub fn get_runtime_version(rpc_node: &str) -> core::result::Result<RuntimeVersio
     Ok(runtime_version_ok)
 }
 
-// TODO: simplify
-pub fn get_genesis_hash(rpc_node: &str) -> core::result::Result<GenesisHashOk, Error> {
-    let data = r#"{"id":1, "jsonrpc":"2.0", "method": "chain_getBlockHash","params":["0"]}"#
-        .to_string()
+/// Gets the block hash at block zero
+pub fn get_genesis_hash(rpc_node: &str) -> core::result::Result<H256, Error> {
+    get_block_hash(rpc_node, Some(0))
+}
+
+/// Gets the block hash at a certain height (None for the latest block)
+pub fn get_block_hash(rpc_node: &str, block_number: Option<u32>) -> core::result::Result<H256, Error> {
+    let param = block_number.map_or("null".to_string(), |n| format!("{n}"));
+    let data = format!(r#"{{"id":1, "jsonrpc":"2.0", "method": "chain_getBlockHash","params":[{param}]}}"#)
         .into_bytes();
     let resp_body = call_rpc(rpc_node, data)?;
     let genesis_hash: GenesisHash = json::from_slice(&resp_body).or(Err(Error::InvalidBody))?;
     // bypass prefix 0x
     let genesis_hash_result = &genesis_hash.result[2..];
-    let genesis_hash_ok = GenesisHashOk {
-        genesis_hash: hex::decode(genesis_hash_result).or(Err(Error::InvalidBody))?,
-    };
-
-    Ok(genesis_hash_ok)
+    let decoded_hash = hex::decode(genesis_hash_result)
+        .or(Err(Error::InvalidBody))?;
+    let hash: [u8; 32] = decoded_hash.try_into().or(Err(Error::InvalidBody))?;
+    Ok(H256(hash))
 }
 
 /// Creates an extrinsic
@@ -234,7 +240,7 @@ pub fn create_transaction<T: Encode>(
     let addr = public_key.to_ss58check_with_version(version.prefix());
     let nonce = get_next_nonce(rpc_node, &addr)?.next_nonce;
     let runtime_version = get_runtime_version(rpc_node)?;
-    let genesis_hash: [u8; 32] = get_genesis_hash(rpc_node)?.genesis_hash.try_into().unwrap();
+    let genesis_hash: [u8; 32] = get_genesis_hash(rpc_node)?.0;
     let spec_version = runtime_version.spec_version;
     let transaction_version = runtime_version.transaction_version;
     let era = Era::Immortal;
@@ -307,7 +313,7 @@ mod tests {
         pink_extension_runtime::mock_ext::mock_all_ext();
         let genesis_hash = get_genesis_hash("https://kusama-rpc.polkadot.io").unwrap();
         assert_eq!(
-            hex::encode(genesis_hash.genesis_hash),
+            hex::encode(genesis_hash),
             "b0a8d493285c2df73290dfb7e61f870f17b41801197a149ca93654499ea3dafe"
         );
     }
@@ -460,7 +466,7 @@ mod tests {
         let some_block =
             H256::from_str("0xbaa0b58522c8af4acaa147604839230a57aad53b9c9f67652feeeea8a0c04679")
                 .unwrap();
-        let r = read_storage(
+        let r = get_storage(
             "https://rhala-api.phala.network/api",
             &hex_literal::hex!("f0c365c3cf59d671eb72da0e7a4113c49f1f0515f462cdcf84e0f1d6045dfcbb"),
             Some(some_block),
