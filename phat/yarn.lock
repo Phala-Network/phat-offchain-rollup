@@ -982,10 +982,10 @@ des.js@^1.0.0:
     inherits "^2.0.1"
     minimalistic-assert "^1.0.0"
 
-devphase@^0.0.24:
-  version "0.0.24"
-  resolved "https://registry.yarnpkg.com/devphase/-/devphase-0.0.24.tgz#9da04b4665d7005fdd73f50b4a2bd626bb7447d1"
-  integrity sha512-40xnYY7HkzKYyQ6E/ouVNQuUYT5QZJZQdHAy+DwQGErcj44wKPF2ivlMCWRq2Xr/yAnB7NEOK1sf8eeqRnFXuQ==
+devphase@^0.0.25:
+  version "0.0.25"
+  resolved "https://registry.yarnpkg.com/devphase/-/devphase-0.0.25.tgz#213d30752198d2ac4368c77f84436d3e0f6a1ad0"
+  integrity sha512-aC/680eIAUaCKig/Y9zoqYqv4pjHOCcAeoi0YkahQk9vjVSlhHmLrnFYu9aLkf03k1LaVQDP0nRU4rvENK8CxQ==
   dependencies:
     "@phala/sdk" "^0.3.5-beta.9"
     "@phala/typedefs" "^0.2.32"
