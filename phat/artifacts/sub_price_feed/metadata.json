@@ -1,11 +1,11 @@
 {
   "source": {
-    "hash": "0xb4ff906d92b53a10a5db141060f12395ebb6f978198356d05ad9a1ee784afc8d",
+    "hash": "0x9cf7d8839f94027e7d9b838a00dbe5a0db25a3cfdeb3371dde111b7337d5d2cd",
     "language": "ink! 3.4.0",
     "compiler": "rustc 1.62.0-nightly"
   },
   "contract": {
-    "name": "sample_oracle",
+    "name": "sub_price_feed",
     "version": "0.1.0",
     "authors": [
       "[your_name] <[your_email]>"
@@ -53,12 +53,37 @@
               }
             },
             {
-              "label": "anchor",
+              "label": "pallet_id",
               "type": {
                 "displayName": [
-                  "H160"
+                  "u8"
                 ],
-                "type": 4
+                "type": 2
+              }
+            },
+            {
+              "label": "submit_key",
+              "type": {
+                "displayName": [],
+                "type": 1
+              }
+            },
+            {
+              "label": "token0",
+              "type": {
+                "displayName": [
+                  "String"
+                ],
+                "type": 3
+              }
+            },
+            {
+              "label": "token1",
+              "type": {
+                "displayName": [
+                  "String"
+                ],
+                "type": 3
               }
             }
           ],
@@ -72,25 +97,46 @@
             "displayName": [
               "Result"
             ],
-            "type": 6
+            "type": 4
           },
           "selector": "0x70714744"
         },
         {
           "args": [],
-          "docs": [],
-          "label": "RollupHandler::handle_rollup",
+          "docs": [
+            " Initializes the rollup on the target blockchain if it's not done yet",
+            "",
+            " First, look up if the name (contract id) is already claimed on the target chain. If",
+            " not, just claim it with the `submit_key` and return the tx hash. If it's claimed, check",
+            " if it's claimed by the `submit_key`. Return an error if the actual owner account is not",
+            " the `submit_key`."
+          ],
+          "label": "maybe_init_rollup",
           "mutates": false,
           "payable": false,
           "returnType": {
             "displayName": [
-              "core",
-              "result",
               "Result"
             ],
-            "type": 9
+            "type": 7
           },
-          "selector": "0xbe8fae6f"
+          "selector": "0xcd2d991d"
+        },
+        {
+          "args": [],
+          "docs": [
+            " Feeds a price by a rollup tx"
+          ],
+          "label": "feed_price",
+          "mutates": false,
+          "payable": false,
+          "returnType": {
+            "displayName": [
+              "Result"
+            ],
+            "type": 7
+          },
+          "selector": "0xf9448ba4"
         }
       ]
     },
@@ -128,19 +174,46 @@
                               },
                               {
                                 "layout": {
+                                  "cell": {
+                                    "key": "0x0300000000000000000000000000000000000000000000000000000000000000",
+                                    "ty": 2
+                                  }
+                                },
+                                "name": "pallet_id"
+                              },
+                              {
+                                "layout": {
                                   "array": {
                                     "cellsPerElem": 1,
                                     "layout": {
                                       "cell": {
-                                        "key": "0x1700000000000000000000000000000000000000000000000000000000000000",
+                                        "key": "0x2400000000000000000000000000000000000000000000000000000000000000",
                                         "ty": 2
                                       }
                                     },
-                                    "len": 20,
-                                    "offset": "0x0300000000000000000000000000000000000000000000000000000000000000"
+                                    "len": 32,
+                                    "offset": "0x0400000000000000000000000000000000000000000000000000000000000000"
                                   }
                                 },
-                                "name": "anchor"
+                                "name": "submit_key"
+                              },
+                              {
+                                "layout": {
+                                  "cell": {
+                                    "key": "0x2400000000000000000000000000000000000000000000000000000000000000",
+                                    "ty": 3
+                                  }
+                                },
+                                "name": "token0"
+                              },
+                              {
+                                "layout": {
+                                  "cell": {
+                                    "key": "0x2500000000000000000000000000000000000000000000000000000000000000",
+                                    "ty": 3
+                                  }
+                                },
+                                "name": "token1"
                               }
                             ]
                           }
@@ -212,18 +285,41 @@
         "id": 4,
         "type": {
           "def": {
-            "composite": {
-              "fields": [
+            "variant": {
+              "variants": [
                 {
-                  "type": 5,
-                  "typeName": "[u8; 20]"
+                  "fields": [
+                    {
+                      "type": 5
+                    }
+                  ],
+                  "index": 0,
+                  "name": "Ok"
+                },
+                {
+                  "fields": [
+                    {
+                      "type": 6
+                    }
+                  ],
+                  "index": 1,
+                  "name": "Err"
                 }
               ]
             }
           },
+          "params": [
+            {
+              "name": "T",
+              "type": 5
+            },
+            {
+              "name": "E",
+              "type": 6
+            }
+          ],
           "path": [
-            "primitive_types",
-            "H160"
+            "Result"
           ]
         }
       },
@@ -231,10 +327,7 @@
         "id": 5,
         "type": {
           "def": {
-            "array": {
-              "len": 20,
-              "type": 2
-            }
+            "tuple": []
           }
         }
       },
@@ -245,9 +338,81 @@
             "variant": {
               "variants": [
                 {
+                  "index": 0,
+                  "name": "BadOrigin"
+                },
+                {
+                  "index": 1,
+                  "name": "NotConfigured"
+                },
+                {
+                  "index": 2,
+                  "name": "FailedToCreateClient"
+                },
+                {
+                  "index": 3,
+                  "name": "FailedToCommitTx"
+                },
+                {
+                  "index": 4,
+                  "name": "FailedToFetchPrice"
+                },
+                {
+                  "index": 5,
+                  "name": "FailedToGetNameOwner"
+                },
+                {
+                  "index": 6,
+                  "name": "FailedToClaimName"
+                },
+                {
+                  "index": 7,
+                  "name": "FailedToGetStorage"
+                },
+                {
+                  "index": 8,
+                  "name": "FailedToCreateTransaction"
+                },
+                {
+                  "index": 9,
+                  "name": "FailedToSendTransaction"
+                },
+                {
+                  "index": 10,
+                  "name": "FailedToGetBlockHash"
+                },
+                {
+                  "index": 11,
+                  "name": "FailedToDecode"
+                },
+                {
+                  "index": 12,
+                  "name": "RollupAlreadyInitialized"
+                },
+                {
+                  "index": 13,
+                  "name": "RollupConfiguredByAnotherAccount"
+                }
+              ]
+            }
+          },
+          "path": [
+            "sub_price_feed",
+            "sub_price_feed",
+            "Error"
+          ]
+        }
+      },
+      {
+        "id": 7,
+        "type": {
+          "def": {
+            "variant": {
+              "variants": [
+                {
                   "fields": [
                     {
-                      "type": 7
+                      "type": 8
                     }
                   ],
                   "index": 0,
@@ -256,7 +421,7 @@
                 {
                   "fields": [
                     {
-                      "type": 8
+                      "type": 6
                     }
                   ],
                   "index": 1,
@@ -268,24 +433,16 @@
           "params": [
             {
               "name": "T",
-              "type": 7
+              "type": 8
             },
             {
               "name": "E",
-              "type": 8
+              "type": 6
             }
           ],
           "path": [
             "Result"
           ]
-        }
-      },
-      {
-        "id": 7,
-        "type": {
-          "def": {
-            "tuple": []
-          }
         }
       },
       {
@@ -296,47 +453,28 @@
               "variants": [
                 {
                   "index": 0,
-                  "name": "BadOrigin"
+                  "name": "None"
                 },
                 {
+                  "fields": [
+                    {
+                      "type": 9
+                    }
+                  ],
                   "index": 1,
-                  "name": "NotConfigurated"
-                },
-                {
-                  "index": 2,
-                  "name": "BadAbi"
-                },
-                {
-                  "index": 3,
-                  "name": "FailedToGetStorage"
-                },
-                {
-                  "index": 4,
-                  "name": "FailedToDecodeStorage"
-                },
-                {
-                  "index": 5,
-                  "name": "FailedToEstimateGas"
-                },
-                {
-                  "index": 6,
-                  "name": "FailedToCreateRollupSession"
-                },
-                {
-                  "index": 7,
-                  "name": "FailedToFetchLock"
-                },
-                {
-                  "index": 8,
-                  "name": "FailedToReadQueueHead"
+                  "name": "Some"
                 }
               ]
             }
           },
+          "params": [
+            {
+              "name": "T",
+              "type": 9
+            }
+          ],
           "path": [
-            "sample_oracle",
-            "sample_oracle",
-            "Error"
+            "Option"
           ]
         }
       },
@@ -344,300 +482,10 @@
         "id": 9,
         "type": {
           "def": {
-            "variant": {
-              "variants": [
-                {
-                  "fields": [
-                    {
-                      "type": 10
-                    }
-                  ],
-                  "index": 0,
-                  "name": "Ok"
-                },
-                {
-                  "fields": [
-                    {
-                      "type": 16
-                    }
-                  ],
-                  "index": 1,
-                  "name": "Err"
-                }
-              ]
-            }
-          },
-          "params": [
-            {
-              "name": "T",
-              "type": 10
-            },
-            {
-              "name": "E",
-              "type": 16
-            }
-          ],
-          "path": [
-            "Result"
-          ]
-        }
-      },
-      {
-        "id": 10,
-        "type": {
-          "def": {
-            "variant": {
-              "variants": [
-                {
-                  "index": 0,
-                  "name": "None"
-                },
-                {
-                  "fields": [
-                    {
-                      "type": 11
-                    }
-                  ],
-                  "index": 1,
-                  "name": "Some"
-                }
-              ]
-            }
-          },
-          "params": [
-            {
-              "name": "T",
-              "type": 11
-            }
-          ],
-          "path": [
-            "Option"
-          ]
-        }
-      },
-      {
-        "id": 11,
-        "type": {
-          "def": {
-            "composite": {
-              "fields": [
-                {
-                  "name": "tx",
-                  "type": 12,
-                  "typeName": "RollupTx"
-                },
-                {
-                  "name": "signature",
-                  "type": 21,
-                  "typeName": "Option<Vec<u8>>"
-                },
-                {
-                  "name": "target",
-                  "type": 21,
-                  "typeName": "Option<Vec<u8>>"
-                }
-              ]
-            }
-          },
-          "path": [
-            "phat_offchain_rollup",
-            "RollupResult"
-          ]
-        }
-      },
-      {
-        "id": 12,
-        "type": {
-          "def": {
-            "composite": {
-              "fields": [
-                {
-                  "name": "conds",
-                  "type": 13,
-                  "typeName": "Vec<Cond>"
-                },
-                {
-                  "name": "actions",
-                  "type": 18,
-                  "typeName": "Vec<Raw>"
-                },
-                {
-                  "name": "updates",
-                  "type": 19,
-                  "typeName": "Vec<(Raw, Option<Raw>)>"
-                }
-              ]
-            }
-          },
-          "path": [
-            "phat_offchain_rollup",
-            "RollupTx"
-          ]
-        }
-      },
-      {
-        "id": 13,
-        "type": {
-          "def": {
-            "sequence": {
-              "type": 14
-            }
-          }
-        }
-      },
-      {
-        "id": 14,
-        "type": {
-          "def": {
-            "variant": {
-              "variants": [
-                {
-                  "fields": [
-                    {
-                      "type": 15,
-                      "typeName": "Raw"
-                    },
-                    {
-                      "type": 17,
-                      "typeName": "Option<Raw>"
-                    }
-                  ],
-                  "index": 0,
-                  "name": "Eq"
-                }
-              ]
-            }
-          },
-          "path": [
-            "phat_offchain_rollup",
-            "Cond"
-          ]
-        }
-      },
-      {
-        "id": 15,
-        "type": {
-          "def": {
-            "composite": {
-              "fields": [
-                {
-                  "type": 16,
-                  "typeName": "Vec<u8>"
-                }
-              ]
-            }
-          },
-          "path": [
-            "phat_offchain_rollup",
-            "Raw"
-          ]
-        }
-      },
-      {
-        "id": 16,
-        "type": {
-          "def": {
             "sequence": {
               "type": 2
             }
           }
-        }
-      },
-      {
-        "id": 17,
-        "type": {
-          "def": {
-            "variant": {
-              "variants": [
-                {
-                  "index": 0,
-                  "name": "None"
-                },
-                {
-                  "fields": [
-                    {
-                      "type": 15
-                    }
-                  ],
-                  "index": 1,
-                  "name": "Some"
-                }
-              ]
-            }
-          },
-          "params": [
-            {
-              "name": "T",
-              "type": 15
-            }
-          ],
-          "path": [
-            "Option"
-          ]
-        }
-      },
-      {
-        "id": 18,
-        "type": {
-          "def": {
-            "sequence": {
-              "type": 15
-            }
-          }
-        }
-      },
-      {
-        "id": 19,
-        "type": {
-          "def": {
-            "sequence": {
-              "type": 20
-            }
-          }
-        }
-      },
-      {
-        "id": 20,
-        "type": {
-          "def": {
-            "tuple": [
-              15,
-              17
-            ]
-          }
-        }
-      },
-      {
-        "id": 21,
-        "type": {
-          "def": {
-            "variant": {
-              "variants": [
-                {
-                  "index": 0,
-                  "name": "None"
-                },
-                {
-                  "fields": [
-                    {
-                      "type": 16
-                    }
-                  ],
-                  "index": 1,
-                  "name": "Some"
-                }
-              ]
-            }
-          },
-          "params": [
-            {
-              "name": "T",
-              "type": 16
-            }
-          ],
-          "path": [
-            "Option"
-          ]
         }
       }
     ]

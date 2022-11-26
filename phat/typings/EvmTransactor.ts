@@ -8,29 +8,31 @@ import type { Codec } from "@polkadot/types/types";
 export namespace EvmTransactor {
     type InkEnv_Types_AccountId = any;
     type PrimitiveTypes_H160 = any;
+    type EvmTransactor_EvmTransator_Error = { BadOrigin: null } | { NotConfigurated: null } | { KeyRetired: null } | { KeyNotRetiredYet: null } | { UpstreamCallFailed: null } | { UpstreamFailed: null } | { BadAbi: null } | { FailedToGetStorage: null } | { FailedToDecodeStorage: null } | { FailedToEstimateGas: null } | { FailedToConnectAnchor: null } | { FailedToSubmitTx: null };
+    type Result = { Ok: DPT.FixedArray<number, 32> } | { Err: EvmTransactor_EvmTransator_Error };
 
     /** */
     /** Queries */
     /** */
     namespace ContractQuery {
         export interface Owner extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.ICompact<InkEnv_Types_AccountId>>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<InkEnv_Types_AccountId>>>;
         }
 
         export interface Wallet extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.ICompact<PrimitiveTypes_H160>>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<PrimitiveTypes_H160>>>;
         }
 
         export interface GetRetiredSecretKey extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<any>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result>>>;
         }
 
         export interface Poll extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<any>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result>>>;
         }
 
         export interface TestPollWithKey extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions, key: DPT.FixedArray<number, 32>): DPT.CallResult<DPT.CallOutcome<any>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions, key: DPT.FixedArray<number, 32>): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result>>>;
         }
     }
 

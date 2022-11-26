@@ -10,6 +10,9 @@ export namespace LocalScheduler {
     type InkPrimitives_Key = any;
     type InkStorage_Lazy_Mapping_Mapping = { offset_key: InkPrimitives_Key };
     type LocalScheduler_LocalScheduler_JobConfig = { name: string, cron_expr: string, target: InkEnv_Types_AccountId, call: number[], enabled: boolean };
+    type LocalScheduler_LocalScheduler_Error = { BadOrigin: null } | { JobNotFound: null } | { NotChanged: null } | { InvalidCronExpression: null } | { CronExpressionNeverFire: null } | { InternalErrorCacheCorrupted: null } | { CallDataTooShort: null } | { FailedToCallJob: null };
+    type Result = { Ok: never[] } | { Err: LocalScheduler_LocalScheduler_Error };
+    type Option = { None: null } | { Some: [ number, LocalScheduler_LocalScheduler_JobConfig ] };
 
     /** */
     /** Queries */
@@ -20,7 +23,7 @@ export namespace LocalScheduler {
         }
 
         export interface GetJob extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions, idx: number): DPT.CallResult<DPT.CallOutcome<any>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions, idx: number): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result>>>;
         }
 
         export interface GetActiveJobs extends DPT.ContractQuery {
@@ -28,15 +31,15 @@ export namespace LocalScheduler {
         }
 
         export interface GetJobSchedule extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions, id: number): DPT.CallResult<DPT.CallOutcome<any>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions, id: number): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Option>>>;
         }
 
         export interface Owner extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.ICompact<InkEnv_Types_AccountId>>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<InkEnv_Types_AccountId>>>;
         }
 
         export interface Poll extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<any>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result>>>;
         }
     }
 
