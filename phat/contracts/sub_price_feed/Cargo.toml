@@ -24,7 +24,7 @@ fixed = { version = "1", default-features = false, features = ["serde"] }
 pink-extension = { version = "0.2", default-features = false }
 pink-json = { git = "https://github.com/Phala-Network/pink-json.git", branch = "pink", default-features = false, features = ["de-number-as-str"] }
 
-phat_offchain_rollup = { path = "../../crates/rollup", default-features = false }
+phat_offchain_rollup = { path = "../../crates/rollup", default-features = false, features = ["substrate"] }
 kv-session = { path = "../../crates/kv-session", default-features = false }
 
 subrpc = { path = "../../crates/subrpc", default-features = false }
@@ -34,7 +34,7 @@ hex = { version = "0.4", default-features = false }
 dotenvy = "0.15"
 env_logger = "0.9"
 pink-extension-runtime = { version = "0.2", default-features = false }
-phat_offchain_rollup = { path = "../../crates/rollup", features = ["logging"] }
+phat_offchain_rollup = { path = "../../crates/rollup", default-features = false, features = ["substrate", "logging"] }
 hex-literal = "0.3"
 
 [lib]
@@ -58,6 +58,7 @@ std = [
     "phat_offchain_rollup/std",
     "pink-extension/std",
     "subrpc/std",
+    "pink-json/std",
 ]
 ink-as-dependency = []
 

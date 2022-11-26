@@ -1,6 +1,6 @@
 use crate::{Action, Error, Result, RollupTx};
 
-use alloc::vec::Vec;
+use alloc::{borrow::ToOwned, vec::Vec};
 use scale::{Decode, Encode};
 
 use ink_env::AccountId;
@@ -9,7 +9,8 @@ use kv_session::{
     traits::{BumpVersion, KvSnapshot},
     RwTracker, Session,
 };
-use pink_extension::{self as pink, ResultExt};
+use pink::ResultExt;
+use pink_extension as pink;
 use primitive_types::H256;
 
 const METHOD_CLAIM_NAME: u8 = 0u8;

@@ -11,6 +11,7 @@ mod local_scheduler {
         traits::{PackedLayout, SpreadAllocate, SpreadLayout},
         Mapping,
     };
+    use pink::ResultExt;
     use pink_extension as pink;
     use scale::{Decode, Encode};
 
@@ -240,8 +241,9 @@ mod local_scheduler {
             if let Some(next_date) = cron.next_after(now_date) {
                 let next_ts = next_date.timestamp_millis() as u64;
                 let value = Encode::encode(&(next_ts, &job.cron_expr));
-                // TODO: handle StorageQuotaExceeded error here?
-                pink::ext().cache_set(&job_key, &value);
+                // Log an error for StorageQuotaExceeded for now
+                let _ = pink::ext().cache_set(&job_key, &value)
+                    .log_err("failed to set cache key");
                 pink::debug!("[Job-{id}] Scheduling at timestamp {next_ts}");
             } else {
                 pink::ext().cache_remove(&job_key);

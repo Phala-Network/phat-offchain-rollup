@@ -12,7 +12,6 @@ use pink_extension::chain_extension::{signing, SigType};
 use scale::{Compact, Encode};
 
 use pink_json as json;
-use sp_runtime::generic::Era;
 
 mod objects;
 mod rpc;
@@ -72,8 +71,6 @@ pub fn get_storage(rpc_node: &str, key: &[u8], at: Option<H256>) -> Result<Optio
         None => Ok(None),
     }
 }
-
-
 
 /// Gets the next nonce of the target account
 ///
@@ -141,16 +138,20 @@ pub fn get_genesis_hash(rpc_node: &str) -> core::result::Result<H256, Error> {
 }
 
 /// Gets the block hash at a certain height (None for the latest block)
-pub fn get_block_hash(rpc_node: &str, block_number: Option<u32>) -> core::result::Result<H256, Error> {
+pub fn get_block_hash(
+    rpc_node: &str,
+    block_number: Option<u32>,
+) -> core::result::Result<H256, Error> {
     let param = block_number.map_or("null".to_string(), |n| format!("{n}"));
-    let data = format!(r#"{{"id":1, "jsonrpc":"2.0", "method": "chain_getBlockHash","params":[{param}]}}"#)
-        .into_bytes();
+    let data = format!(
+        r#"{{"id":1, "jsonrpc":"2.0", "method": "chain_getBlockHash","params":[{param}]}}"#
+    )
+    .into_bytes();
     let resp_body = call_rpc(rpc_node, data)?;
     let genesis_hash: GenesisHash = json::from_slice(&resp_body).or(Err(Error::InvalidBody))?;
     // bypass prefix 0x
     let genesis_hash_result = &genesis_hash.result[2..];
-    let decoded_hash = hex::decode(genesis_hash_result)
-        .or(Err(Error::InvalidBody))?;
+    let decoded_hash = hex::decode(genesis_hash_result).or(Err(Error::InvalidBody))?;
     let hash: [u8; 32] = decoded_hash.try_into().or(Err(Error::InvalidBody))?;
     Ok(H256(hash))
 }

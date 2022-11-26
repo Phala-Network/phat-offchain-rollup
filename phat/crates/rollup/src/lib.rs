@@ -25,9 +25,14 @@ pub enum Error {
     FailedToSendTransaction,
     SessionFailedToDecode,
     SessionFailedToGetStorage,
+
+    #[cfg(feature = "evm")]
     EvmFailedToSubmitTx(pink_web3::Error),
+    #[cfg(feature = "evm")]
     EvmFailedToEstimateGas(pink_web3::contract::Error),
+    #[cfg(feature = "evm")]
     EvmFailedToGetStorage(pink_web3::contract::Error),
+
     QueueIndexOverflow,
     LockVersionOverflow,
     RpcNetworkError,

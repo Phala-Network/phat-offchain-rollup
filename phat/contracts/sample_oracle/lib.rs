@@ -11,8 +11,7 @@ mod sample_oracle {
     use alloc::{string::String, vec::Vec};
     use ink_storage::traits::{PackedLayout, SpreadLayout};
     use phat_offchain_rollup::{
-        clients::evm::read::{Action, QueuedRollupSession},
-        lock::GLOBAL as GLOBAL_LOCK,
+        clients::evm::read::QueuedRollupSession, lock::GLOBAL as GLOBAL_LOCK, Action,
         RollupHandler, RollupResult,
     };
     use pink_extension as pink;

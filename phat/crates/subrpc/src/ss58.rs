@@ -1,6 +1,5 @@
 use crate::traits::common::Error;
-use alloc::string::String;
-use alloc::vec;
+use alloc::{string::String, vec, vec::Vec};
 use base58::ToBase58;
 use ss58_registry::Ss58AddressFormat;
 

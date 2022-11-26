@@ -16,11 +16,7 @@ pub fn storage_prefix(pallet_name: &str, storage_name: &str) -> [u8; 32] {
 pub fn storage_map_blake2_128_prefix(prefix: &[u8], key1: &[u8]) -> Vec<u8> {
     let key1_hashed = sp_core_hashing::blake2_128(key1);
 
-    let mut final_key = Vec::with_capacity(
-        prefix.len()
-            + key1_hashed.as_ref().len()
-            + key1.len()
-    );
+    let mut final_key = Vec::with_capacity(prefix.len() + key1_hashed.as_ref().len() + key1.len());
     final_key.extend_from_slice(prefix);
     final_key.extend_from_slice(key1_hashed.as_ref());
     final_key.extend_from_slice(key1);

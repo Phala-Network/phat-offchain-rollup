@@ -8,7 +8,7 @@ pub use crate::sub_price_feed::*;
 
 #[ink::contract(env = pink_extension::PinkEnvironment)]
 mod sub_price_feed {
-    use alloc::{string::String, vec::Vec};
+    use alloc::{format, string::String, vec, vec::Vec};
     use ink_storage::traits::{PackedLayout, SpreadLayout};
     use pink_extension as pink;
     use scale::{Decode, Encode};

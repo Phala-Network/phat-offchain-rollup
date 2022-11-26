@@ -1,4 +1,5 @@
-// #[cfg(feature = "evm")]
+#[cfg(feature = "evm")]
 pub mod evm;
-// #[cfg(feature = "substrate")]
+
+#[cfg(feature = "substrate")]
 pub mod substrate;

@@ -3,7 +3,9 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use scale::{Decode, Encode};
 use serde::Deserialize;
-use sp_runtime::generic::Era;
+
+mod era;
+pub use era::Era;
 
 #[derive(Deserialize, Encode, Clone, Debug, PartialEq)]
 pub struct NextNonce<'a> {
