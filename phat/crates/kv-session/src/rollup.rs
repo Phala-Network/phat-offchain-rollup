@@ -13,6 +13,7 @@ pub enum VersionLayout<Key> {
     // Inline,
 }
 
+#[derive(Debug)]
 pub struct RollUpTransaction<K, V> {
     /// Should be the block hash for a blockchain backend
     pub snapshot_id: V,
@@ -73,7 +74,7 @@ where
         .into_iter()
         .map(|k| {
             (
-                k.clone(),
+                k.clone().concat(postfix.clone()),
                 versions
                     .get(&k.concat(postfix.clone()))
                     .and_then(Clone::clone),
@@ -192,8 +193,8 @@ mod tests {
         assert_eq!(
             rollup.conditions,
             [
-                ("A".to_owned(), None),        // Require version of A to be None
-                ("B".to_owned(), Some(10000))  // Require version of B to be 10000
+                ("A_ver".to_owned(), None),        // Require version of A to be None
+                ("B_ver".to_owned(), Some(10000))  // Require version of B to be 10000
             ]
         );
         assert_eq!(
@@ -210,8 +211,8 @@ mod tests {
         assert_eq!(
             rollup.conditions,
             [
-                ("Foo_A".to_owned(), None),        // Require version of A to be None
-                ("Foo_B".to_owned(), Some(10000))  // Require version of B to be 10000
+                ("Foo_A_ver".to_owned(), None),        // Require version of A to be None
+                ("Foo_B_ver".to_owned(), Some(10000))  // Require version of B to be 10000
             ]
         );
         assert_eq!(

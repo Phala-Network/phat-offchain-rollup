@@ -26,6 +26,7 @@ ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false
 ] }
 
 phat_offchain_rollup = { path = "../../crates/rollup", default-features = false }
+kv-session = { path = "../../crates/kv-session", default-features = false }
 
 subrpc = { path = "../../crates/subrpc", default-features = false }
 hex = { version = "0.4", default-features = false }

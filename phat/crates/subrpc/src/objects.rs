@@ -76,12 +76,6 @@ pub struct TransactionResponse<'a> {
     pub(crate) id: u32,
 }
 
-#[derive(Encode, Decode, Clone, Debug)]
-#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-pub struct GenesisHashOk {
-    pub(crate) genesis_hash: Vec<u8>,
-}
-
 #[derive(Encode, Decode, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct ExtraParam {
