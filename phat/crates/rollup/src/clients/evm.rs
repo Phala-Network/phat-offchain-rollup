@@ -4,7 +4,7 @@ pub mod read {
     use crate::{
         lock::{LockId, LockVersion, LockVersionReader, Locks},
         platforms::Evm,
-        Error, Result, RollupResult, RollupTx,
+        Action, Error, Result, RollupResult, RollupTx,
     };
     use alloc::{string::String, vec::Vec};
     use pink_web3::api::{Eth, Namespace};
@@ -15,10 +15,6 @@ pub mod read {
     use scale::Decode;
 
     // TODO: move out out EVM since it's generic
-    pub enum Action {
-        Reply(Vec<u8>),
-        ProcessedTo(u32),
-    }
 
     // Converts to Vec<u8> for EVM rollup anchor
     impl From<Action> for Vec<u8> {

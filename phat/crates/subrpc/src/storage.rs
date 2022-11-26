@@ -12,7 +12,22 @@ pub fn storage_prefix(pallet_name: &str, storage_name: &str) -> [u8; 32] {
     final_key
 }
 
-/// Returns the storage key of a storage double map entry (with Blake2_128 hash)
+/// Returns the storage key of a storage map entry (with Blake2_128 hash)
+pub fn storage_map_blake2_128_prefix(prefix: &[u8], key1: &[u8]) -> Vec<u8> {
+    let key1_hashed = sp_core_hashing::blake2_128(key1);
+
+    let mut final_key = Vec::with_capacity(
+        prefix.len()
+            + key1_hashed.as_ref().len()
+            + key1.len()
+    );
+    final_key.extend_from_slice(prefix);
+    final_key.extend_from_slice(key1_hashed.as_ref());
+    final_key.extend_from_slice(key1);
+    final_key
+}
+
+/// Returns the storage key of a storage double map entry (with dual Blake2_128 hash)
 pub fn storage_double_map_blake2_128_prefix(prefix: &[u8], key1: &[u8], key2: &[u8]) -> Vec<u8> {
     let key1_hashed = sp_core_hashing::blake2_128(key1);
     let key2_hashed = sp_core_hashing::blake2_128(key2);
@@ -24,13 +39,11 @@ pub fn storage_double_map_blake2_128_prefix(prefix: &[u8], key1: &[u8], key2: &[
             + key2_hashed.as_ref().len()
             + key2.len(),
     );
-
     final_key.extend_from_slice(prefix);
     final_key.extend_from_slice(key1_hashed.as_ref());
     final_key.extend_from_slice(key1);
     final_key.extend_from_slice(key2_hashed.as_ref());
     final_key.extend_from_slice(key2);
-
     final_key
 }
 
