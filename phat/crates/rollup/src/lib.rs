@@ -4,7 +4,7 @@ extern crate alloc;
 
 use core::fmt::Debug;
 
-use alloc::{string::String, vec::Vec};
+use alloc::vec::Vec;
 use scale::{Decode, Encode};
 
 pub mod clients;
@@ -18,10 +18,16 @@ pub enum Error {
     FailedToDecode,
     DecodeOverflow,
     BadEvmAnchorAbi,
+    FailedToGetStorage,
     FailedToDecodeStorage,
-    FailedToSubmitTx(pink_web3::Error),
-    FailedToEstimateGas(pink_web3::contract::Error),
-    FailedToGetStorage(pink_web3::contract::Error),
+    FailedToGetBlockHash,
+    FailedToCreateTransaction,
+    FailedToSendTransaction,
+    SessionFailedToDecode,
+    SessionFailedToGetStorage,
+    EvmFailedToSubmitTx(pink_web3::Error),
+    EvmFailedToEstimateGas(pink_web3::contract::Error),
+    EvmFailedToGetStorage(pink_web3::contract::Error),
     QueueIndexOverflow,
     LockVersionOverflow,
     RpcNetworkError,

@@ -25,6 +25,8 @@ ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false
     "serde",
     "rlp",
 ] }
+kv-session = { path = "../kv-session" }
+subrpc = { path = "../subrpc" }
 
 [features]
 default = ["std", "logging"]
@@ -38,6 +40,7 @@ std = [
     "scale-info/std",
 	"primitive-types/std",
     "pink-web3/std",
+    "subrpc/std",
 ]
 logging = [
     "pink-extension",

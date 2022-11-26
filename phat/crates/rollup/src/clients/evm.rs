@@ -70,7 +70,7 @@ pub mod read {
                 Options::default(),
                 None,
             ))
-            .map_err(Error::FailedToGetStorage)?;
+            .map_err(Error::EvmFailedToGetStorage)?;
             #[cfg(feature = "logging")]
             pink_extension::debug!(
                 "Read(0x{}) = 0x{}",
@@ -110,7 +110,7 @@ pub mod read {
                 Options::default(),
                 None,
             ))
-            .map_err(Error::FailedToGetStorage)?;
+            .map_err(Error::EvmFailedToGetStorage)?;
             Ok(value.0)
         }
 
@@ -301,7 +301,7 @@ pub mod write {
                 pair.address(),
                 Options::default(),
             ))
-            .map_err(Error::FailedToEstimateGas)?;
+            .map_err(Error::EvmFailedToEstimateGas)?;
 
             // Actually submit the tx (no guarantee for success)
             let tx_id = resolve_ready(self.contract.signed_call(
@@ -310,7 +310,7 @@ pub mod write {
                 Options::with(|opt| opt.gas = Some(gas)),
                 pair,
             ))
-            .map_err(Error::FailedToSubmitTx)?;
+            .map_err(Error::EvmFailedToSubmitTx)?;
             Ok(tx_id)
         }
     }

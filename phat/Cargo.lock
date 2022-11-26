@@ -1766,12 +1766,14 @@ dependencies = [
  "ink_metadata",
  "ink_primitives",
  "ink_storage",
+ "kv-session",
  "parity-scale-codec",
  "pink-ethabi",
  "pink-extension 0.2.0",
  "pink-web3",
  "primitive-types",
  "scale-info",
+ "subrpc",
 ]
 
 [[package]]
