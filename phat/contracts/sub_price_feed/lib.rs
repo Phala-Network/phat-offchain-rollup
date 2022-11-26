@@ -139,11 +139,14 @@ mod sub_price_feed {
             .or(Err(Error::FailedToClaimName))
         }
 
-        fn fetch_price(token0: &str, token1: &str) -> Result<u128> {
+        /// Fetches the price of a trading pair from CoinGecko
+        fn fetch_coingecko_price(token0: &str, token1: &str) -> Result<u128> {
             use fixed::types::U64F64 as Fp;
 
             // Fetch the price from CoinGecko.
-            // (Detailed documentation: https://www.coingecko.com/en/api/documentation)
+            //
+            // Supported tokens are listed in the detailed documentation:
+            // <https://www.coingecko.com/en/api/documentation>
             let url = format!(
                 "https://api.coingecko.com/api/v3/simple/price?ids={token0}&vs_currencies={token1}"
             );
@@ -175,9 +178,11 @@ mod sub_price_feed {
             Ok(f.to_num())
         }
 
-        /// Feeds a price by a rollup tx
+        /// Feeds a price by a rollup transaction
         #[ink(message)]
         pub fn feed_price(&self) -> Result<Option<Vec<u8>>> {
+            // Initialize a rollup client. The client tracks a "rollup transaction" that allows you
+            // to read, write, and execute actions on the target chain with atomicity.
             let config = self.ensure_configured()?;
             let contract_id = self.env().account_id();
             let mut client =
@@ -185,8 +190,10 @@ mod sub_price_feed {
                     .log_err("failed to create rollup client")
                     .or(Err(Error::FailedToCreateClient))?;
 
+            // Business logic starts from here.
+
             // Get the price and respond as a rollup action.
-            let price = Self::fetch_price(&config.token0, &config.token1)?;
+            let price = Self::fetch_coingecko_price(&config.token0, &config.token1)?;
             let response = ResponseRecord {
                 owner: self.owner.clone(),
                 contract_id: contract_id.clone(),
@@ -194,9 +201,20 @@ mod sub_price_feed {
                 price,
                 timestamp_ms: self.env().block_timestamp(),
             };
+            // Attach an action to the tx by:
             client.action(Action::Reply(response.encode()));
 
-            // Submit the transaction
+            // An offchain rollup contract will get a dedicated kv store on the target blockchain.
+            // The kv store can be accessed by the Phat Contract by:
+            // - client.session.get(key)
+            // - client.session.put(key, value)
+            //
+            // Note that all of the read, write, and custom actions are grouped as a transaction,
+            // which is applied on the target blockchain atomically.
+
+            // Business logic ends here.
+
+            // Submit the transaction if it's not empty
             let maybe_submittable = client
                 .commit()
                 .log_err("failed to commit")
