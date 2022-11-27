@@ -1,11 +1,11 @@
 {
   "source": {
-    "hash": "0x21e785dea8ea37e40cc2cc8390d670bf8f97c6eca0af8b449d4be2be721a82bb",
+    "hash": "0x6e71664085629450a9c8e47e1365db14d916ae8b4f713799c6057943a22f0aa9",
     "language": "ink! 3.4.0",
     "compiler": "rustc 1.62.0-nightly"
   },
   "contract": {
-    "name": "sub_price_feed",
+    "name": "sub0_factory",
     "version": "0.1.0",
     "authors": [
       "[your_name] <[your_email]>"
@@ -25,22 +25,6 @@
       "docs": [],
       "events": [],
       "messages": [
-        {
-          "args": [],
-          "docs": [
-            " Gets the owner of the contract"
-          ],
-          "label": "owner",
-          "mutates": false,
-          "payable": false,
-          "returnType": {
-            "displayName": [
-              "AccountId"
-            ],
-            "type": 0
-          },
-          "selector": "0xfeaea4fa"
-        },
         {
           "args": [
             {
@@ -69,6 +53,57 @@
               }
             },
             {
+              "label": "price_feed_code",
+              "type": {
+                "displayName": [
+                  "Hash"
+                ],
+                "type": 4
+              }
+            }
+          ],
+          "docs": [
+            " Configures the contract, only by the contract owner"
+          ],
+          "label": "config",
+          "mutates": true,
+          "payable": false,
+          "returnType": {
+            "displayName": [
+              "Result"
+            ],
+            "type": 8
+          },
+          "selector": "0x70714744"
+        },
+        {
+          "args": [],
+          "docs": [
+            " Returns the current public config"
+          ],
+          "label": "get_config",
+          "mutates": false,
+          "payable": false,
+          "returnType": {
+            "displayName": [
+              "Result"
+            ],
+            "type": 11
+          },
+          "selector": "0xd0707806"
+        },
+        {
+          "args": [
+            {
+              "label": "name",
+              "type": {
+                "displayName": [
+                  "String"
+                ],
+                "type": 3
+              }
+            },
+            {
               "label": "token0",
               "type": {
                 "displayName": [
@@ -88,81 +123,50 @@
             }
           ],
           "docs": [
-            " Configures the rollup target (admin only)"
+            " Deploys a SubPriceFeed contract"
           ],
-          "label": "config",
+          "label": "deploy_price_feed",
           "mutates": true,
           "payable": false,
           "returnType": {
             "displayName": [
               "Result"
             ],
-            "type": 4
+            "type": 13
           },
-          "selector": "0x70714744"
-        },
-        {
-          "args": [
-            {
-              "label": "new_owner",
-              "type": {
-                "displayName": [
-                  "AccountId"
-                ],
-                "type": 0
-              }
-            }
-          ],
-          "docs": [
-            " Transfers the ownership of the contract (admin only)"
-          ],
-          "label": "transfer_ownership",
-          "mutates": true,
-          "payable": false,
-          "returnType": {
-            "displayName": [
-              "Result"
-            ],
-            "type": 4
-          },
-          "selector": "0x107e33ea"
+          "selector": "0xb9a3bedb"
         },
         {
           "args": [],
           "docs": [
-            " Initializes the rollup on the target blockchain if it's not done yet",
-            "",
-            " First, look up if the name (contract id) is already claimed on the target chain. If",
-            " not, just claim it with the `submit_key` and return the tx hash. If it's claimed, check",
-            " if it's claimed by the `submit_key`. Return an error if the actual owner account is not",
-            " the `submit_key`."
+            " Returns all the deployments"
           ],
-          "label": "maybe_init_rollup",
+          "label": "get_deployments",
           "mutates": false,
           "payable": false,
           "returnType": {
             "displayName": [
               "Result"
             ],
-            "type": 7
+            "type": 14
           },
-          "selector": "0xcd2d991d"
+          "selector": "0x581bda1a"
         },
         {
           "args": [],
           "docs": [
-            " Feeds a price by a rollup transaction"
+            " Gets the owner of the contract"
           ],
-          "label": "feed_price",
+          "label": "owner",
           "mutates": false,
           "payable": false,
           "returnType": {
             "displayName": [
-              "Result"
+              "AccountId"
             ],
-            "type": 7
+            "type": 0
           },
-          "selector": "0xf9448ba4"
+          "selector": "0xfeaea4fa"
         }
       ]
     },
@@ -227,19 +231,10 @@
                                 "layout": {
                                   "cell": {
                                     "key": "0x2400000000000000000000000000000000000000000000000000000000000000",
-                                    "ty": 3
+                                    "ty": 4
                                   }
                                 },
-                                "name": "token0"
-                              },
-                              {
-                                "layout": {
-                                  "cell": {
-                                    "key": "0x2500000000000000000000000000000000000000000000000000000000000000",
-                                    "ty": 3
-                                  }
-                                },
-                                "name": "token1"
+                                "name": "price_feed_code"
                               }
                             ]
                           }
@@ -255,6 +250,24 @@
               }
             },
             "name": "config"
+          },
+          {
+            "layout": {
+              "cell": {
+                "key": "0x0200000000000000000000000000000000000000000000000000000000000000",
+                "ty": 5
+              }
+            },
+            "name": "deployments"
+          },
+          {
+            "layout": {
+              "cell": {
+                "key": "0x0300000000000000000000000000000000000000000000000000000000000000",
+                "ty": 7
+              }
+            },
+            "name": "num_deployed"
           }
         ]
       }
@@ -311,12 +324,60 @@
         "id": 4,
         "type": {
           "def": {
+            "composite": {
+              "fields": [
+                {
+                  "type": 1,
+                  "typeName": "[u8; 32]"
+                }
+              ]
+            }
+          },
+          "path": [
+            "ink_env",
+            "types",
+            "Hash"
+          ]
+        }
+      },
+      {
+        "id": 5,
+        "type": {
+          "def": {
+            "sequence": {
+              "type": 6
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "type": {
+          "def": {
+            "sequence": {
+              "type": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "type": {
+          "def": {
+            "primitive": "u32"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "type": {
+          "def": {
             "variant": {
               "variants": [
                 {
                   "fields": [
                     {
-                      "type": 5
+                      "type": 9
                     }
                   ],
                   "index": 0,
@@ -325,7 +386,7 @@
                 {
                   "fields": [
                     {
-                      "type": 6
+                      "type": 10
                     }
                   ],
                   "index": 1,
@@ -337,11 +398,11 @@
           "params": [
             {
               "name": "T",
-              "type": 5
+              "type": 9
             },
             {
               "name": "E",
-              "type": 6
+              "type": 10
             }
           ],
           "path": [
@@ -350,7 +411,7 @@
         }
       },
       {
-        "id": 5,
+        "id": 9,
         "type": {
           "def": {
             "tuple": []
@@ -358,7 +419,7 @@
         }
       },
       {
-        "id": 6,
+        "id": 10,
         "type": {
           "def": {
             "variant": {
@@ -373,64 +434,28 @@
                 },
                 {
                   "index": 2,
-                  "name": "FailedToCreateClient"
+                  "name": "FailedToDeployContract"
                 },
                 {
                   "index": 3,
-                  "name": "FailedToCommitTx"
+                  "name": "FailedToConfigContract"
                 },
                 {
                   "index": 4,
-                  "name": "FailedToFetchPrice"
-                },
-                {
-                  "index": 5,
-                  "name": "FailedToGetNameOwner"
-                },
-                {
-                  "index": 6,
-                  "name": "FailedToClaimName"
-                },
-                {
-                  "index": 7,
-                  "name": "FailedToGetStorage"
-                },
-                {
-                  "index": 8,
-                  "name": "FailedToCreateTransaction"
-                },
-                {
-                  "index": 9,
-                  "name": "FailedToSendTransaction"
-                },
-                {
-                  "index": 10,
-                  "name": "FailedToGetBlockHash"
-                },
-                {
-                  "index": 11,
-                  "name": "FailedToDecode"
-                },
-                {
-                  "index": 12,
-                  "name": "RollupAlreadyInitialized"
-                },
-                {
-                  "index": 13,
-                  "name": "RollupConfiguredByAnotherAccount"
+                  "name": "FailedToTransferOwnership"
                 }
               ]
             }
           },
           "path": [
-            "sub_price_feed",
-            "sub_price_feed",
+            "sub0_factory",
+            "sub0_factory",
             "Error"
           ]
         }
       },
       {
-        "id": 7,
+        "id": 11,
         "type": {
           "def": {
             "variant": {
@@ -438,7 +463,7 @@
                 {
                   "fields": [
                     {
-                      "type": 8
+                      "type": 12
                     }
                   ],
                   "index": 0,
@@ -447,7 +472,7 @@
                 {
                   "fields": [
                     {
-                      "type": 6
+                      "type": 10
                     }
                   ],
                   "index": 1,
@@ -459,11 +484,11 @@
           "params": [
             {
               "name": "T",
-              "type": 8
+              "type": 12
             },
             {
               "name": "E",
-              "type": 6
+              "type": 10
             }
           ],
           "path": [
@@ -472,23 +497,39 @@
         }
       },
       {
-        "id": 8,
+        "id": 12,
+        "type": {
+          "def": {
+            "tuple": [
+              2,
+              4
+            ]
+          }
+        }
+      },
+      {
+        "id": 13,
         "type": {
           "def": {
             "variant": {
               "variants": [
                 {
+                  "fields": [
+                    {
+                      "type": 0
+                    }
+                  ],
                   "index": 0,
-                  "name": "None"
+                  "name": "Ok"
                 },
                 {
                   "fields": [
                     {
-                      "type": 9
+                      "type": 10
                     }
                   ],
                   "index": 1,
-                  "name": "Some"
+                  "name": "Err"
                 }
               ]
             }
@@ -496,21 +537,116 @@
           "params": [
             {
               "name": "T",
-              "type": 9
+              "type": 0
+            },
+            {
+              "name": "E",
+              "type": 10
             }
           ],
           "path": [
-            "Option"
+            "Result"
           ]
         }
       },
       {
-        "id": 9,
+        "id": 14,
+        "type": {
+          "def": {
+            "variant": {
+              "variants": [
+                {
+                  "fields": [
+                    {
+                      "type": 15
+                    }
+                  ],
+                  "index": 0,
+                  "name": "Ok"
+                },
+                {
+                  "fields": [
+                    {
+                      "type": 10
+                    }
+                  ],
+                  "index": 1,
+                  "name": "Err"
+                }
+              ]
+            }
+          },
+          "params": [
+            {
+              "name": "T",
+              "type": 15
+            },
+            {
+              "name": "E",
+              "type": 10
+            }
+          ],
+          "path": [
+            "Result"
+          ]
+        }
+      },
+      {
+        "id": 15,
         "type": {
           "def": {
             "sequence": {
-              "type": 2
+              "type": 16
             }
+          }
+        }
+      },
+      {
+        "id": 16,
+        "type": {
+          "def": {
+            "composite": {
+              "fields": [
+                {
+                  "name": "name",
+                  "type": 3,
+                  "typeName": "String"
+                },
+                {
+                  "name": "owner",
+                  "type": 0,
+                  "typeName": "AccountId"
+                },
+                {
+                  "name": "contract_id",
+                  "type": 0,
+                  "typeName": "AccountId"
+                },
+                {
+                  "name": "created_at",
+                  "type": 17,
+                  "typeName": "u64"
+                },
+                {
+                  "name": "expired_at",
+                  "type": 17,
+                  "typeName": "u64"
+                }
+              ]
+            }
+          },
+          "path": [
+            "sub0_factory",
+            "sub0_factory",
+            "Deployment"
+          ]
+        }
+      },
+      {
+        "id": 17,
+        "type": {
+          "def": {
+            "primitive": "u64"
           }
         }
       }

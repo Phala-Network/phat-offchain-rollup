@@ -41,10 +41,15 @@ export namespace SubPriceFeed {
         export interface Config extends DPT.ContractTx {
             (options: ContractOptions, rpc: string, pallet_id: number, submit_key: DPT.FixedArray<number, 32>, token0: string, token1: string): DPT.SubmittableExtrinsic;
         }
+
+        export interface TransferOwnership extends DPT.ContractTx {
+            (options: ContractOptions, new_owner: InkEnv_Types_AccountId): DPT.SubmittableExtrinsic;
+        }
     }
 
     export interface MapMessageTx extends DPT.MapMessageTx {
         config: ContractTx.Config;
+        transferOwnership: ContractTx.TransferOwnership;
     }
 
     /** */
