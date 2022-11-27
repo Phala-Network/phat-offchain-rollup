@@ -51,6 +51,7 @@ mod sub_price_feed {
     pub enum Error {
         BadOrigin,
         NotConfigured,
+        InvalidKeyLength,
         FailedToCreateClient,
         FailedToCommitTx,
         FailedToFetchPrice,
@@ -89,7 +90,7 @@ mod sub_price_feed {
             &mut self,
             rpc: String,
             pallet_id: u8,
-            submit_key: [u8; 32],
+            submit_key: Vec<u8>,
             token0: String,
             token1: String,
         ) -> Result<()> {
@@ -97,7 +98,7 @@ mod sub_price_feed {
             self.config = Some(Config {
                 rpc,
                 pallet_id,
-                submit_key,
+                submit_key: submit_key.try_into().or(Err(Error::InvalidKeyLength))?,
                 token0,
                 token1,
             });
@@ -292,7 +293,7 @@ mod sub_price_feed {
         fn fixed_parse() {
             let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();
-            let p = SubPriceFeed::fetch_price("polkadot", "usd").unwrap();
+            let p = SubPriceFeed::fetch_coingecko_price("polkadot", "usd").unwrap();
             pink::warn!("Price: {p:?}");
         }
 
@@ -310,7 +311,7 @@ mod sub_price_feed {
                 .config(
                     "http://127.0.0.1:39933".to_string(),
                     100,
-                    sk_alice,
+                    sk_alice.to_vec(),
                     "polkadot".to_string(),
                     "usd".to_string(),
                 )

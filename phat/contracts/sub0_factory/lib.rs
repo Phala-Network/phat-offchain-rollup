@@ -56,6 +56,7 @@ mod sub0_factory {
     pub enum Error {
         BadOrigin,
         NotConfigured,
+        InvalidKeyLength,
         FailedToDeployContract,
         FailedToConfigContract,
         FailedToTransferOwnership,
@@ -77,14 +78,14 @@ mod sub0_factory {
             &mut self,
             rpc: String,
             pallet_id: u8,
-            submit_key: [u8; 32],
+            submit_key: Vec<u8>,
             price_feed_code: Hash,
         ) -> Result<()> {
             self.ensure_owner()?;
             self.config = Some(Config {
                 rpc,
                 pallet_id,
-                submit_key,
+                submit_key: submit_key.try_into().or(Err(Error::InvalidKeyLength))?,
                 price_feed_code,
             });
             Ok(())
@@ -121,7 +122,7 @@ mod sub0_factory {
                 .config(
                     config.rpc.clone(),
                     config.pallet_id,
-                    config.submit_key,
+                    config.submit_key.to_vec(),
                     token0,
                     token1,
                 )
@@ -215,7 +216,7 @@ mod sub0_factory {
                 .config(
                     "http://127.0.0.1:39933".to_string(),
                     100,
-                    [1u8; 32],
+                    [1u8; 32].to_vec(),
                     hash2.clone(),
                 )
                 .expect("failed to config factory");
