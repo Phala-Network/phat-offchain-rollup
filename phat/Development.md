@@ -38,6 +38,15 @@
 
 To configure the local test stack, please check [devphase.config.ts](./devphase.config.ts).
 
+## Compile contracts
+
+```bash
+yarn devphase compile
+```
+
+You can also specify which the contract to build by adding the contract name. The name should be
+in snake case, consistent with the directory names under `contracts/`.
+
 ## Run E2E test
 
 Simply run:
