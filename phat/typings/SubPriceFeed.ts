@@ -7,7 +7,7 @@ import type { Codec } from "@polkadot/types/types";
 
 export namespace SubPriceFeed {
     type InkEnv_Types_AccountId = any;
-    type SubPriceFeed_SubPriceFeed_Error = { BadOrigin: null } | { NotConfigured: null } | { FailedToCreateClient: null } | { FailedToCommitTx: null } | { FailedToFetchPrice: null } | { FailedToGetNameOwner: null } | { FailedToClaimName: null } | { FailedToGetStorage: null } | { FailedToCreateTransaction: null } | { FailedToSendTransaction: null } | { FailedToGetBlockHash: null } | { FailedToDecode: null } | { RollupAlreadyInitialized: null } | { RollupConfiguredByAnotherAccount: null };
+    type SubPriceFeed_SubPriceFeed_Error = { BadOrigin: null } | { NotConfigured: null } | { InvalidKeyLength: null } | { FailedToCreateClient: null } | { FailedToCommitTx: null } | { FailedToFetchPrice: null } | { FailedToGetNameOwner: null } | { FailedToClaimName: null } | { FailedToGetStorage: null } | { FailedToCreateTransaction: null } | { FailedToSendTransaction: null } | { FailedToGetBlockHash: null } | { FailedToDecode: null } | { RollupAlreadyInitialized: null } | { RollupConfiguredByAnotherAccount: null };
     type Result = { Ok: Option } | { Err: SubPriceFeed_SubPriceFeed_Error };
     type Option = { None: null } | { Some: number[] };
 
@@ -39,7 +39,7 @@ export namespace SubPriceFeed {
     /** */
     namespace ContractTx {
         export interface Config extends DPT.ContractTx {
-            (options: ContractOptions, rpc: string, pallet_id: number, submit_key: DPT.FixedArray<number, 32>, token0: string, token1: string): DPT.SubmittableExtrinsic;
+            (options: ContractOptions, rpc: string, pallet_id: number, submit_key: number[], token0: string, token1: string): DPT.SubmittableExtrinsic;
         }
 
         export interface TransferOwnership extends DPT.ContractTx {

@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0x6e71664085629450a9c8e47e1365db14d916ae8b4f713799c6057943a22f0aa9",
+    "hash": "0xe2c09e1e97b912e3517ffec553578e6f66aaedb64b352bcca4515f9fc9fec516",
     "language": "ink! 3.4.0",
     "compiler": "rustc 1.62.0-nightly"
   },
@@ -48,8 +48,10 @@
             {
               "label": "submit_key",
               "type": {
-                "displayName": [],
-                "type": 1
+                "displayName": [
+                  "Vec"
+                ],
+                "type": 6
               }
             },
             {
@@ -434,14 +436,18 @@
                 },
                 {
                   "index": 2,
-                  "name": "FailedToDeployContract"
+                  "name": "InvalidKeyLength"
                 },
                 {
                   "index": 3,
-                  "name": "FailedToConfigContract"
+                  "name": "FailedToDeployContract"
                 },
                 {
                   "index": 4,
+                  "name": "FailedToConfigContract"
+                },
+                {
+                  "index": 5,
                   "name": "FailedToTransferOwnership"
                 }
               ]

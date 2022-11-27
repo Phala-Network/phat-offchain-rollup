@@ -8,7 +8,7 @@ import type { Codec } from "@polkadot/types/types";
 export namespace Sub0Factory {
     type InkEnv_Types_AccountId = any;
     type InkEnv_Types_Hash = any;
-    type Sub0Factory_Sub0Factory_Error = { BadOrigin: null } | { NotConfigured: null } | { FailedToDeployContract: null } | { FailedToConfigContract: null } | { FailedToTransferOwnership: null };
+    type Sub0Factory_Sub0Factory_Error = { BadOrigin: null } | { NotConfigured: null } | { InvalidKeyLength: null } | { FailedToDeployContract: null } | { FailedToConfigContract: null } | { FailedToTransferOwnership: null };
     type Result = { Ok: Sub0Factory_Sub0Factory_Deployment[] } | { Err: Sub0Factory_Sub0Factory_Error };
     type Sub0Factory_Sub0Factory_Deployment = { name: string, owner: InkEnv_Types_AccountId, contract_id: InkEnv_Types_AccountId, created_at: number, expired_at: number };
 
@@ -40,7 +40,7 @@ export namespace Sub0Factory {
     /** */
     namespace ContractTx {
         export interface Config extends DPT.ContractTx {
-            (options: ContractOptions, rpc: string, pallet_id: number, submit_key: DPT.FixedArray<number, 32>, price_feed_code: InkEnv_Types_Hash): DPT.SubmittableExtrinsic;
+            (options: ContractOptions, rpc: string, pallet_id: number, submit_key: number[], price_feed_code: InkEnv_Types_Hash): DPT.SubmittableExtrinsic;
         }
 
         export interface DeployPriceFeed extends DPT.ContractTx {
