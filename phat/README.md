@@ -1,29 +1,13 @@
-# Phat Contract Implementation
+# Phat Contract Offchain Rollup
 
-## Run a local test environment
+## Sub0 Workshop
 
-1. Put the Phala binaries inside `tmp/phala-dev-stack/bin`, including `node` (renamed from `phala-node`), `pruntime` and `pherry`.
+This repo is also prepared for the Sub0 2022 Phat Contract Workshop. In the workshop, it shows how
+to deploy a simple price feed oracle on Phala Network and provide the oracle service to any
+blockchain.
 
-2. Install yarn v1 and node v16, and install the dependencies
+Please switch to the workshop branch to see more detailed instructions.
 
-    ```bash
-    yarn
-    ```
+## Development
 
-3. Start the local stack
-
-    ```bash
-    yarn devphase stack
-    ```
-
-4. Init the testnet (currently by [this script](https://github.com/shelvenzhou/phala-blockchain-setup))
-
-    ```bash
-    # edit .env file
-    yarn
-    node src/setup-logserver.js
-    ```
-
-To configure the local test stack, please check [devphase.config.ts](./devphase.config.ts).
-
-## Run E2E test
+Please refer to [Development](./Development.md).
