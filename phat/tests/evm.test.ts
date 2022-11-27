@@ -11,7 +11,7 @@ async function delay(ms: number): Promise<void> {
     return new Promise( resolve => setTimeout(resolve, ms) );
 }
 
-describe('Full Test', () => {
+describe.skip('Full Test', () => {
     const rpc = process.env.RPC;
     const anchorAddr = '0x' + process.env.ANCHOR_ADDR;
     const rollupKey = '0x' + process.env.PRIVKEY;

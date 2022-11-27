@@ -76,6 +76,7 @@ const config : ProjectConfigOptions = {
                 '--dev': true,
                 '--port': 33333,
                 '--ws-port': '{{stack.node.port}}',
+                '--rpc-port': 39933,
                 '--ws-external': true,
                 '--unsafe-ws-external': true,
                 '--rpc-methods': 'Unsafe',
