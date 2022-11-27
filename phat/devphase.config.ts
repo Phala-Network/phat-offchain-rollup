@@ -3,10 +3,6 @@ import { join } from 'path';
 import { spawn } from 'child_process';
 import * as fs from 'fs';
 
-function rel(p: string): string {
-    return join(process.cwd(), p);
-}
-
 async function initChain(devphase: any): Promise<void> {
     console.log('######################## Initializing blockchain ########################');
     // Necessary to run; copied from devphase `defaultSetupenv()`
@@ -18,7 +14,7 @@ async function initChain(devphase: any): Promise<void> {
             ['src/setup-drivers.js'],
             {
                 stdio: 'inherit',
-                cwd: '../tmp/setup',
+                cwd: './setup',
                 env: {
                     'ENDPOINT': devphase.options.nodeUrl,
                     'WORKERS': devphase.options.workerUrl,
@@ -26,11 +22,6 @@ async function initChain(devphase: any): Promise<void> {
                 },
             },
         );
-        // function onData(data: Buffer) {
-        //     console.log('[INIT]', data.toString());
-        // }
-        // init.stdout.on('data', onData);
-        // init.stderr.on('data', onData);
         init.on('exit', code => {
             console.log('initChain script exited with code', code);
             resolve();
@@ -45,8 +36,7 @@ async function saveLog(devphase: any, outPath): Promise<void> {
         const readLog = spawn(
             'node', ['src/read-log.js'],
             {
-                // stdio: 'inherit',
-                cwd: '../tmp/setup',
+                cwd: './setup',
                 env: {
                     'ENDPOINT': devphase.options.nodeUrl,
                     'WORKERS': devphase.options.workerUrl,
@@ -66,7 +56,7 @@ async function saveLog(devphase: any, outPath): Promise<void> {
 const config : ProjectConfigOptions = {
     stack: {
         blockTime: 500,
-        version: 'nightly-2022-11-24',
+        version: 'nightly-2022-11-27',
         node: {
             port: 39944,
             binary: '{{directories.stacks}}/{{stack.version}}/phala-node',

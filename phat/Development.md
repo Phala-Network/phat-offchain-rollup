@@ -2,9 +2,10 @@
 
 ## Prepare the environment
 
-1. Install yarn v1 and node v16, and install the dependencies
+1. Initialize git submodules, and install yarn v1, node v16, and the dependencies:
 
     ```bash
+    git submodule update --init
     yarn
     ```
 
