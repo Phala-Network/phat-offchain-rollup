@@ -7,6 +7,7 @@ members = [
     "contracts/evm_transactor",
     "contracts/local_scheduler",
     "contracts/sub_price_feed",
+    "contracts/sub0_factory",
 ]
 
 # Sneak peek of the new test engine!

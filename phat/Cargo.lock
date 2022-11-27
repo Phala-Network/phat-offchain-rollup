@@ -3046,6 +3046,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
+name = "sub0_factory"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "hex-literal",
+ "ink_env",
+ "ink_lang",
+ "ink_metadata",
+ "ink_primitives",
+ "ink_storage",
+ "parity-scale-codec",
+ "pink-extension 0.2.0",
+ "pink-extension-runtime",
+ "scale-info",
+ "sub_price_feed",
+]
+
+[[package]]
 name = "sub_price_feed"
 version = "0.1.0"
 dependencies = [

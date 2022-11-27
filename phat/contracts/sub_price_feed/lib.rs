@@ -83,7 +83,7 @@ mod sub_price_feed {
             self.owner
         }
 
-        /// Configures the rollup target
+        /// Configures the rollup target (admin only)
         #[ink(message)]
         pub fn config(
             &mut self,
@@ -101,6 +101,14 @@ mod sub_price_feed {
                 token0,
                 token1,
             });
+            Ok(())
+        }
+
+        /// Transfers the ownership of the contract (admin only)
+        #[ink(message)]
+        pub fn transfer_ownership(&mut self, new_owner: AccountId) -> Result<()> {
+            self.ensure_owner()?;
+            self.owner = new_owner;
             Ok(())
         }
 
