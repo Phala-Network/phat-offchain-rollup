@@ -625,8 +625,8 @@
                 },
                 {
                   "name": "contract_id",
-                  "type": 0,
-                  "typeName": "AccountId"
+                  "type": 4,
+                  "typeName": "Hash"
                 },
                 {
                   "name": "created_at",
