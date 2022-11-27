@@ -7,6 +7,7 @@
     ```bash
     git submodule update --init
     yarn
+    (cd setup; yarn)
     ```
 
 2. Try to start the local stack. devphase will download the selected prebuilt binaries from Github at the first time.
