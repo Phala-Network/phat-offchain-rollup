@@ -16,6 +16,7 @@ import "./Interfaces.sol";
 ///
 /// Storage layout:
 ///
+/// - `<lockKey>`: `uint` - the version of the queue lock
 /// - `<prefix>/start`: `uint` - index of the first element
 /// - `<prefix>/end`: `uint` - index of the next element to push to the queue
 /// - `<prefix/<n>`: `bytes` - the `n`-th message
@@ -25,6 +26,7 @@ contract PhatQueuedAnchor is PhatRollupAnchor, IPhatQueuedAnchor, Ownable {
     event RequestProcessedTo(uint256);
 
     bytes queuePrefix;
+    bytes lockKey;
 
     uint8 constant ACTION_QUEUE_PROCESSED_TO = 0;
 
@@ -33,6 +35,7 @@ contract PhatQueuedAnchor is PhatRollupAnchor, IPhatQueuedAnchor, Ownable {
     {
         // TODO: Now we are using the global lock. Should switch to fine grained lock in the
         // future.
+        lockKey = hex"00";
         queuePrefix = queuePrefix_;
         emit Configured(queuePrefix, lockKey);
     }
@@ -70,6 +73,11 @@ contract PhatQueuedAnchor is PhatRollupAnchor, IPhatQueuedAnchor, Ownable {
         phatStorage[storageKey] = "";
     }
 
+    function incLock() internal {
+        uint256 v = toUint256Strict(phatStorage[lockKey], 0);
+        phatStorage[lockKey] = abi.encode(v + 1);
+    }
+
     /// Pushes a request to the queue waiting for the Phat Contract to process
     ///
     /// Returns the index of the reqeust.
@@ -78,6 +86,7 @@ contract PhatQueuedAnchor is PhatRollupAnchor, IPhatQueuedAnchor, Ownable {
         bytes memory itemKey = abi.encode(end);
         setBytes(itemKey, data);
         setUint("end", end + 1);
+        incLock();
         emit RequestQueued(end, data);
         return end;
     }
