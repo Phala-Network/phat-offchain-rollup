@@ -110,6 +110,12 @@ impl<'a> SubstrateRollupClient<'a> {
         })
     }
 
+    pub fn session(
+        &mut self,
+    ) -> &mut Session<SubstrateSnapshot<'a>, Vec<u8>, Vec<u8>, RwTracker<Vec<u8>>> {
+        &mut self.session
+    }
+
     pub fn action(&mut self, action: Action) -> &mut Self {
         self.actions.push(action.encode());
         self
