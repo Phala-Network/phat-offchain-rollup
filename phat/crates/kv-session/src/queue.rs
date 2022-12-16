@@ -1,7 +1,4 @@
-use alloc::{
-    string::{String, ToString},
-    vec::Vec,
-};
+use alloc::vec::Vec;
 use core::marker::PhantomData;
 
 use crate::{
@@ -10,35 +7,43 @@ use crate::{
     OneLock, Result, Session,
 };
 
-pub trait Codec {
-    fn encode_u128(number: u128) -> Vec<u8>;
-    fn decode_u128(raw: impl AsRef<[u8]>) -> Result<u128>;
+type QueueIndex = u32;
+
+pub struct QueueTransaction {
+    pub inner_tx: RollUpTransaction<Vec<u8>, Vec<u8>>,
+    pub queue_head: QueueIndex,
+}
+
+pub trait QueueIndexCodec {
+    type Index;
+    fn encode(number: Self::Index) -> Vec<u8>;
+    fn decode(raw: impl AsRef<[u8]>) -> Result<Self::Index>;
 }
 
 type InnerSession<Snap> =
-    Session<PrefixedKvSnapshot<String, Snap>, String, Vec<u8>, OneLock<String>>;
+    Session<PrefixedKvSnapshot<Vec<u8>, Snap>, Vec<u8>, Vec<u8>, OneLock<Vec<u8>>>;
 
 pub struct MessageQueueSession<Snap, Cod> {
-    prefix: String,
-    session: InnerSession<Snap>,
+    pub session: InnerSession<Snap>,
+    prefix: Vec<u8>,
     // The pos of first pushed message
-    head: u128,
+    head: QueueIndex,
     // The pos to push the next message
-    tail: u128,
+    tail: QueueIndex,
     codec: PhantomData<Cod>,
 }
 
 impl<S, C> MessageQueueSession<S, C>
 where
-    S: KvSnapshot<Key = String, Value = Vec<u8>> + Clone,
-    C: Codec,
+    S: KvSnapshot<Key = Vec<u8>, Value = Vec<u8>> + Clone,
+    C: QueueIndexCodec<Index = QueueIndex>,
 {
-    pub fn new(prefix: impl Into<String>, snapshot: S) -> Result<Self> {
+    pub fn new(prefix: impl Into<Vec<u8>>, snapshot: S) -> Result<Self> {
         let prefix = prefix.into();
         let session = Session::new(
             snapshot.prefixed(prefix.clone()),
             // Treat the head cursor as lock
-            OneLock::new("head".into(), false),
+            OneLock::new(b"_head".to_vec(), false),
         );
 
         Self {
@@ -52,19 +57,19 @@ where
     }
 
     fn init(mut self) -> Result<Self> {
-        self.head = self.get_number("head")?.unwrap_or(0);
-        self.tail = self.get_number("tail")?.unwrap_or(0);
+        self.head = self.get_number(b"_head")?.unwrap_or(0);
+        self.tail = self.get_number(b"_tail")?.unwrap_or(0);
         if self.tail < self.head {
             return Err(crate::Error::FailedToDecode);
         }
         Ok(self)
     }
 
-    fn get_number(&mut self, key: &str) -> Result<Option<u128>> {
-        self.session.get(key)?.map(C::decode_u128).transpose()
+    fn get_number(&mut self, key: &[u8; 5]) -> Result<Option<QueueIndex>> {
+        self.session.get(&key[..])?.map(C::decode).transpose()
     }
 
-    pub fn length(&self) -> u128 {
+    pub fn length(&self) -> QueueIndex {
         self.tail - self.head
     }
 
@@ -72,25 +77,26 @@ where
         if self.head == self.tail {
             return Ok(None);
         }
-        let front_key = self.head.to_string();
+        let front_key = C::encode(self.head);
         let data = self.session.get(&front_key)?;
-        self.session.delete(&front_key);
         self.head += 1;
-        self.session.put("head", C::encode_u128(self.head));
         Ok(data)
     }
 
-    pub fn commit(self) -> Result<RollUpTransaction<String, Vec<u8>>> {
+    pub fn commit(self) -> Result<QueueTransaction> {
         let (tx, snapshot) = self.session.commit();
 
         let conditions = snapshot.batch_get(&tx.accessed_keys)?;
         let snapshot_id = snapshot.snapshot_id()?;
-        Ok(RollUpTransaction {
-            snapshot_id,
-            conditions,
-            updates: tx.value_updates,
-        }
-        .prefixed_with(self.prefix))
+        Ok(QueueTransaction {
+            inner_tx: RollUpTransaction {
+                snapshot_id,
+                conditions,
+                updates: tx.value_updates,
+            }
+            .prefixed_with(self.prefix),
+            queue_head: self.head,
+        })
     }
 }
 
@@ -106,17 +112,17 @@ mod tests {
 
     #[derive(Clone, Default)]
     struct MockSnapshot {
-        db: Arc<RefCell<BTreeMap<String, Vec<u8>>>>,
+        db: Arc<RefCell<BTreeMap<Vec<u8>, Vec<u8>>>>,
     }
 
     impl MockSnapshot {
-        fn set(&self, key: impl Into<String>, value: &[u8]) {
+        fn set(&self, key: impl Into<Vec<u8>>, value: &[u8]) {
             self.db.borrow_mut().insert(key.into(), value.to_owned());
         }
     }
 
     impl KvSnapshot for MockSnapshot {
-        type Key = String;
+        type Key = Vec<u8>;
 
         type Value = Vec<u8>;
 
@@ -131,12 +137,13 @@ mod tests {
     }
 
     struct ScaleCodec;
-    impl Codec for ScaleCodec {
-        fn encode_u128(number: u128) -> Vec<u8> {
+    impl QueueIndexCodec for ScaleCodec {
+        type Index = u32;
+        fn encode(number: Self::Index) -> Vec<u8> {
             Encode::encode(&number)
         }
 
-        fn decode_u128(raw: impl AsRef<[u8]>) -> Result<u128> {
+        fn decode(raw: impl AsRef<[u8]>) -> Result<Self::Index> {
             let mut buf = raw.as_ref();
             Decode::decode(&mut buf).or(Err(Error::FailedToDecode))
         }
@@ -150,8 +157,12 @@ mod tests {
         assert_eq!(queue.pop(), Ok(None));
         let tx = queue.commit().unwrap();
         // Should lock the "TestQ/head"
-        assert_eq!(tx.conditions, vec![("TestQ/head".to_owned(), None)]);
-        assert_eq!(tx.updates, vec![]);
+        assert_eq!(
+            tx.inner_tx.conditions,
+            vec![(b"TestQ/_head".to_vec(), None)]
+        );
+        assert_eq!(tx.inner_tx.updates, vec![]);
+        assert_eq!(tx.queue_head, 0);
     }
 
     #[test]
@@ -159,33 +170,25 @@ mod tests {
         let kvdb = MockSnapshot::default();
 
         // Set up some test data
-        kvdb.set("TestQ/head", &0_u128.encode());
-        kvdb.set("TestQ/tail", &2_u128.encode());
-        kvdb.set("TestQ/0", b"foo");
-        kvdb.set("TestQ/1", b"bar");
+        kvdb.set(*b"TestQ/_head", &0_u128.encode());
+        kvdb.set(*b"TestQ/_tail", &2_u128.encode());
+        kvdb.set(*b"TestQ/\x00\x00\x00\x00", b"foo");
+        kvdb.set(*b"TestQ/\x01\x00\x00\x00", b"bar");
 
-        let mut queue = MessageQueueSession::<_, ScaleCodec>::new("TestQ/", kvdb).unwrap();
+        let mut queue = MessageQueueSession::<_, ScaleCodec>::new(*b"TestQ/", kvdb).unwrap();
         assert_eq!(queue.length(), 2);
         assert_eq!(queue.pop(), Ok(Some(b"foo".to_vec())));
         assert_eq!(queue.pop(), Ok(Some(b"bar".to_vec())));
         assert_eq!(queue.pop(), Ok(None));
+        let final_head = queue.head;
         let tx = queue.commit().unwrap();
 
         assert_eq!(
-            tx.conditions,
+            tx.inner_tx.conditions,
             // Should lock on the head cursor
-            vec![("TestQ/head".to_owned(), Some(0_u128.encode()))]
+            vec![(b"TestQ/_head".to_vec(), Some(0_u128.encode()))]
         );
-        assert_eq!(
-            tx.updates,
-            vec![
-                // Should remove the poped keys. This is not performant if there are many elements
-                // in the queue. Use ACTION_QUEUE_PROCESSED_TO is light weight, .
-                ("TestQ/0".to_owned(), None),
-                ("TestQ/1".to_owned(), None),
-                // Should modify the head cursor (also treat as lock)
-                ("TestQ/head".to_owned(), Some(2_u128.encode())),
-            ]
-        );
+        assert_eq!(tx.inner_tx.updates, vec![]);
+        assert_eq!(tx.queue_head, final_head);
     }
 }
