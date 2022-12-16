@@ -9,8 +9,11 @@ use crate::{
 
 type QueueIndex = u32;
 
+/// A tx committed from a queue session.
 pub struct QueueTransaction {
+    /// The inner tx from the underlying kv session.
     pub inner_tx: RollUpTransaction<Vec<u8>, Vec<u8>>,
+    /// The final queue head.
     pub queue_head: QueueIndex,
 }
 
