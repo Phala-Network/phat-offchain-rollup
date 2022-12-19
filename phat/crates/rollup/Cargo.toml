@@ -30,7 +30,7 @@ ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false
 
 # for Substrate rollup
 kv-session = { path = "../kv-session" }
-subrpc = { path = "../subrpc", default-features = false, optional = true }
+subrpc = { package = "pink-subrpc", version = "0.1", default-features = false, optional = true }
 
 [features]
 default = ["std", "logging"]

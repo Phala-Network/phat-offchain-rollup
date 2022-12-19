@@ -319,7 +319,7 @@ mod local_scheduler {
                 .expect("failed to deploy EvmTransactor");
 
             // Deploy Oracle
-            let mut oracle = ::sample_oracle::SampleOracleRef::default()
+            let oracle = ::sample_oracle::SampleOracleRef::default()
                 .code_hash(hash2)
                 .endowment(0)
                 .salt_bytes([0u8; 0])
