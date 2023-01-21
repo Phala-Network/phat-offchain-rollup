@@ -1,13 +1,31 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "./Interfaces.sol";
 import "./PhatRollupReceiver.sol";
 
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
 
-contract PhatRollupAnchor is ReentrancyGuard {
+
+/// A Phat Contract Rollup Anchor with a built-in request queue
+///
+/// Call `pushMessage(data)` to push the raw message to the Phat Contract. It returns the request
+/// id, which can be used to link the response to the request later.
+///
+/// On the Phat Contract side, when some requests are processed, it should send an action
+/// `ACTION_SET_QUEUE_HEAD` to removed the finished requests, and increment the queue lock
+/// (very important!).
+///
+/// Storage layout:
+///
+/// - `<lockKey>`: `uint` - the version of the queue lock
+/// - `<prefix>/start`: `uint` - index of the first element
+/// - `<prefix>/end`: `uint` - index of the next element to push to the queue
+/// - `<prefix/<n>`: `bytes` - the `n`-th message
+contract PhatRollupAnchor is IPhatRollupAnchor, ReentrancyGuard, Ownable {
     bytes4 constant ROLLUP_RECEIVED = 0x43a53d89;
     // function genReceiverSelector() public pure returns (bytes4) {
     //     return bytes4(keccak256("onPhatRollupReceived(address,bytes)"));
@@ -16,18 +34,22 @@ contract PhatRollupAnchor is ReentrancyGuard {
     //     return toUint256(inputData, 0);
     // }
 
-    uint8 constant ACTION_SYS = 0;
-    uint8 constant ACTION_CALLBACK = 1;
-    uint8 constant ACTION_CUSTOM = 2;
-    
-    address caller;
-    address actionCallback;
-    mapping (bytes => bytes) phatStorage;
+    event MessageQueued(uint256 idx, bytes data);
+    event MessageProcessedTo(uint256);
 
-    constructor(address caller_, address actionCallback_) {
+    uint8 constant ACTION_REPLY = 0;
+    uint8 constant ACTION_SET_QUEUE_HEAD = 1;
+    
+    address submitter;
+    address actionCallback;
+    mapping (bytes => bytes) kvStore;
+    bytes queuePrefix;
+
+    constructor(address submitter_, address actionCallback_, bytes memory queuePrefix_) {
         // require(actionCallback_.isContract(), "bad callback");
-        caller = caller_;
+        submitter = submitter_;
         actionCallback = actionCallback_;
+        queuePrefix = queuePrefix_;
     }
     
     /// Triggers a rollup transaction with `eq` conditoin check on uint256 values
@@ -41,14 +63,14 @@ contract PhatRollupAnchor is ReentrancyGuard {
         bytes[] calldata updateValues,
         bytes[] calldata actions
     ) public nonReentrant() returns (bool) {
-        require(msg.sender == caller, "bad caller");
+        require(msg.sender == submitter, "bad submitter");
         require(condKeys.length == condValues.length, "bad cond len");
         require(updateKeys.length == updateValues.length, "bad update len");
         
         // check cond
         for (uint i = 0; i < condKeys.length; i++) {
-            uint256 value = toUint256Strict(phatStorage[condKeys[i]], 0);
-            uint256 expected = toUint256Strict(condValues[i], 0);
+            uint32 value = toUint32Strict(kvStore[condKeys[i]]);
+            uint32 expected = toUint32Strict(condValues[i]);
             if (value != expected) {
                 revert("cond not met");
             }
@@ -56,7 +78,7 @@ contract PhatRollupAnchor is ReentrancyGuard {
         
         // apply updates
         for (uint i = 0; i < updateKeys.length; i++) {
-            phatStorage[updateKeys[i]] = updateValues[i];
+            kvStore[updateKeys[i]] = updateValues[i];
         }
         
         // apply actions
@@ -69,22 +91,16 @@ contract PhatRollupAnchor is ReentrancyGuard {
 
     function handleAction(bytes calldata action) private {
         uint8 actionType = uint8(action[0]);
-        if (actionType == ACTION_SYS) {
-            // pass
-        } else if (actionType == ACTION_CALLBACK) {
+        if (actionType == ACTION_REPLY) {
             require(checkAndCallReceiver(action[1:]), "action failed");
-        } else if (actionType == ACTION_CUSTOM) {
-            handleCustomAction(action[1:]);
+        } else if (actionType == ACTION_SET_QUEUE_HEAD) {
+            require(action.length >= 5, "ACTION_SET_QUEUE_HEAD cannot decode");
+            uint32 end = abi.decode(action[1:], (uint32));
+            popTo(end);
         } else {
             revert("unsupported action");
         }
     }
-
-    /// Handles a custom action defined in a child contract
-    ///
-    /// Override it in the child class if you want to implement any special custom actions. Revert
-    /// if you want to interrupt the transaction.
-    function handleCustomAction(bytes calldata action) internal virtual {}
     
     function checkAndCallReceiver(bytes calldata action) private returns(bool) {
         bytes4 retval = PhatRollupReceiver(actionCallback)
@@ -93,18 +109,79 @@ contract PhatRollupAnchor is ReentrancyGuard {
     }
 
     function getStorage(bytes memory key) public view returns(bytes memory) {
-        return phatStorage[key];
+        return kvStore[key];
     }
 
-    function toUint256Strict(bytes memory _bytes, uint256 _start) public pure returns (uint256) {
+    function toUint32Strict(bytes memory _bytes) public pure returns (uint32) {
         if (_bytes.length == 0) {
             return 0;
         }
-        require(_bytes.length == _start + 32, "toUint256_outOfBounds");
-        uint256 tempUint;
-        assembly {
-            tempUint := mload(add(add(_bytes, 0x20), _start))
+        require(_bytes.length == 32, "toUint32Strict_outOfBounds");
+        uint32 v = abi.decode(_bytes, (uint32));
+        return v;
+    }
+
+    // Queue functions
+
+    /// Pushes a request to the queue waiting for the Phat Contract to process
+    ///
+    /// Returns the index of the reqeust.
+    function pushMessage(bytes memory data) public onlyOwner() returns (uint32) {
+        uint32 end = queueGetUint("end");
+        bytes memory itemKey = abi.encode(end);
+        queueSetBytes(itemKey, data);
+        queueSetUint("end", end + 1);
+        emit MessageQueued(end, data);
+        return end;
+    }
+
+    function popTo(uint32 targetIdx) internal {
+        uint32 curEnd = queueGetUint("end");
+        require(targetIdx <= curEnd, "invalid queue end");
+        for (uint32 i = queueGetUint("start"); i < targetIdx; i++) {
+            queueRemoveItem(i);
         }
-        return tempUint;
+        queueSetUint("start", targetIdx);
+        emit MessageProcessedTo(targetIdx);
+    }
+
+
+    /// Returns the prefix of the queue related keys
+    ///
+    /// The queue is persisted in the rollup kv store with all its keys prefixed. This function
+    /// returns the prefix.
+    function queueGetPrefix() public view returns (bytes memory) {
+        return queuePrefix;
+    }
+
+    /// Returns the raw bytes value stored in the queue kv store
+    function queueGetBytes(bytes memory key) public view returns (bytes memory) {
+        bytes memory storageKey = bytes.concat(queuePrefix, key);
+        return kvStore[storageKey];
+    }
+
+    /// Returns the uint32 repr of the data stored in the queue kv store
+    function queueGetUint(bytes memory key) public view returns (uint32) {
+        bytes memory storageKey = bytes.concat(queuePrefix, key);
+        return toUint32Strict(kvStore[storageKey]);
+    }
+
+    /// Stores a raw bytes value to the queue kv store
+    function queueSetBytes(bytes memory key, bytes memory value) internal {
+        bytes memory storageKey = bytes.concat(queuePrefix, key);
+        kvStore[storageKey] = value;
+    }
+
+    /// Stores a uint32 value to the queue kv store
+    function queueSetUint(bytes memory key, uint32 value) internal {
+        bytes memory storageKey = bytes.concat(queuePrefix, key);
+        kvStore[storageKey] = abi.encode(value);
+    }
+
+    /// Removes a queue item
+    function queueRemoveItem(uint32 idx) internal {
+        bytes memory key = abi.encode(idx);
+        bytes memory storageKey = bytes.concat(queuePrefix, key);
+        delete kvStore[storageKey];
     }
 }
