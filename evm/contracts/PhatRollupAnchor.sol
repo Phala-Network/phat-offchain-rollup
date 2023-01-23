@@ -22,9 +22,9 @@ import "./PhatRollupReceiver.sol";
 /// Storage layout:
 ///
 /// - `<lockKey>`: `uint` - the version of the queue lock
-/// - `<prefix>/start`: `uint` - index of the first element
-/// - `<prefix>/end`: `uint` - index of the next element to push to the queue
-/// - `<prefix/<n>`: `bytes` - the `n`-th message
+/// - `<prefix>/_head`: `uint` - index of the first element
+/// - `<prefix>/_tail`: `uint` - index of the next element to push to the queue
+/// - `<prefix/<n>`: `bytes` - the `n`-th message; `n` is encoded as uint32
 contract PhatRollupAnchor is IPhatRollupAnchor, ReentrancyGuard, Ownable {
     bytes4 constant ROLLUP_RECEIVED = 0x43a53d89;
     // function genReceiverSelector() public pure returns (bytes4) {
@@ -33,6 +33,10 @@ contract PhatRollupAnchor is IPhatRollupAnchor, ReentrancyGuard, Ownable {
     // function testConvert(bytes calldata inputData) public view returns (uint256) {
     //     return toUint256(inputData, 0);
     // }
+
+    // Constants aligned with the Phat Contract rollup queue implementation.
+    bytes constant KEY_HEAD = "_head";
+    bytes constant KEY_TAIL = "_tail";
 
     event MessageQueued(uint256 idx, bytes data);
     event MessageProcessedTo(uint256);
@@ -95,8 +99,8 @@ contract PhatRollupAnchor is IPhatRollupAnchor, ReentrancyGuard, Ownable {
             require(checkAndCallReceiver(action[1:]), "action failed");
         } else if (actionType == ACTION_SET_QUEUE_HEAD) {
             require(action.length >= 5, "ACTION_SET_QUEUE_HEAD cannot decode");
-            uint32 end = abi.decode(action[1:], (uint32));
-            popTo(end);
+            uint32 targetIdx = abi.decode(action[1:], (uint32));
+            popTo(targetIdx);
         } else {
             revert("unsupported action");
         }
@@ -127,21 +131,21 @@ contract PhatRollupAnchor is IPhatRollupAnchor, ReentrancyGuard, Ownable {
     ///
     /// Returns the index of the reqeust.
     function pushMessage(bytes memory data) public onlyOwner() returns (uint32) {
-        uint32 end = queueGetUint("end");
-        bytes memory itemKey = abi.encode(end);
+        uint32 tail = queueGetUint(KEY_TAIL);
+        bytes memory itemKey = abi.encode(tail);
         queueSetBytes(itemKey, data);
-        queueSetUint("end", end + 1);
-        emit MessageQueued(end, data);
-        return end;
+        queueSetUint(KEY_TAIL, tail + 1);
+        emit MessageQueued(tail, data);
+        return tail;
     }
 
     function popTo(uint32 targetIdx) internal {
-        uint32 curEnd = queueGetUint("end");
-        require(targetIdx <= curEnd, "invalid queue end");
-        for (uint32 i = queueGetUint("start"); i < targetIdx; i++) {
+        uint32 curTail = queueGetUint(KEY_TAIL);
+        require(targetIdx <= curTail, "invalid pop target");
+        for (uint32 i = queueGetUint(KEY_HEAD); i < targetIdx; i++) {
             queueRemoveItem(i);
         }
-        queueSetUint("start", targetIdx);
+        queueSetUint(KEY_HEAD, targetIdx);
         emit MessageProcessedTo(targetIdx);
     }
 

@@ -164,9 +164,9 @@ describe("RollupAnchor", function () {
         expect(await receiver.getRecvLength()).to.be.equals('1');
         expect(await receiver.getRecv(0)).to.be.eql([anchor.address, '0x0000000000000000000000000000000000000000000000000000000000000000deadbeef']);
         // end
-        expect(await anchor.queueGetUint(hex('end'))).to.be.equals(1);
+        expect(await anchor.queueGetUint(hex('_tail'))).to.be.equals(1);
         // start
-        expect(await anchor.queueGetUint(hex('start'))).to.be.equals(1);
+        expect(await anchor.queueGetUint(hex('_head'))).to.be.equals(1);
     })
   });
 });
