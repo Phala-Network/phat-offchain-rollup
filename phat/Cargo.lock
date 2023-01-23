@@ -1233,13 +1233,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9b7d56ba4a8344d6be9729995e6b06f928af29998cdf79fe390cbf6b1fee838"
 
 [[package]]
-name = "kv-session"
-version = "0.1.0"
-dependencies = [
- "parity-scale-codec",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1611,10 +1604,10 @@ dependencies = [
  "ink_metadata",
  "ink_primitives",
  "ink_storage",
- "kv-session",
  "parity-scale-codec",
  "pink-ethabi",
  "pink-extension 0.2.0",
+ "pink-kv-session",
  "pink-subrpc",
  "pink-web3",
  "primitive-types",
@@ -1778,6 +1771,11 @@ dependencies = [
  "ryu",
  "serde",
 ]
+
+[[package]]
+name = "pink-kv-session"
+version = "0.2.0"
+source = "git+https://github.com/Phala-Network/phala-blockchain.git?branch=kv-session#5dc390063e140e913be385c98a8a07aea6627e6b"
 
 [[package]]
 name = "pink-subrpc"
@@ -2656,7 +2654,6 @@ dependencies = [
  "ink_metadata",
  "ink_primitives",
  "ink_storage",
- "kv-session",
  "parity-scale-codec",
  "phat_offchain_rollup",
  "pink-extension 0.2.0",

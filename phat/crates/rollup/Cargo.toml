@@ -29,7 +29,7 @@ ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false
 ], optional = true }
 
 # for Substrate rollup
-kv-session = { path = "../kv-session" }
+kv-session = { package = "pink-kv-session", version = "0.2", git = "https://github.com/Phala-Network/phala-blockchain.git", branch = "kv-session" }
 subrpc = { package = "pink-subrpc", version = "0.1", default-features = false, optional = true }
 
 [features]

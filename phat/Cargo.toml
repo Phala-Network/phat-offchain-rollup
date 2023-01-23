@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "crates/rollup",
-    "crates/kv-session",
     "contracts/sample_oracle",
     "contracts/evm_transactor",
     "contracts/local_scheduler",

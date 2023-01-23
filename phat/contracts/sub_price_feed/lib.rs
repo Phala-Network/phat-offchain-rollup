@@ -195,7 +195,7 @@ mod sub_price_feed {
             let config = self.ensure_configured()?;
             let contract_id = self.env().account_id();
             let mut client =
-                SubstrateRollupClient::new(&config.rpc, config.pallet_id, &contract_id)
+                SubstrateRollupClient::new(&config.rpc, config.pallet_id, &contract_id, b"q/")
                     .log_err("failed to create rollup client")
                     .or(Err(Error::FailedToCreateClient))?;
 
