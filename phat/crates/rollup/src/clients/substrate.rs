@@ -151,6 +151,11 @@ impl<'a> SubstrateRollupClient<'a> {
             return Ok(None);
         }
 
+        // Consider:
+        // if let Some(head_idx) = raw_tx.queue_head {
+        //     self.action(Action::ProcessedTo(head_idx));
+        // }
+
         let tx = crate::RollupTx {
             conds: raw_tx
                 .conditions

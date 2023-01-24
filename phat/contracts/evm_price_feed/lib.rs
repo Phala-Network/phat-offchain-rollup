@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![feature(let_else)]
 
 extern crate alloc;
 
@@ -19,6 +20,10 @@ mod evm_price_feed {
     use pink::ResultExt;
 
     use phat_offchain_rollup::{clients::evm::EvmRollupClient, Action};
+
+    // Defined in TestOracle.sol
+    const TYPE_RESPONSE: u32 = 0;
+    const TYPE_FEED: u32 = 1;
 
     #[ink(storage)]
     pub struct EvmPriceFeed {
@@ -64,6 +69,7 @@ mod evm_price_feed {
         FailedToSendTransaction,
         FailedToGetBlockHash,
         FailedToDecode,
+        InvalidRequest,
         RollupAlreadyInitialized,
         RollupConfiguredByAnotherAccount,
     }
@@ -170,7 +176,7 @@ mod evm_price_feed {
             let price = Self::fetch_coingecko_price(&config.token0, &config.token1)?;
 
             let payload = ethabi::encode(&[
-                Token::Uint(1.into()), // TYPE_FEED
+                Token::Uint(TYPE_FEED.into()),
                 Token::Uint(config.feed_id.into()),
                 Token::Uint(price.into()),
             ]);
@@ -189,6 +195,44 @@ mod evm_price_feed {
             // Business logic ends here.
 
             // Submit the transaction if it's not empty
+            maybe_submit_tx(client, &config)
+        }
+
+        /// Processes a price request by a rollup transaction
+        #[ink(message)]
+        pub fn answer_price(&self) -> Result<Option<Vec<u8>>> {
+            use ethabi::{ParamType, Token};
+            use pink_kv_session::traits::QueueSession;
+            let config = self.ensure_configured()?;
+            let mut client = connect(&config)?;
+
+            let Some(raw_req) = client.session().pop().log_err("answer_price: failed to read queue").or(Err(Error::FailedToGetStorage))? else {
+                return Ok(None);
+            };
+            // Decode the queue data by ethabi (u256, bytes)
+            let decoded = ethabi::decode(&[ParamType::Uint(32), ParamType::Bytes], &raw_req)
+                .or(Err(Error::FailedToDecode))?;
+            let [Token::Uint(rid), Token::Bytes(pair)] = decoded.as_slice() else {
+                return Err(Error::FailedToDecode);
+            };
+            // Extract tokens from "token0/token1" string
+            let pair = String::from_utf8_lossy(&pair);
+            let pair_components: Vec<&str> = pair.split('/').collect();
+            let [token0, token1] = pair_components.as_slice() else {
+                return Err(Error::InvalidRequest)
+            };
+            pink::info!("Request received: ({token0}, {token1})");
+            // Get the price and respond as a rollup action.
+            let price = Self::fetch_coingecko_price(token0, token1)?;
+            pink::info!("Price: {price}");
+            // Respond
+            let payload = ethabi::encode(&[
+                Token::Uint(TYPE_RESPONSE.into()),
+                Token::Uint(*rid),
+                Token::Uint(price.into()),
+            ]);
+            client.action(Action::Reply(payload));
+
             maybe_submit_tx(client, &config)
         }
 
@@ -273,7 +317,7 @@ mod evm_price_feed {
         }
 
         #[ink::test]
-        fn default_works() {
+        fn submit_price_feed() {
             let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();
             let EnvVars { rpc, key, anchor } = config();
@@ -292,6 +336,28 @@ mod evm_price_feed {
 
             let r = price_feed.feed_price().expect("failed to feed price");
             pink::warn!("feed price: {r:?}");
+        }
+
+        #[ink::test]
+        fn answer_price_request() {
+            let _ = env_logger::try_init();
+            pink_extension_runtime::mock_ext::mock_all_ext();
+            let EnvVars { rpc, key, anchor } = config();
+
+            let mut price_feed = EvmPriceFeed::default();
+            price_feed
+                .config(
+                    rpc,
+                    anchor,
+                    key,
+                    "polkadot".to_string(),
+                    "usd".to_string(),
+                    0,
+                )
+                .unwrap();
+
+            let r = price_feed.answer_price().expect("failed to answer price");
+            pink::warn!("answer price: {r:?}");
         }
     }
 }

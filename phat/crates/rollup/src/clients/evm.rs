@@ -85,18 +85,18 @@ impl BumpVersion for EvmSnapshot {
             None => 0,
         };
         let new = old + 1;
-        let mut encoded = Vec::<u8>::with_capacity(32);
-        U256::from(new).to_big_endian(encoded.as_mut_slice());
-        Ok(encoded)
+        let mut encoded = [0u8; 32];
+        U256::from(new).to_big_endian(&mut encoded);
+        Ok(encoded.to_vec())
     }
 }
 
 pub struct RlpCodec;
 impl QueueIndexCodec for RlpCodec {
     fn encode(number: u32) -> Vec<u8> {
-        let mut encoded = Vec::<u8>::with_capacity(32);
-        U256::from(number).to_big_endian(encoded.as_mut_slice());
-        encoded
+        let mut encoded = [0u8; 32];
+        U256::from(number).to_big_endian(&mut encoded);
+        encoded.to_vec()
     }
 
     fn decode(raw: impl AsRef<[u8]>) -> kv_session::Result<u32> {
@@ -162,7 +162,7 @@ impl EvmRollupClient {
         self
     }
 
-    pub fn commit(self) -> Result<Option<SubmittableRollupTx>> {
+    pub fn commit(mut self) -> Result<Option<SubmittableRollupTx>> {
         let (session_tx, kvdb) = self.session.commit();
         let raw_tx = rollup::rollup(
             &kvdb,
@@ -175,6 +175,11 @@ impl EvmRollupClient {
 
         // #[cfg(feature = "logging")]
         // pink::warn!("RawTx: {raw_tx:?}");
+
+        if let Some(head_idx) = raw_tx.queue_head {
+            self.actions
+                .push(Action::ProcessedTo(head_idx).encode_into_evm());
+        }
 
         if raw_tx.updates.is_empty() && self.actions.is_empty() {
             return Ok(None);

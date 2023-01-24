@@ -56,4 +56,5 @@ substrate = [
 evm = [
     "pink-web3",
     "ethabi",
+    "pink-extension",
 ]
