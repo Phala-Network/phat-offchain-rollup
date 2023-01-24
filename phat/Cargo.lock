@@ -561,12 +561,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "evm_transactor"
+name = "evm_price_feed"
 version = "0.1.0"
 dependencies = [
  "dotenvy",
  "env_logger",
+ "fixed",
  "hex",
+ "hex-literal",
  "ink_env",
  "ink_lang",
  "ink_metadata",
@@ -577,10 +579,11 @@ dependencies = [
  "pink-ethabi",
  "pink-extension 0.2.0",
  "pink-extension-runtime",
+ "pink-json 0.4.0 (git+https://github.com/Phala-Network/pink-json.git?branch=pink)",
  "pink-web3",
  "primitive-types",
- "sample_oracle",
  "scale-info",
+ "serde",
 ]
 
 [[package]]
