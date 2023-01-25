@@ -98,7 +98,7 @@ contract PhatRollupAnchor is IPhatRollupAnchor, ReentrancyGuard, Ownable {
         if (actionType == ACTION_REPLY) {
             require(checkAndCallReceiver(action[1:]), "action failed");
         } else if (actionType == ACTION_SET_QUEUE_HEAD) {
-            require(action.length >= 5, "ACTION_SET_QUEUE_HEAD cannot decode");
+            require(action.length >= 1 + 32, "ACTION_SET_QUEUE_HEAD cannot decode");
             uint32 targetIdx = abi.decode(action[1:], (uint32));
             popTo(targetIdx);
         } else {
