@@ -8,14 +8,16 @@ import "./PhatRollupReceiver.sol";
 contract TestOracle is PhatRollupReceiver, Ownable {
     event PriceReceived(uint reqId, string pair, uint256 price);
     event FeedReceived(uint feedId, string pair,  uint256 price);
+    event ErrorReceived(uint reqId, string pair,  uint256 errno);
 
     uint constant TYPE_RESPONSE = 0;
     uint constant TYPE_FEED = 1;
+    uint constant TYPE_ERROR = 2;
 
     address anchor = address(0);
     mapping (uint => string) feeds;
     mapping (uint => string) requests;
-    uint nextRequest = 0;
+    uint nextRequest = 1;
 
     function setAnchor(address anchor_) public onlyOwner() {
         anchor = anchor_;
@@ -41,12 +43,15 @@ contract TestOracle is PhatRollupReceiver, Ownable {
         require(msg.sender == anchor, "bad caller");
 
         require(action.length == 32 * 3, "cannot parse action");
-        (uint respType, uint id, uint256 price) = abi.decode(action, (uint, uint, uint256));
+        (uint respType, uint id, uint256 data) = abi.decode(action, (uint, uint, uint256));
         if (respType == TYPE_RESPONSE) {
-            emit PriceReceived(id, requests[id], price);
+            emit PriceReceived(id, requests[id], data);
             delete requests[id];
         } else if (respType == TYPE_FEED) {
-            emit FeedReceived(id, feeds[id], price);
+            emit FeedReceived(id, feeds[id], data);
+        } else if (respType == TYPE_ERROR) {
+            emit ErrorReceived(id, requests[id], data);
+            delete requests[id];
         }
         return ROLLUP_RECEIVED;
     }

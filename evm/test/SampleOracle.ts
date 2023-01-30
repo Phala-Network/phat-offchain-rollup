@@ -6,6 +6,7 @@ import { ethers } from "hardhat";
 
 const TYPE_RESPONSE = 0;
 const TYPE_FEED = 1;
+const TYPE_ERROR = 2;
 
 describe("SampleOracle", function () {
   async function deployFixture() {
@@ -44,7 +45,7 @@ describe("SampleOracle", function () {
                   // Callback: (RESPONSE, rid: 0, price: 19500)
                   utils.hexConcat([
                     '0x00',
-                    defaultAbiCoder.encode(['uint', 'uint', 'uint256'], [TYPE_RESPONSE, 0, btcPrice])
+                    defaultAbiCoder.encode(['uint', 'uint', 'uint256'], [TYPE_RESPONSE, 1, btcPrice])
                   ]),
                   // Queue processed to 1
                   utils.hexConcat(['0x01', uint(1)]),
@@ -56,7 +57,7 @@ describe("SampleOracle", function () {
           .withArgs(1);
       await expect(rollupTx).to
           .emit(oracle, 'PriceReceived')
-          .withArgs(0, 'btc/usdt', btcPrice);
+          .withArgs(1, 'btc/usdt', btcPrice);
     })
 
     it("Can receive feed", async function () {
@@ -85,6 +86,34 @@ describe("SampleOracle", function () {
       await expect(rollupTx).to
           .emit(oracle, 'FeedReceived')
           .withArgs(0, 'btc/usdt', btcPrice);
+    })
+
+    it("Can process error", async function () {
+      const { anchor, oracle, owner, submitter } = await loadFixture(deployFixture);
+
+      const reqTx = await oracle.connect(owner).request("btc/usdt");
+      await expect(reqTx).not.to.be.reverted;
+      await expect(reqTx).to.emit(anchor, 'MessageQueued');
+
+      // Simulate a rollup to respond
+      const rollupTx = await anchor.connect(submitter).rollupU256CondEq(
+              // cond (global=0)
+              ['0x00'], [uint(0)],
+              // updates (global=1)
+              ['0x00'], [uint(1)],
+              // actions 
+              [
+                  // Callback: (ERROR, rid: 0, error: 19510)
+                  utils.hexConcat([
+                    '0x00',
+                    defaultAbiCoder.encode(['uint', 'uint', 'uint256'], [TYPE_ERROR, 1, 256])
+                  ]),
+              ],
+          )
+      await expect(rollupTx).not.to.be.reverted;
+      await expect(rollupTx).to
+          .emit(oracle, 'ErrorReceived')
+          .withArgs(1, 'btc/usdt', 256);
     })
 
   });
