@@ -226,6 +226,37 @@ mod evm_price_feed {
             maybe_submit_tx(client, &config)
         }
 
+        /// Feeds a price data point to a customized rollup target.
+        ///
+        /// For dev purpose.
+        #[ink(message)]
+        pub fn feed_custom_price(
+            &self,
+            rpc: String,
+            anchor_addr: [u8; 20],
+            submit_key: [u8; 32],
+            feed_id: u32,
+            price: u128,
+        ) -> Result<Option<Vec<u8>>> {
+            use ethabi::Token;
+            let custom_config = Config {
+                rpc,
+                anchor_addr,
+                submit_key,
+                token0: Default::default(),
+                token1: Default::default(),
+                feed_id,
+            };
+            let mut client = connect(&custom_config)?;
+            let payload = ethabi::encode(&[
+                Token::Uint(TYPE_FEED.into()),
+                Token::Uint(feed_id.into()),
+                Token::Uint(price.into()),
+            ]);
+            client.action(Action::Reply(payload));
+            maybe_submit_tx(client, &custom_config)
+        }
+
         fn answer_price_inner(client: &mut EvmRollupClient) -> Result<PriceReponse> {
             use ethabi::{ParamType, Token};
             use pink_kv_session::traits::QueueSession;
