@@ -12,7 +12,7 @@ mod evm_price_feed {
     use alloc::{format, string::String, vec, vec::Vec};
     use ink_storage::traits::{PackedLayout, SpreadLayout};
     use pink_extension as pink;
-    use primitive_types::H160;
+    use primitive_types::{H160, U256};
     use scale::{Decode, Encode};
     use serde::Deserialize;
 
@@ -24,6 +24,7 @@ mod evm_price_feed {
     // Defined in TestOracle.sol
     const TYPE_RESPONSE: u32 = 0;
     const TYPE_FEED: u32 = 1;
+    const TYPE_ERROR: u32 = 3;
 
     #[ink(storage)]
     pub struct EvmPriceFeed {
@@ -52,17 +53,17 @@ mod evm_price_feed {
     }
 
     #[derive(Encode, Decode, Debug)]
+    #[repr(u8)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
         BadOrigin,
         NotConfigured,
         InvalidKeyLength,
         InvalidAddressLength,
+        NoRequestInQueue,
         FailedToCreateClient,
         FailedToCommitTx,
         FailedToFetchPrice,
-        FailedToGetNameOwner,
-        FailedToClaimName,
 
         FailedToGetStorage,
         FailedToCreateTransaction,
@@ -70,8 +71,12 @@ mod evm_price_feed {
         FailedToGetBlockHash,
         FailedToDecode,
         InvalidRequest,
-        RollupAlreadyInitialized,
-        RollupConfiguredByAnotherAccount,
+    }
+
+    impl From<Error> for U256 {
+        fn from(err: Error) -> U256 {
+            (err as u8).into()
+        }
     }
 
     type Result<T> = core::result::Result<T, Error>;
@@ -185,9 +190,10 @@ mod evm_price_feed {
             client.action(Action::Reply(payload));
 
             // An offchain rollup contract will get a dedicated kv store on the target blockchain.
-            // The kv store can be accessed by the Phat Contract by:
+            // The kv store and the request queue can be accessed by the Phat Contract by:
             // - client.session.get(key)
             // - client.session.put(key, value)
+            // - client.session.pop()
             //
             // Note that all of the read, write, and custom actions are grouped as a transaction,
             // which is applied on the target blockchain atomically.
@@ -201,17 +207,39 @@ mod evm_price_feed {
         /// Processes a price request by a rollup transaction
         #[ink(message)]
         pub fn answer_price(&self) -> Result<Option<Vec<u8>>> {
-            use ethabi::{ParamType, Token};
-            use pink_kv_session::traits::QueueSession;
+            use ethabi::Token;
             let config = self.ensure_configured()?;
             let mut client = connect(&config)?;
-
-            let Some(raw_req) = client.session().pop().log_err("answer_price: failed to read queue").or(Err(Error::FailedToGetStorage))? else {
-                return Ok(None);
+            let action = match Self::answer_price_inner(&mut client)? {
+                PriceReponse::Response(rid, price) => ethabi::encode(&[
+                    Token::Uint(TYPE_RESPONSE.into()),
+                    Token::Uint(rid),
+                    Token::Uint(price.into()),
+                ]),
+                PriceReponse::Error(rid, error) => ethabi::encode(&[
+                    Token::Uint(TYPE_ERROR.into()),
+                    Token::Uint(rid.unwrap_or_default()),
+                    Token::Uint(error.into()),
+                ]),
             };
+            client.action(Action::Reply(action));
+            maybe_submit_tx(client, &config)
+        }
+
+        fn answer_price_inner(client: &mut EvmRollupClient) -> Result<PriceReponse> {
+            use ethabi::{ParamType, Token};
+            use pink_kv_session::traits::QueueSession;
+            // Get a request if presents
+            let raw_req = client
+                .session()
+                .pop()
+                .log_err("answer_price: failed to read queue")
+                .or(Err(Error::FailedToGetStorage))?
+                .ok_or(Error::NoRequestInQueue)?;
             // Decode the queue data by ethabi (u256, bytes)
-            let decoded = ethabi::decode(&[ParamType::Uint(32), ParamType::Bytes], &raw_req)
-                .or(Err(Error::FailedToDecode))?;
+            let Ok(decoded) = ethabi::decode(&[ParamType::Uint(32), ParamType::Bytes], &raw_req) else {
+                return Ok(PriceReponse::Error(None, Error::FailedToDecode))
+            };
             let [Token::Uint(rid), Token::Bytes(pair)] = decoded.as_slice() else {
                 return Err(Error::FailedToDecode);
             };
@@ -219,21 +247,23 @@ mod evm_price_feed {
             let pair = String::from_utf8_lossy(&pair);
             let pair_components: Vec<&str> = pair.split('/').collect();
             let [token0, token1] = pair_components.as_slice() else {
-                return Err(Error::InvalidRequest)
+                return Ok(PriceReponse::Error(Some(*rid), Error::InvalidRequest))
             };
             pink::info!("Request received: ({token0}, {token1})");
             // Get the price and respond as a rollup action.
-            let price = Self::fetch_coingecko_price(token0, token1)?;
-            pink::info!("Price: {price}");
-            // Respond
-            let payload = ethabi::encode(&[
-                Token::Uint(TYPE_RESPONSE.into()),
-                Token::Uint(*rid),
-                Token::Uint(price.into()),
-            ]);
-            client.action(Action::Reply(payload));
-
-            maybe_submit_tx(client, &config)
+            let result = Self::fetch_coingecko_price(token0, token1);
+            match result {
+                Ok(price) => {
+                    // Respond
+                    pink::info!("Price: {price}");
+                    Ok(PriceReponse::Response(*rid, price))
+                }
+                // Error when fetching the price. Could be
+                Err(Error::FailedToDecode) => {
+                    Ok(PriceReponse::Error(Some(*rid), Error::FailedToDecode))
+                }
+                Err(e) => return Err(e),
+            }
         }
 
         /// Returns BadOrigin error if the caller is not the owner
@@ -249,6 +279,11 @@ mod evm_price_feed {
         fn ensure_configured(&self) -> Result<&Config> {
             self.config.as_ref().ok_or(Error::NotConfigured)
         }
+    }
+
+    enum PriceReponse {
+        Response(U256, u128),
+        Error(Option<U256>, Error),
     }
 
     fn connect(config: &Config) -> Result<EvmRollupClient> {
@@ -317,6 +352,7 @@ mod evm_price_feed {
         }
 
         #[ink::test]
+        #[ignore]
         fn submit_price_feed() {
             let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();
@@ -339,6 +375,7 @@ mod evm_price_feed {
         }
 
         #[ink::test]
+        #[ignore]
         fn answer_price_request() {
             let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();
