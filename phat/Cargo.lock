@@ -1778,7 +1778,8 @@ dependencies = [
 [[package]]
 name = "pink-kv-session"
 version = "0.2.0"
-source = "git+https://github.com/Phala-Network/phala-blockchain.git?branch=kv-session#5dc390063e140e913be385c98a8a07aea6627e6b"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3da595e670ee22ac5ae563a55388ce2148d68b993fe09ca0099a247cb55cf790"
 
 [[package]]
 name = "pink-subrpc"
