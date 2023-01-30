@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0x4e2c0a90213530971986a02874b8558b585ce7289738692228e54a64dfca3188",
+    "hash": "0xb5c0210d1a0912e007c7d055719ae594cdc3b85055bac459bb6f72bbea41e114",
     "language": "ink! 3.4.0",
     "compiler": "rustc 1.62.0-nightly"
   },
@@ -169,6 +169,66 @@
             "type": 9
           },
           "selector": "0x95df8765"
+        },
+        {
+          "args": [
+            {
+              "label": "rpc",
+              "type": {
+                "displayName": [
+                  "String"
+                ],
+                "type": 3
+              }
+            },
+            {
+              "label": "anchor_addr",
+              "type": {
+                "displayName": [],
+                "type": 11
+              }
+            },
+            {
+              "label": "submit_key",
+              "type": {
+                "displayName": [],
+                "type": 1
+              }
+            },
+            {
+              "label": "feed_id",
+              "type": {
+                "displayName": [
+                  "u32"
+                ],
+                "type": 4
+              }
+            },
+            {
+              "label": "price",
+              "type": {
+                "displayName": [
+                  "u128"
+                ],
+                "type": 12
+              }
+            }
+          ],
+          "docs": [
+            " Feeds a price data point to a customized rollup target.",
+            "",
+            " For dev purpose."
+          ],
+          "label": "feed_custom_price",
+          "mutates": false,
+          "payable": false,
+          "returnType": {
+            "displayName": [
+              "Result"
+            ],
+            "type": 9
+          },
+          "selector": "0xd1b03f84"
         }
       ]
     },
@@ -421,55 +481,43 @@
                 },
                 {
                   "index": 4,
-                  "name": "FailedToCreateClient"
+                  "name": "NoRequestInQueue"
                 },
                 {
                   "index": 5,
-                  "name": "FailedToCommitTx"
+                  "name": "FailedToCreateClient"
                 },
                 {
                   "index": 6,
-                  "name": "FailedToFetchPrice"
+                  "name": "FailedToCommitTx"
                 },
                 {
                   "index": 7,
-                  "name": "FailedToGetNameOwner"
+                  "name": "FailedToFetchPrice"
                 },
                 {
                   "index": 8,
-                  "name": "FailedToClaimName"
-                },
-                {
-                  "index": 9,
                   "name": "FailedToGetStorage"
                 },
                 {
-                  "index": 10,
+                  "index": 9,
                   "name": "FailedToCreateTransaction"
                 },
                 {
-                  "index": 11,
+                  "index": 10,
                   "name": "FailedToSendTransaction"
                 },
                 {
-                  "index": 12,
+                  "index": 11,
                   "name": "FailedToGetBlockHash"
                 },
                 {
-                  "index": 13,
+                  "index": 12,
                   "name": "FailedToDecode"
                 },
                 {
-                  "index": 14,
+                  "index": 13,
                   "name": "InvalidRequest"
-                },
-                {
-                  "index": 15,
-                  "name": "RollupAlreadyInitialized"
-                },
-                {
-                  "index": 16,
-                  "name": "RollupConfiguredByAnotherAccount"
                 }
               ]
             }
@@ -554,6 +602,25 @@
           "path": [
             "Option"
           ]
+        }
+      },
+      {
+        "id": 11,
+        "type": {
+          "def": {
+            "array": {
+              "len": 20,
+              "type": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 12,
+        "type": {
+          "def": {
+            "primitive": "u128"
+          }
         }
       }
     ]

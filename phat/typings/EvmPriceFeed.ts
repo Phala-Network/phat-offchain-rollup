@@ -7,7 +7,7 @@ import type { Codec } from "@polkadot/types/types";
 
 export namespace EvmPriceFeed {
     type InkEnv_Types_AccountId = any;
-    type EvmPriceFeed_EvmPriceFeed_Error = { BadOrigin: null } | { NotConfigured: null } | { InvalidKeyLength: null } | { InvalidAddressLength: null } | { FailedToCreateClient: null } | { FailedToCommitTx: null } | { FailedToFetchPrice: null } | { FailedToGetNameOwner: null } | { FailedToClaimName: null } | { FailedToGetStorage: null } | { FailedToCreateTransaction: null } | { FailedToSendTransaction: null } | { FailedToGetBlockHash: null } | { FailedToDecode: null } | { InvalidRequest: null } | { RollupAlreadyInitialized: null } | { RollupConfiguredByAnotherAccount: null };
+    type EvmPriceFeed_EvmPriceFeed_Error = { BadOrigin: null } | { NotConfigured: null } | { InvalidKeyLength: null } | { InvalidAddressLength: null } | { NoRequestInQueue: null } | { FailedToCreateClient: null } | { FailedToCommitTx: null } | { FailedToFetchPrice: null } | { FailedToGetStorage: null } | { FailedToCreateTransaction: null } | { FailedToSendTransaction: null } | { FailedToGetBlockHash: null } | { FailedToDecode: null } | { InvalidRequest: null };
     type Result = { Ok: Option } | { Err: EvmPriceFeed_EvmPriceFeed_Error };
     type Option = { None: null } | { Some: number[] };
 
@@ -26,12 +26,17 @@ export namespace EvmPriceFeed {
         export interface AnswerPrice extends DPT.ContractQuery {
             (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result>>>;
         }
+
+        export interface FeedCustomPrice extends DPT.ContractQuery {
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions, rpc: string, anchor_addr: DPT.FixedArray<number, 20>, submit_key: DPT.FixedArray<number, 32>, feed_id: number, price: number): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result>>>;
+        }
     }
 
     export interface MapMessageQuery extends DPT.MapMessageQuery {
         owner: ContractQuery.Owner;
         feedPrice: ContractQuery.FeedPrice;
         answerPrice: ContractQuery.AnswerPrice;
+        feedCustomPrice: ContractQuery.FeedCustomPrice;
     }
 
     /** */
