@@ -20,6 +20,7 @@ primitive-types = { version = "0.11", default-features = false, features = ["cod
 hex = { version = "0.4", default-features = false, features = ["alloc"] }
 
 pink-extension = { version = "0.2", default-features = false, optional = true }
+kv-session = { package = "pink-kv-session", version = "0.2" }
 
 # for EVM rollup
 pink-web3 = { version = "0.19", default-features = false, features = ["pink", "signing"], optional = true }
@@ -29,7 +30,6 @@ ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false
 ], optional = true }
 
 # for Substrate rollup
-kv-session = { path = "../kv-session" }
 subrpc = { package = "pink-subrpc", version = "0.1", default-features = false, optional = true }
 
 [features]
@@ -56,4 +56,5 @@ substrate = [
 evm = [
     "pink-web3",
     "ethabi",
+    "pink-extension",
 ]

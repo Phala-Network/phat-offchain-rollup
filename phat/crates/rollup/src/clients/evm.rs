@@ -1,317 +1,269 @@
+use crate::{Action, Error, Result, RollupTx};
+
+use alloc::{borrow::ToOwned, vec::Vec};
+use primitive_types::{H160, U256};
+use scale::Encode;
+
+use kv_session::{
+    rollup,
+    traits::{BumpVersion, KvSnapshot, QueueIndexCodec},
+    RwTracker, Session,
+};
+use pink::ResultExt;
+use pink_extension as pink;
+use pink_web3::{
+    api::{Eth, Namespace},
+    contract::{Contract, Options},
+    keys::pink::KeyPair,
+    transports::{resolve_ready, PinkHttp},
+    types::{BlockId, BlockNumber, Bytes, U64},
+};
+
 const ANCHOR_ABI: &[u8] = include_bytes!("../../res/anchor.abi.json");
 
-pub mod read {
-    use crate::{
-        lock::{LockId, LockVersion, LockVersionReader, Locks},
-        platforms::Evm,
-        Action, Error, Result, RollupResult, RollupTx,
-    };
-    use alloc::{string::String, vec::Vec};
-    use pink_web3::api::{Eth, Namespace};
-    use pink_web3::contract::{Contract, Options};
-    use pink_web3::transports::{resolve_ready, PinkHttp};
-    use pink_web3::types::{Bytes, H160};
-    use primitive_types::U256;
-    use scale::Decode;
+pub struct EvmSnapshot {
+    contract_id: H160,
+    contract: Contract<PinkHttp>,
+    at: u64,
+}
 
-    // TODO: move out out EVM since it's generic
+impl EvmSnapshot {
+    pub fn new(rpc: &str, contract_id: H160) -> Result<Self> {
+        let eth = Eth::new(PinkHttp::new(rpc));
+        let at: U64 = eth
+            .block_number()
+            .resolve()
+            .log_err("rollup snapshot: failed to get block number")
+            .or(Err(Error::FailedToGetBlockNumber))?;
+        let contract =
+            Contract::from_json(eth, contract_id, ANCHOR_ABI).or(Err(Error::BadEvmAnchorAbi))?;
 
-    // Converts to Vec<u8> for EVM rollup anchor
-    impl From<Action> for Vec<u8> {
-        fn from(action: Action) -> Vec<u8> {
-            use core::iter::once;
-            match action {
-                Action::Reply(data) => once(1u8).chain(data.into_iter()).collect(),
-                Action::ProcessedTo(n) => [2u8, 0u8]
-                    .into_iter()
-                    .chain(u256_be(n.into()).into_iter())
-                    .collect(),
-            }
-        }
+        // let hash = subrpc::get_block_hash(rpc, None).or(Err(Error::FailedToGetBlockHash))?;
+        Ok(EvmSnapshot {
+            contract,
+            contract_id,
+            at: at.0[0],
+        })
+    }
+    pub fn destruct(self) -> Contract<PinkHttp> {
+        self.contract
+    }
+}
+
+impl KvSnapshot for EvmSnapshot {
+    fn get(&self, key: &[u8]) -> kv_session::Result<Option<Vec<u8>>> {
+        let key: Bytes = key.to_owned().into();
+        let value: Bytes = resolve_ready(self.contract.query(
+            "getStorage",
+            (key.clone(),),
+            self.contract_id,
+            Options::default(),
+            Some(BlockId::Number(BlockNumber::Number(self.at.into()))),
+        ))
+        .log_err("rollup snapshot: get storage failed")
+        .or(Err(kv_session::Error::FailedToGetStorage))?;
+
+        #[cfg(feature = "logging")]
+        pink::warn!(
+            "Storage[{}] = {:?}",
+            hex::encode(&key.0),
+            hex::encode(&value.0)
+        );
+
+        Ok(Some(value.0))
     }
 
-    fn u256_be(n: U256) -> [u8; 32] {
-        let mut r = [0u8; 32];
-        n.to_big_endian(&mut r);
-        r
+    fn snapshot_id(&self) -> kv_session::Result<Vec<u8>> {
+        Ok(self.at.encode())
+    }
+}
+impl BumpVersion for EvmSnapshot {
+    fn bump_version(&self, version: Option<Vec<u8>>) -> kv_session::Result<Vec<u8>> {
+        // u32 is stored in U256 in EVM. Here we parse it as u32, inc, and return in U256 again
+        let old: u32 = match version {
+            Some(v) => RlpCodec::decode(&v)?,
+            None => 0,
+        };
+        let new = old + 1;
+        let mut encoded = [0u8; 32];
+        U256::from(new).to_big_endian(&mut encoded);
+        Ok(encoded.to_vec())
+    }
+}
+
+pub struct RlpCodec;
+impl QueueIndexCodec for RlpCodec {
+    fn encode(number: u32) -> Vec<u8> {
+        let mut encoded = [0u8; 32];
+        U256::from(number).to_big_endian(&mut encoded);
+        encoded.to_vec()
     }
 
-    /// The client to query anchor contract states
-    pub struct AnchorQueryClient {
-        address: H160,
-        contract: Contract<PinkHttp>,
-    }
-
-    impl AnchorQueryClient {
-        /// Connects to an Ethereum RPC endpoint and load the anchor contract
-        pub fn connect(rpc: &String, address: H160) -> Result<Self> {
-            let eth = Eth::new(PinkHttp::new(rpc));
-            let contract = Contract::from_json(eth, address, super::ANCHOR_ABI)
-                .or(Err(Error::BadEvmAnchorAbi))?;
-
-            Ok(Self { address, contract })
-        }
-
-        /// Reads the raw bytes from the anchor kv store
-        pub fn read_raw(&self, key_slice: &[u8]) -> Result<Vec<u8>> {
-            let key: Bytes = key_slice.into();
-
-            #[cfg(feature = "logging")]
-            pink_extension::debug!(
-                "Read(addr: {}, key: 0x{})",
-                hex::encode(&self.address),
-                hex::encode(key_slice),
-            );
-
-            let value: Bytes = resolve_ready(self.contract.query(
-                "getStorage",
-                (key,),
-                self.address,
-                Options::default(),
-                None,
-            ))
-            .map_err(Error::EvmFailedToGetStorage)?;
-            #[cfg(feature = "logging")]
-            pink_extension::debug!(
-                "Read(0x{}) = 0x{}",
-                hex::encode(key_slice),
-                hex::encode(&value.0)
-            );
-            Ok(value.0)
-        }
-
-        pub fn _read_typed<T: Decode + Default>(&self, key: &[u8]) -> Result<T> {
-            let data = self.read_raw(key)?;
-            if data.is_empty() {
-                return Ok(Default::default());
-            }
-            T::decode(&mut &data[..]).or(Err(Error::FailedToDecodeStorage))
-        }
-
-        /// Reads an u256 value from the anchor raw kv store
-        pub fn read_raw_u256(&self, key: &[u8]) -> Result<U256> {
-            let data = self.read_raw(key)?;
-            if data.is_empty() {
-                return Ok(Default::default());
-            }
-            if data.len() != 32 {
-                return Err(Error::FailedToDecodeStorage);
-            }
-            Ok(U256::from_big_endian(&data))
-        }
-
-        /// Reads the raw bytes value from the QueuedAnchor.getBytes API
-        pub fn read_queue_bytes(&self, key_slice: &[u8]) -> Result<Vec<u8>> {
-            let key: Bytes = key_slice.into();
-            let value: Bytes = resolve_ready(self.contract.query(
-                "getBytes",
-                (key,),
-                self.address,
-                Options::default(),
-                None,
-            ))
-            .map_err(Error::EvmFailedToGetStorage)?;
-            Ok(value.0)
-        }
-
-        /// Reads an u256 value from the QueuedAnchor.getBytes API
-        pub fn read_queue_u256(&self, key_slice: &[u8]) -> Result<U256> {
-            let data = self.read_queue_bytes(key_slice)?;
-            if data.is_empty() {
-                return Ok(Default::default());
-            }
-            if data.len() != 32 {
-                return Err(Error::FailedToDecodeStorage);
-            }
-            Ok(U256::from_big_endian(&data))
-        }
-    }
-
-    /// Implements LockVersionReader to read version from the anchor contract
-    struct BlockingVersionStore<'a> {
-        anchor: &'a AnchorQueryClient,
-    }
-    impl<'a> LockVersionReader for BlockingVersionStore<'a> {
-        #[allow(unused_variables)]
-        fn get_version(&self, id: LockId) -> crate::Result<LockVersion> {
-            let id: Vec<u8> = crate::lock::EvmLocks::key(id).into();
-            let value = self.anchor.read_raw_u256(&id).map_err(|err| {
-                #[cfg(feature = "logging")]
-                pink_extension::warn!("LockVersionReader::get_version failed: {err:?}");
-                Error::FailedToReadVersion
-            })?;
-            value.try_into().or(Err(Error::LockVersionOverflow))
-        }
-    }
-
-    /// The client to handle a QueuedRollupAnchor rollup session
-    pub struct QueuedRollupSession {
-        anchor: AnchorQueryClient,
-        locks: Locks<Evm>,
-        tx: RollupTx,
-    }
-
-    impl QueuedRollupSession {
-        /// Creates a new session that connects to the EVM anchor contract
-        pub fn new<F>(rpc: &String, address: H160, lock_def: F) -> Result<Self>
-        where
-            F: FnOnce(&mut Locks<Evm>),
-        {
-            let anchor = AnchorQueryClient::connect(rpc, address)?;
-            let mut locks = Locks::default();
-            lock_def(&mut locks);
-            Ok(Self {
-                anchor,
-                locks,
-                tx: RollupTx::default(),
-            })
-        }
-
-        /// Gets the RollupTx to write
-        pub fn tx_mut(&mut self) -> &mut RollupTx {
-            &mut self.tx
-        }
-
-        /// Builds the final RollupResult
-        pub fn build(self) -> RollupResult {
-            RollupResult {
-                tx: self.tx,
-                signature: None,
-                target: None,
-            }
-        }
-
-        /// Requests a write lock
-        pub fn lock_write(&mut self, lock: &str) -> Result<()> {
-            let vstore = BlockingVersionStore {
-                anchor: &self.anchor,
-            };
-            self.locks.tx_write(&mut self.tx, &vstore, lock)
-        }
-
-        /// Requests a read lock
-        pub fn lock_read(&mut self, lock: &str) -> Result<()> {
-            let vstore = BlockingVersionStore {
-                anchor: &self.anchor,
-            };
-            self.locks.tx_read(&mut self.tx, &vstore, lock)
-        }
-
-        /// Gets the start index of the queue (inclusive)
-        pub fn queue_start(&self) -> Result<u32> {
-            self.anchor
-                .read_queue_u256(b"start")?
-                .try_into()
-                .or(Err(Error::QueueIndexOverflow))
-        }
-
-        /// Gets the end index of the queue (non-inclusive)
-        pub fn queue_end(&self) -> Result<u32> {
-            self.anchor
-                .read_queue_u256(b"end")?
-                .try_into()
-                .or(Err(Error::QueueIndexOverflow))
-        }
-
-        /// Gets the i-th element of the queue
-        pub fn queue_get(&self, i: u32) -> Result<Vec<u8>> {
-            let mut be_idx = [0u8; 32];
-            U256::from(i).to_big_endian(&mut be_idx);
-            self.anchor.read_queue_bytes(&be_idx)
-        }
-
-        /// Gets the first element of the queue
-        ///
-        /// Return `(element, idx)`
-        pub fn queue_head(&self) -> Result<(Option<Vec<u8>>, u32)> {
-            let start: u32 = self.queue_start()?;
-            let end: u32 = self.queue_end()?;
-            if start == end {
-                return Ok((None, start));
-            }
-            self.queue_get(start).map(|v| (Some(v), start))
+    fn decode(raw: impl AsRef<[u8]>) -> kv_session::Result<u32> {
+        // Unlike the decode function for Substrate, EVM contract always returns the raw bytes.
+        // Even if the storage value doesn't exist, it returns a zero length bytes array. So here
+        // we must handle the default value case (`v.len() == 0`).
+        let v = raw.as_ref();
+        if v.len() == 0 {
+            Ok(0)
+        } else if v.len() != 32 {
+            Err(kv_session::Error::FailedToDecode)
+        } else {
+            Ok(U256::from_big_endian(v).low_u32())
         }
     }
 }
 
-pub mod write {
-    use crate::{Error, Result};
-    use alloc::{string::String, vec::Vec};
-    use pink_web3::contract::{Contract, Options};
-    use pink_web3::transports::{resolve_ready, PinkHttp};
-    use pink_web3::types::H160;
-    use pink_web3::{
-        api::{Eth, Namespace},
-        keys::pink::KeyPair,
-    };
+pub struct EvmRollupClient {
+    // rpc: &'a str,
+    // contract_id: &'a H160,
+    actions: Vec<Vec<u8>>,
+    session: Session<EvmSnapshot, RwTracker, RlpCodec>,
+}
 
-    /// The client to submit transaction to the Evm anchor contract
-    pub struct AnchorTxClient {
-        contract: Contract<PinkHttp>,
+pub struct SubmittableRollupTx {
+    contract: Contract<PinkHttp>,
+    tx: RollupTx,
+}
+
+impl Action {
+    fn encode_into_evm(self) -> Vec<u8> {
+        match self {
+            Action::Reply(mut data) => {
+                data.insert(0, 0);
+                data
+            }
+            Action::ProcessedTo(n) => {
+                let mut data = RlpCodec::encode(n);
+                data.insert(0, 1);
+                data
+            }
+        }
+    }
+}
+
+impl EvmRollupClient {
+    pub fn new(rpc: &str, contract_id: H160, queue_prefix: &[u8]) -> Result<Self> {
+        let kvdb = EvmSnapshot::new(rpc, contract_id)?;
+        let access_tracker = RwTracker::new();
+        Ok(Self {
+            actions: Default::default(),
+            session: Session::new(kvdb, access_tracker, queue_prefix)
+                .map_err(Error::SessionError)?,
+        })
     }
 
-    impl AnchorTxClient {
-        /// Connects to an Ethereum RPC endpoint and load the anchor contract
-        pub fn connect(rpc: &String, address: H160) -> Result<AnchorTxClient> {
-            let eth = Eth::new(PinkHttp::new(rpc));
-            let contract = Contract::from_json(eth, address, super::ANCHOR_ABI)
-                .or(Err(Error::BadEvmAnchorAbi))?;
+    pub fn session(&mut self) -> &mut Session<EvmSnapshot, RwTracker, RlpCodec> {
+        &mut self.session
+    }
 
-            Ok(AnchorTxClient { contract })
+    pub fn action(&mut self, action: Action) -> &mut Self {
+        self.actions.push(action.encode_into_evm());
+        self
+    }
+
+    pub fn commit(mut self) -> Result<Option<SubmittableRollupTx>> {
+        let (session_tx, kvdb) = self.session.commit();
+        let raw_tx = rollup::rollup(
+            &kvdb,
+            session_tx,
+            rollup::VersionLayout::Standalone {
+                key_postfix: b":ver".to_vec(),
+            },
+        )
+        .map_err(Self::convert_err)?;
+
+        // #[cfg(feature = "logging")]
+        // pink::warn!("RawTx: {raw_tx:?}");
+
+        if let Some(head_idx) = raw_tx.queue_head {
+            self.actions
+                .push(Action::ProcessedTo(head_idx).encode_into_evm());
         }
 
-        /// Submits a RollupTx to the anchor with a key pair
-        ///
-        /// Return the transaction hash but don't wait for the transaction confirmation.
-        pub fn submit_rollup(
-            &self,
-            tx: crate::RollupTx,
-            pair: KeyPair,
-        ) -> Result<primitive_types::H256> {
-            use ethabi::Token;
-            use pink_web3::signing::Key;
+        if raw_tx.updates.is_empty() && self.actions.is_empty() {
+            return Ok(None);
+        }
 
-            // Prepare rollupU256CondEq params
-            let (cond_keys, cond_values): (Vec<Vec<u8>>, Vec<Vec<u8>>) = tx
-                .conds
+        let tx = crate::RollupTx {
+            conds: raw_tx
+                .conditions
                 .into_iter()
-                .map(|cond| {
-                    let crate::Cond::Eq(k, v) = cond;
-                    (k.into(), v.map(Into::into).unwrap_or_default())
-                })
-                .unzip();
-            let (update_keys, update_values): (Vec<Vec<u8>>, Vec<Vec<u8>>) = tx
+                .map(|(k, v)| crate::Cond::Eq(k.into(), v.map(Into::into)))
+                .collect(),
+            actions: self.actions.into_iter().map(Into::into).collect(),
+            updates: raw_tx
                 .updates
                 .into_iter()
-                .map(|(k, v)| (k.into(), v.map(Into::into).unwrap_or_default()))
-                .unzip();
-            let actions = tx.actions.into_iter().map(Into::<Vec<u8>>::into);
-            let params = (
-                Token::Array(cond_keys.into_iter().map(Token::Bytes).collect()),
-                Token::Array(cond_values.into_iter().map(Token::Bytes).collect()),
-                Token::Array(update_keys.into_iter().map(Token::Bytes).collect()),
-                Token::Array(update_values.into_iter().map(Token::Bytes).collect()),
-                Token::Array(actions.map(Token::Bytes).collect()),
-            );
+                .map(|(k, v)| (k.into(), v.map(Into::into)))
+                .collect(),
+        };
 
-            // Estiamte gas before submission
-            let gas = resolve_ready(self.contract.estimate_gas(
-                "rollupU256CondEq",
-                params.clone(),
-                pair.address(),
-                Options::default(),
-            ))
-            .map_err(Error::EvmFailedToEstimateGas)?;
+        Ok(Some(SubmittableRollupTx {
+            contract: kvdb.destruct(),
+            tx,
+        }))
+    }
 
-            // Actually submit the tx (no guarantee for success)
-            let tx_id = resolve_ready(self.contract.signed_call(
-                "rollupU256CondEq",
-                params,
-                Options::with(|opt| opt.gas = Some(gas)),
-                pair,
-            ))
-            .map_err(Error::EvmFailedToSubmitTx)?;
-            Ok(tx_id)
+    fn convert_err(err: kv_session::Error) -> Error {
+        match err {
+            kv_session::Error::FailedToDecode => Error::SessionFailedToDecode,
+            kv_session::Error::FailedToGetStorage => Error::SessionFailedToGetStorage,
         }
+    }
+}
+
+impl SubmittableRollupTx {
+    pub fn submit(self, pair: KeyPair) -> Result<Vec<u8>> {
+        use ethabi::Token;
+        use pink_web3::signing::Key;
+
+        // Prepare rollupU256CondEq params
+        let (cond_keys, cond_values): (Vec<Vec<u8>>, Vec<Vec<u8>>) = self
+            .tx
+            .conds
+            .into_iter()
+            .map(|cond| {
+                let crate::Cond::Eq(k, v) = cond;
+                (k.into(), v.map(Into::into).unwrap_or_default())
+            })
+            .unzip();
+        let (update_keys, update_values): (Vec<Vec<u8>>, Vec<Vec<u8>>) = self
+            .tx
+            .updates
+            .into_iter()
+            .map(|(k, v)| (k.into(), v.map(Into::into).unwrap_or_default()))
+            .unzip();
+        let actions = self.tx.actions.into_iter().map(Into::<Vec<u8>>::into);
+        let params = (
+            Token::Array(cond_keys.into_iter().map(Token::Bytes).collect()),
+            Token::Array(cond_values.into_iter().map(Token::Bytes).collect()),
+            Token::Array(update_keys.into_iter().map(Token::Bytes).collect()),
+            Token::Array(update_values.into_iter().map(Token::Bytes).collect()),
+            Token::Array(actions.map(Token::Bytes).collect()),
+        );
+
+        // Estiamte gas before submission
+        let gas = resolve_ready(self.contract.estimate_gas(
+            "rollupU256CondEq",
+            params.clone(),
+            pair.address(),
+            Options::default(),
+        ))
+        .map_err(Error::EvmFailedToEstimateGas)?;
+
+        // Actually submit the tx (no guarantee for success)
+        let tx_id = resolve_ready(self.contract.signed_call(
+            "rollupU256CondEq",
+            params,
+            Options::with(|opt| opt.gas = Some(gas)),
+            pair,
+        ))
+        .map_err(Error::EvmFailedToSubmitTx)?;
+
+        #[cfg(feature = "logging")]
+        pink::warn!("Sent = {}", hex::encode(&tx_id));
+
+        Ok(tx_id.encode())
     }
 }

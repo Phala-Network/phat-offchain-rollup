@@ -6,7 +6,7 @@ use scale::{Decode, Encode};
 use ink_env::AccountId;
 use kv_session::{
     rollup,
-    traits::{BumpVersion, KvSnapshot},
+    traits::{BumpVersion, KvSnapshot, QueueIndexCodec},
     RwTracker, Session,
 };
 use pink::ResultExt;
@@ -34,13 +34,7 @@ impl<'a> SubstrateSnapshot<'a> {
 }
 
 impl<'a> KvSnapshot for SubstrateSnapshot<'a> {
-    type Key = Vec<u8>;
-    type Value = Vec<u8>;
-
-    fn get(
-        &self,
-        key: &impl ToOwned<Owned = Self::Key>,
-    ) -> kv_session::Result<Option<Self::Value>> {
+    fn get(&self, key: &[u8]) -> kv_session::Result<Option<Vec<u8>>> {
         let prefix = subrpc::storage::storage_prefix("PhatRollupAnchor", "States");
         let key1: &[u8] = self.contract_id.as_ref();
         let key2: &[u8] = &key.to_owned().encode();
@@ -66,11 +60,11 @@ impl<'a> KvSnapshot for SubstrateSnapshot<'a> {
         }
     }
 
-    fn snapshot_id(&self) -> kv_session::Result<Self::Value> {
+    fn snapshot_id(&self) -> kv_session::Result<Vec<u8>> {
         Ok(self.at.encode())
     }
 }
-impl<'a> BumpVersion<Vec<u8>> for SubstrateSnapshot<'a> {
+impl<'a> BumpVersion for SubstrateSnapshot<'a> {
     fn bump_version(&self, version: Option<Vec<u8>>) -> kv_session::Result<Vec<u8>> {
         match version {
             Some(v) => {
@@ -82,12 +76,26 @@ impl<'a> BumpVersion<Vec<u8>> for SubstrateSnapshot<'a> {
     }
 }
 
+pub struct ScaleCodec;
+impl QueueIndexCodec for ScaleCodec {
+    fn encode(number: u32) -> Vec<u8> {
+        number.encode()
+    }
+
+    fn decode(raw: impl AsRef<[u8]>) -> kv_session::Result<u32> {
+        // QueueIndex is stored as a value in the rollup kv store. When the value is empty, it's
+        // treated as the default value (0 for u32). However, this function only handles the
+        // non-empty case (empty value != zero length bytes). So here, `[]` is not considered.
+        Decode::decode(&mut raw.as_ref()).or(Err(kv_session::Error::FailedToDecode))
+    }
+}
+
 pub struct SubstrateRollupClient<'a> {
     rpc: &'a str,
     pallet_id: u8,
     contract_id: &'a AccountId,
     actions: Vec<Vec<u8>>,
-    session: Session<SubstrateSnapshot<'a>, Vec<u8>, Vec<u8>, RwTracker<Vec<u8>>>,
+    session: Session<SubstrateSnapshot<'a>, RwTracker, ScaleCodec>,
 }
 
 pub struct SubmittableRollupTx<'a> {
@@ -98,21 +106,25 @@ pub struct SubmittableRollupTx<'a> {
 }
 
 impl<'a> SubstrateRollupClient<'a> {
-    pub fn new(rpc: &'a str, pallet_id: u8, contract_id: &'a AccountId) -> Result<Self> {
+    pub fn new(
+        rpc: &'a str,
+        pallet_id: u8,
+        contract_id: &'a AccountId,
+        queue_prefix: &[u8],
+    ) -> Result<Self> {
         let kvdb = SubstrateSnapshot::new(rpc, contract_id)?;
-        let access_tracker = RwTracker::<Vec<u8>>::new();
+        let access_tracker = RwTracker::new();
         Ok(SubstrateRollupClient {
             rpc,
             pallet_id,
             contract_id,
             actions: Default::default(),
-            session: Session::new(kvdb, access_tracker),
+            session: Session::new(kvdb, access_tracker, queue_prefix)
+                .map_err(Error::SessionError)?,
         })
     }
 
-    pub fn session(
-        &mut self,
-    ) -> &mut Session<SubstrateSnapshot<'a>, Vec<u8>, Vec<u8>, RwTracker<Vec<u8>>> {
+    pub fn session(&mut self) -> &mut Session<SubstrateSnapshot<'a>, RwTracker, ScaleCodec> {
         &mut self.session
     }
 
@@ -124,7 +136,7 @@ impl<'a> SubstrateRollupClient<'a> {
     pub fn commit(self) -> Result<Option<SubmittableRollupTx<'a>>> {
         let (session_tx, kvdb) = self.session.commit();
         let raw_tx = rollup::rollup(
-            kvdb,
+            &kvdb,
             session_tx,
             rollup::VersionLayout::Standalone {
                 key_postfix: b":ver".to_vec(),
@@ -138,6 +150,11 @@ impl<'a> SubstrateRollupClient<'a> {
         if raw_tx.updates.is_empty() && self.actions.is_empty() {
             return Ok(None);
         }
+
+        // Consider:
+        // if let Some(head_idx) = raw_tx.queue_head {
+        //     self.action(Action::ProcessedTo(head_idx));
+        // }
 
         let tx = crate::RollupTx {
             conds: raw_tx

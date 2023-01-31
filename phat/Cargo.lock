@@ -561,12 +561,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "evm_transactor"
+name = "evm_price_feed"
 version = "0.1.0"
 dependencies = [
  "dotenvy",
  "env_logger",
+ "fixed",
  "hex",
+ "hex-literal",
  "ink_env",
  "ink_lang",
  "ink_metadata",
@@ -577,10 +579,12 @@ dependencies = [
  "pink-ethabi",
  "pink-extension 0.2.0",
  "pink-extension-runtime",
+ "pink-json 0.4.0 (git+https://github.com/Phala-Network/pink-json.git?branch=pink)",
+ "pink-kv-session",
  "pink-web3",
  "primitive-types",
- "sample_oracle",
  "scale-info",
+ "serde",
 ]
 
 [[package]]
@@ -1233,13 +1237,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9b7d56ba4a8344d6be9729995e6b06f928af29998cdf79fe390cbf6b1fee838"
 
 [[package]]
-name = "kv-session"
-version = "0.1.0"
-dependencies = [
- "parity-scale-codec",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1322,7 +1319,6 @@ dependencies = [
  "pink-extension 0.2.0",
  "pink-extension-runtime",
  "saffron",
- "sample_oracle",
  "scale-info",
 ]
 
@@ -1611,10 +1607,10 @@ dependencies = [
  "ink_metadata",
  "ink_primitives",
  "ink_storage",
- "kv-session",
  "parity-scale-codec",
  "pink-ethabi",
  "pink-extension 0.2.0",
+ "pink-kv-session",
  "pink-subrpc",
  "pink-web3",
  "primitive-types",
@@ -1778,6 +1774,12 @@ dependencies = [
  "ryu",
  "serde",
 ]
+
+[[package]]
+name = "pink-kv-session"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3da595e670ee22ac5ae563a55388ce2148d68b993fe09ca0099a247cb55cf790"
 
 [[package]]
 name = "pink-subrpc"
@@ -2147,28 +2149,6 @@ checksum = "03fb9a628596fc7590eb7edbf7b0613287be78df107f5f97b118aad59fb2eea9"
 dependencies = [
  "chrono",
  "nom",
-]
-
-[[package]]
-name = "sample_oracle"
-version = "0.1.0"
-dependencies = [
- "dotenvy",
- "env_logger",
- "hex",
- "ink_env",
- "ink_lang",
- "ink_metadata",
- "ink_primitives",
- "ink_storage",
- "parity-scale-codec",
- "phat_offchain_rollup",
- "pink-ethabi",
- "pink-extension 0.2.0",
- "pink-extension-runtime",
- "pink-web3",
- "primitive-types",
- "scale-info",
 ]
 
 [[package]]
@@ -2656,7 +2636,6 @@ dependencies = [
  "ink_metadata",
  "ink_primitives",
  "ink_storage",
- "kv-session",
  "parity-scale-codec",
  "phat_offchain_rollup",
  "pink-extension 0.2.0",

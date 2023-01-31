@@ -17,15 +17,18 @@ pub enum Error {
     FailedToReadVersion,
     FailedToDecode,
     DecodeOverflow,
-    BadEvmAnchorAbi,
     FailedToGetStorage,
     FailedToDecodeStorage,
     FailedToGetBlockHash,
+    FailedToGetBlockNumber,
     FailedToCreateTransaction,
     FailedToSendTransaction,
+    SessionError(kv_session::Error),
     SessionFailedToDecode,
     SessionFailedToGetStorage,
 
+    #[cfg(feature = "evm")]
+    BadEvmAnchorAbi,
     #[cfg(feature = "evm")]
     EvmFailedToSubmitTx(pink_web3::Error),
     #[cfg(feature = "evm")]
