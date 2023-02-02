@@ -4,10 +4,11 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "devphase": "^0.0.25",
-    "dotenv": "^16.0.3",
+    "devphase": "^0.0.34",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
     "ts-node": "^10.9.1",
-    "tsconfig-paths": "^4.1.0",
-    "typescript": "^4.8.4"
+    "typescript": "^4.9.5"
   }
 }

@@ -6,7 +6,7 @@ import * as fs from 'fs';
 async function initChain(devphase: any): Promise<void> {
     console.log('######################## Initializing blockchain ########################');
     // Necessary to run; copied from devphase `defaultSetupenv()`
-    devphase.mainClusterId = devphase.options.clusterId;
+    //devphase.mainClusterId = devphase.options.clusterId;
     // Run our custom init script
     return new Promise((resolve) => {
         const init = spawn(
@@ -16,9 +16,9 @@ async function initChain(devphase: any): Promise<void> {
                 stdio: 'inherit',
                 cwd: './setup',
                 env: {
-                    'ENDPOINT': devphase.options.nodeUrl,
-                    'WORKERS': devphase.options.workerUrl,
-                    'GKS': devphase.options.workerUrl,
+                    'ENDPOINT': devphase.networkConfig.nodeUrl,
+                    'WORKERS': devphase.networkConfig.workerUrl,
+                    'GKS': devphase.networkConfig.workerUrl,
                 },
             },
         );
@@ -38,9 +38,9 @@ async function saveLog(devphase: any, outPath): Promise<void> {
             {
                 cwd: './setup',
                 env: {
-                    'ENDPOINT': devphase.options.nodeUrl,
-                    'WORKERS': devphase.options.workerUrl,
-                    'CLUSTER': devphase.options.clusterId,
+                    'ENDPOINT': devphase.networkConfig.nodeUrl,
+                    'WORKERS': devphase.networkConfig.workerUrl,
+                    'CLUSTER': devphase.mainClusterId,
                 }
             }
         );
@@ -56,7 +56,7 @@ async function saveLog(devphase: any, outPath): Promise<void> {
 const config : ProjectConfigOptions = {
     stack: {
         blockTime: 500,
-        version: 'nightly-2022-11-27',
+        version: 'nightly-2023-01-30',
         node: {
             port: 39944,
             binary: '{{directories.stacks}}/{{stack.version}}/phala-node',
@@ -107,29 +107,23 @@ const config : ProjectConfigOptions = {
         }
     },
     /**
-     * Configuration options of DevPhase instance used in testing
+     * Networks configuration
+     * Default network is local and it can be changed using CLI argument
      */
-    devPhaseOptions: {
-        nodeUrl: 'ws://localhost:{{stack.node.port}}',
-        workerUrl: 'http://localhost:{{stack.pruntime.port}}',
-        accountsMnemonic: '', // default account
-        accountsPaths: {
-            alice: '//Alice',
-            bob: '//Bob',
-            charlie: '//Charlie',
-            dave: '//Dave',
-            eve: '//Eve',
-            ferdie: '//Ferdie',
-        },
-        sudoAccount: 'alice',
-        ss58Prefix: 30,
-        clusterId: '0x0000000000000000000000000000000000000000000000000000000000000000',
+    networks: {
+	local: {
+	    nodeUrl: 'ws://localhost:{{stack.node.port}}',
+	    workerUrl: 'http://localhost:{{stack.pruntime.port}}',
+	    blockTime: 500,
+	}
     },
     /**
      * Testing configuration
      */
      testing: {
         mocha: {}, // custom mocha configuration
+        spawnStack: true, // spawn runtime stack? or assume there is running one
+        stackLogOutput: true, // if specifed pipes output of all stack component to file (by default it is ignored)
         envSetup: { // environment setup
             setup: {
                 // custom setup procedure callback; (devPhase) => Promise<void>
@@ -143,9 +137,22 @@ const config : ProjectConfigOptions = {
                 timeout: 10 * 1000,
             }
         },
-        blockTime: 500, // overrides block time specified in node (and pherry) component
-        stackLogOutput : true, // if specifed pipes output of all stack component to file (by default it is ignored)
     },
+    /**
+     * Accounts fallback configuration
+     * It is overriden by values saved in ./accounts.json
+     */
+    accountsConfig: {
+        keyrings: {
+            alice: '//Alice', // string (in case of mnemonic) or account keyring JSON
+            bob: '//Bob',
+            charlie: '//Charlie',
+            dave: '//Dave',
+            eve: '//Eve',
+            ferdie: '//Ferdie'
+        },
+        suAccount: 'alice'
+    }
 };
 
 export default config;
