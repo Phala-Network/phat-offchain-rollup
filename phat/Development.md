@@ -16,6 +16,9 @@
     yarn devphase stack
     ```
 
+If you haven't installed node.js, it's suggested to install it via [nvm](https://github.com/nvm-sh/nvm#install--update-script). 
+It's also suggested to install `yarn` (classical) by `npm install --global yarn` ([docs](https://classic.yarnpkg.com/lang/en/docs/install)).
+
 ## Launch a standalone local test stack for custom testing
 
 1. start the local stack.
@@ -59,3 +62,4 @@ yarn devphase test
 
 The tests are written in TypeScript at `./tests/*.test.ts`. The logs are output to `./logs/{date}`
 directory.
+
