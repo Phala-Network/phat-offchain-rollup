@@ -37,8 +37,6 @@ impl EvmSnapshot {
             .or(Err(Error::FailedToGetBlockNumber))?;
         let contract =
             Contract::from_json(eth, contract_id, ANCHOR_ABI).or(Err(Error::BadEvmAnchorAbi))?;
-
-        // let hash = subrpc::get_block_hash(rpc, None).or(Err(Error::FailedToGetBlockHash))?;
         Ok(EvmSnapshot {
             contract,
             contract_id,
@@ -115,8 +113,6 @@ impl QueueIndexCodec for RlpCodec {
 }
 
 pub struct EvmRollupClient {
-    // rpc: &'a str,
-    // contract_id: &'a H160,
     actions: Vec<Vec<u8>>,
     session: Session<EvmSnapshot, RwTracker, RlpCodec>,
 }
