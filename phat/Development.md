@@ -46,7 +46,7 @@ To configure the local test stack, please check [devphase.config.ts](./devphase.
 ## Compile contracts
 
 ```bash
-yarn devphase compile
+yarn devphase contract compile
 ```
 
 You can also specify which the contract to build by adding the contract name. The name should be
@@ -57,7 +57,7 @@ in snake case, consistent with the directory names under `contracts/`.
 Simply run:
 
 ```bash
-yarn devphase test
+yarn devphase contract test
 ```
 
 The tests are written in TypeScript at `./tests/*.test.ts`. The logs are output to `./logs/{date}`
