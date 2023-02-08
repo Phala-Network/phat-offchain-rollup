@@ -50,7 +50,7 @@ We are going to load the **Sub0Factory** contract and interact with it. `Sub0Fac
 In the Phat UI homepage, click the _Attach_ button. Drag & drop the `metadata.json` file (or the `.contract` file) to the _Contarct File_ section, enter the contract address, and click _Submit_ button.
 
 ```
-0xb1262b061e4084031c7732ec34553379bc8fc3ef168b86d5496721fbabe6cdd4
+0xb3142f57455558dd6f5c6b067ee49a71e1f5000813d64bf98427656270d05c85
 ```
 
 > This is the address of the pre-deployed  `Sub0Factory` contract on the Phala public testnet (PoC-5). As of writing, it points to the latest deployment. However if the testnet get reset or migrated, the address may be changed. Please ask the Phala team if you believe it's out-of-date.
