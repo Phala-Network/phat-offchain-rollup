@@ -1,57 +1,4 @@
 import { ProjectConfigOptions } from 'devphase';
-import { join } from 'path';
-import { spawn } from 'child_process';
-import * as fs from 'fs';
-
-async function initChain(devphase: any): Promise<void> {
-    console.log('######################## Initializing blockchain ########################');
-    // Necessary to run; copied from devphase `defaultSetupenv()`
-    //devphase.mainClusterId = devphase.options.clusterId;
-    // Run our custom init script
-    return new Promise((resolve) => {
-        const init = spawn(
-            'node',
-            ['src/setup-drivers.js'],
-            {
-                stdio: 'inherit',
-                cwd: './setup',
-                env: {
-                    'ENDPOINT': devphase.networkConfig.nodeUrl,
-                    'WORKERS': devphase.networkConfig.workerUrl,
-                    'GKS': devphase.networkConfig.workerUrl,
-                },
-            },
-        );
-        init.on('exit', code => {
-            console.log('initChain script exited with code', code);
-            resolve();
-        });
-    });
-}
-
-async function saveLog(devphase: any, outPath): Promise<void> {
-    console.log('######################## Saving worker logs ########################');
-    const logging = fs.createWriteStream(outPath, { flags: 'w'});
-    await new Promise((resolve: (_: void) => void) => {
-        const readLog = spawn(
-            'node', ['src/read-log.js'],
-            {
-                cwd: './setup',
-                env: {
-                    'ENDPOINT': devphase.networkConfig.nodeUrl,
-                    'WORKERS': devphase.networkConfig.workerUrl,
-                    'CLUSTER': devphase.mainClusterId,
-                }
-            }
-        );
-        readLog.stdout.pipe(logging);
-        readLog.stderr.pipe(logging);
-        readLog.on('exit', code => {
-            console.log('saveLog script exited with code', code);
-            resolve();
-        });
-    });
-}
 
 const config : ProjectConfigOptions = {
     stack: {
@@ -127,13 +74,12 @@ const config : ProjectConfigOptions = {
         envSetup: { // environment setup
             setup: {
                 // custom setup procedure callback; (devPhase) => Promise<void>
-                custom: initChain,
+                custom: undefined,
                 timeout: 120 * 1000,
             },
             teardown: {
                 // custom teardown procedure callback ; (devPhase) => Promise<void>
-                custom: devphase =>
-                    saveLog(devphase, `${devphase.runtimeContext.paths.currentLog}/worker.log`),
+                custom: undefined,
                 timeout: 10 * 1000,
             }
         },
