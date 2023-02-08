@@ -28,14 +28,8 @@ describe('Substrate Offchain Rollup', () => {
     const txConf = { gasLimit: "10000000000000", storageDepositLimit: null };
 
     before(async function() {
-        priceFeedFactory = await this.devPhase.getFactory(
-            ContractType.InkCode,
-            './artifacts/sub_price_feed/sub_price_feed.contract'
-        );
-        sub0Factory = await this.devPhase.getFactory(
-            ContractType.InkCode,
-            './artifacts/sub0_factory/sub0_factory.contract'
-        )
+        priceFeedFactory = await this.devPhase.getFactory('sub_price_feed');
+        sub0Factory = await this.devPhase.getFactory('sub0_factory');
         priceFeedCodeHash = priceFeedFactory.metadata.source.hash;
         await priceFeedFactory.deploy();
         await sub0Factory.deploy();
