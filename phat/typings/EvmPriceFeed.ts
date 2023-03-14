@@ -6,9 +6,10 @@ import type { ContractCallOutcome, ContractOptions } from "@polkadot/api-contrac
 import type { Codec } from "@polkadot/types/types";
 
 export namespace EvmPriceFeed {
-    type InkEnv_Types_AccountId = any;
+    type InkPrimitives_Types_AccountId = any;
+    type InkPrimitives_LangError = { CouldNotReadInput: null };
+    type Result = { Ok: Result } | { Err: InkPrimitives_LangError };
     type EvmPriceFeed_EvmPriceFeed_Error = { BadOrigin: null } | { NotConfigured: null } | { InvalidKeyLength: null } | { InvalidAddressLength: null } | { NoRequestInQueue: null } | { FailedToCreateClient: null } | { FailedToCommitTx: null } | { FailedToFetchPrice: null } | { FailedToGetStorage: null } | { FailedToCreateTransaction: null } | { FailedToSendTransaction: null } | { FailedToGetBlockHash: null } | { FailedToDecode: null } | { InvalidRequest: null };
-    type Result = { Ok: Option } | { Err: EvmPriceFeed_EvmPriceFeed_Error };
     type Option = { None: null } | { Some: number[] };
 
     /** */
@@ -16,7 +17,7 @@ export namespace EvmPriceFeed {
     /** */
     namespace ContractQuery {
         export interface Owner extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<InkEnv_Types_AccountId>>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result>>>;
         }
 
         export interface FeedPrice extends DPT.ContractQuery {
@@ -48,7 +49,7 @@ export namespace EvmPriceFeed {
         }
 
         export interface TransferOwnership extends DPT.ContractTx {
-            (options: ContractOptions, new_owner: InkEnv_Types_AccountId): DPT.SubmittableExtrinsic;
+            (options: ContractOptions, new_owner: InkPrimitives_Types_AccountId): DPT.SubmittableExtrinsic;
         }
     }
 

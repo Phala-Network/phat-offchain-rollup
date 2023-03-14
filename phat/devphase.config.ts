@@ -11,7 +11,7 @@ const config : ProjectConfigOptions = {
     },
     stack: {
         blockTime: 500,
-        version: 'nightly-2023-01-30',
+        version: 'nightly-2023-02-20',
         node: {
             port: 39944,
             binary: '{{directories.stacks}}/{{stack.version}}/phala-node',
