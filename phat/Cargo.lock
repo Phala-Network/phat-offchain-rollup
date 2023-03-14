@@ -1763,9 +1763,9 @@ checksum = "3da595e670ee22ac5ae563a55388ce2148d68b993fe09ca0099a247cb55cf790"
 
 [[package]]
 name = "pink-subrpc"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8755acf1ec5f043421ab39831af337a4a10ba89b6d349e02c234bf52315d41be"
+checksum = "7b4d515824efb66f1d5433368501c2d7e617131f387d244c7274070811d9e1cd"
 dependencies = [
  "base58",
  "hex",

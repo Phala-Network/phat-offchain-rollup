@@ -21,7 +21,7 @@ pink-json = { git = "https://github.com/Phala-Network/pink-json.git", branch = "
 
 phat_offchain_rollup = { path = "../../crates/rollup", default-features = false, features = ["substrate"] }
 
-subrpc = { package = "pink-subrpc", version = "0.4.0", default-features = false }
+subrpc = { package = "pink-subrpc", version = "0.4.1", default-features = false }
 hex = { version = "0.4", default-features = false }
 
 [dev-dependencies]
