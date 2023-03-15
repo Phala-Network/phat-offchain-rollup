@@ -56,7 +56,7 @@ describe('Substrate Offchain Rollup', () => {
         it('should has correct owners', async function() {
             const feedOwner = await priceFeed.query.owner(certAlice, {});
             expect(feedOwner.result.isOk).to.be.true;
-            expect(feedOwner.output.toString()).to.be.equal(alice.address.toString());
+            expect(feedOwner.output.asOk.toString()).to.be.equal(alice.address.toString());
         });
 
         it('should be configurable', async function() {
@@ -71,7 +71,7 @@ describe('Substrate Offchain Rollup', () => {
             const init = await priceFeed.query.maybeInitRollup(certAlice, {});
             expect(init.result.isOk).to.be.true;
             expect(init.output.isOk).to.be.true;
-            expect(init.output.asOk.isSome).to.be.true;
+            expect(init.output.asOk.isOk).to.be.true;
         });
 
         it('can submit tx', async function() {
@@ -80,7 +80,7 @@ describe('Substrate Offchain Rollup', () => {
             const feed = await priceFeed.query.feedPrice(certAlice, {});
             expect(feed.result.isOk).to.be.true;
             expect(feed.output.isOk).to.be.true;
-            expect(feed.output.asOk.isSome).to.be.true;
+            expect(feed.output.asOk.isOk).to.be.true;
             await delay(3*1000);
 
             // The response should be received on the blockchain
@@ -100,7 +100,7 @@ describe('Substrate Offchain Rollup', () => {
         it('should has correct owners', async function() {
             const sub0Owner = await sub0.query.owner(certAlice, {});
             expect(sub0Owner.result.isOk).to.be.true;
-            expect(sub0Owner.output.toString()).to.be.equal(alice.address.toString());
+            expect(sub0Owner.output.asOk.toString()).to.be.equal(alice.address.toString());
         });
 
         it('can be configured', async function() {
@@ -114,7 +114,7 @@ describe('Substrate Offchain Rollup', () => {
             const config = await sub0.query.getConfig(certAlice, {})
             expect(config.result.isOk).to.be.true;
             expect(config.output.isOk).to.be.true;
-            expect(config.output.asOk.length).to.be.equal(2);
+            expect(config.output.asOk.asOk.length).to.be.equal(2);
         });
 
         let priceFeed1: SubPriceFeed.Contract;
@@ -129,13 +129,13 @@ describe('Substrate Offchain Rollup', () => {
 
             let deployments = await sub0.query.getDeployments(certAlice, {});
             expect(deployments.result.isOk).to.be.true;
-            expect(deployments.output.asOk.length).to.be.equal(2);
+            expect(deployments.output.asOk.asOk.length).to.be.equal(2);
 
             // Get the address in hex, and attach to it.
             //
             // Note that `contractId.toString()` returns and SS58 encoded address by default, but
             // Polkadot.js cannot parse it to H256.
-            let feed1Addr = deployments.output.asOk[1].contractId.toHex();
+            let feed1Addr = deployments.output.asOk.asOk[1].contractId.toHex();
             priceFeed1 = await priceFeedFactory.attach(feed1Addr);
         });
 
@@ -144,20 +144,20 @@ describe('Substrate Offchain Rollup', () => {
             const init = await priceFeed1.query.maybeInitRollup(certAlice, {});
             expect(init.result.isOk).to.be.true;
             expect(init.output.isOk).to.be.true;
-            expect(init.output.asOk.isSome).to.be.true;
+            expect(init.output.asOk.isOk).to.be.true;
             await delay(3*1000);
 
             // Trigger a rollup
             const feed = await priceFeed1.query.feedPrice(certAlice, {});
             expect(feed.result.isOk).to.be.true;
             expect(feed.output.isOk).to.be.true;
-            expect(feed.output.asOk.isSome).to.be.true;
+            expect(feed.output.asOk.isOk).to.be.true;
             await delay(3*1000);
 
             // The response should be received on the blockchain
             const receivedPrice = await api.query.phatOracle.priceFeeds.entries(alice.address);
             expect(receivedPrice.length).to.be.equal(2);  // 2 in totoal: 1 existing & 1 more
-        });
+        }).timeout(30000);
 
     });
 
