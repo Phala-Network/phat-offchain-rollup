@@ -9,30 +9,25 @@ edition = "2021"
 overflow-checks = false
 
 [dependencies]
-ink_primitives = { version = "3", default-features = false }
-ink_metadata = { version = "3", default-features = false, features = ["derive"], optional = true }
-ink_env = { version = "3", default-features = false }
-ink_storage = { version = "3", default-features = false }
-ink_lang = { version = "3", default-features = false }
+ink = { version = "4.0.1", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-primitive-types = { version = "0.11", default-features = false, features = ["codec", "scale-info"] }
 serde = { version = "1.0.140", default-features = false, features = ["derive", "alloc"]}
 fixed = { version = "1", default-features = false, features = ["serde"] }
 
-pink-extension = { version = "0.2", default-features = false }
+pink-extension = { version = "0.4.1", default-features = false }
 pink-json = { git = "https://github.com/Phala-Network/pink-json.git", branch = "pink", default-features = false, features = ["de-number-as-str"] }
 
 phat_offchain_rollup = { path = "../../crates/rollup", default-features = false, features = ["substrate"] }
 
-subrpc = { package = "pink-subrpc", version = "0.1", default-features = false }
+subrpc = { package = "pink-subrpc", version = "0.4.1", default-features = false }
 hex = { version = "0.4", default-features = false }
 
 [dev-dependencies]
 dotenvy = "0.15"
-env_logger = "0.9"
-pink-extension-runtime = { version = "0.2", default-features = false }
+env_logger = "0.10.0"
+pink-extension-runtime = { version = "0.4.0", default-features = false }
 phat_offchain_rollup = { path = "../../crates/rollup", default-features = false, features = ["substrate", "logging"] }
 hex-literal = "0.3"
 
@@ -48,10 +43,7 @@ crate-type = [
 [features]
 default = ["std"]
 std = [
-    "ink_metadata/std",
-    "ink_env/std",
-    "ink_storage/std",
-    "ink_primitives/std",
+    "ink/std",
     "scale/std",
     "scale-info/std",
     "phat_offchain_rollup/std",

@@ -2,19 +2,14 @@
 
 extern crate alloc;
 
-use ink_lang as ink;
-
 #[ink::contract(env = pink_extension::PinkEnvironment)]
 mod sub0_factory {
-    use alloc::{string::String, vec::Vec};
-    use ink_lang as ink;
-    use ink_storage::traits::{PackedLayout, SpreadAllocate, SpreadLayout};
-    use pink::ResultExt;
-    use pink_extension as pink;
+    use alloc::{string::String, vec, vec::Vec};
+    use ink::storage::traits::StorageLayout;
+    use pink_extension::ResultExt;
     use scale::{Decode, Encode};
 
     #[ink(storage)]
-    #[derive(SpreadAllocate, Default)]
     pub struct Sub0Factory {
         owner: AccountId,
         config: Option<Config>,
@@ -22,11 +17,8 @@ mod sub0_factory {
         num_deployed: u32,
     }
 
-    #[derive(Encode, Decode, Debug, PackedLayout, SpreadLayout)]
-    #[cfg_attr(
-        feature = "std",
-        derive(scale_info::TypeInfo, ink_storage::traits::StorageLayout)
-    )]
+    #[derive(Encode, Decode, Debug)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
     struct Config {
         /// The RPC endpoint of the target blockchain
         rpc: String,
@@ -38,11 +30,8 @@ mod sub0_factory {
         price_feed_code: Hash,
     }
 
-    #[derive(Default, Encode, Decode, Debug, PartialEq, Eq, PackedLayout, SpreadLayout)]
-    #[cfg_attr(
-        feature = "std",
-        derive(scale_info::TypeInfo, ink_storage::traits::StorageLayout)
-    )]
+    #[derive(Encode, Decode, Debug, PartialEq, Eq)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
     pub struct Deployment {
         name: String,
         owner: AccountId,
@@ -67,9 +56,12 @@ mod sub0_factory {
     impl Sub0Factory {
         #[ink(constructor)]
         pub fn default() -> Self {
-            ink_lang::utils::initialize_contract(|this: &mut Self| {
-                this.owner = Self::env().caller();
-            })
+            Self {
+                owner: Self::env().caller(),
+                config: Option::default(),
+                deployments: vec![],
+                num_deployed: 0,
+            }
         }
 
         /// Configures the contract, only by the contract owner
@@ -114,9 +106,7 @@ mod sub0_factory {
                 .code_hash(config.price_feed_code)
                 .endowment(0)
                 .salt_bytes(self.num_deployed.encode())
-                .instantiate()
-                .log_err("failed to deploy SubPriceFeed")
-                .or(Err(Error::FailedToDeployContract))?;
+                .instantiate();
 
             deployed
                 .config(
@@ -188,29 +178,26 @@ mod sub0_factory {
         use super::*;
 
         use ink_env::call::FromAccountId;
-        use ink_lang as ink;
-        use sub_price_feed::{SubPriceFeed, SubPriceFeedRef};
+        use sub_price_feed::SubPriceFeedRef;
 
         #[ink::test]
+        #[ignore = "off-chain environment does not support contract instantiation"]
         fn it_works() {
             let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();
 
-            // Register contracts
-            let hash1 = ink_env::Hash::try_from([10u8; 32]).unwrap();
-            let hash2 = ink_env::Hash::try_from([20u8; 32]).unwrap();
-            ink_env::test::register_contract::<Sub0Factory>(hash1.as_ref());
-            ink_env::test::register_contract::<SubPriceFeed>(hash2.as_ref());
+            // Mock code hash of contracts
+            let hash1 = ink::primitives::Hash::try_from([10u8; 32]).unwrap();
+            let hash2 = ink::primitives::Hash::try_from([20u8; 32]).unwrap();
 
             let alice = AccountId::from([1u8; 32]);
 
             // Deploy the factory
-            let mut factory = Sub0FactoryRef::default()
+            let mut factory = crate::sub0_factory::Sub0FactoryRef::default()
                 .code_hash(hash1)
                 .endowment(0)
                 .salt_bytes([0u8; 0])
-                .instantiate()
-                .expect("failed to deploy EvmTransactor");
+                .instantiate();
 
             factory
                 .config(

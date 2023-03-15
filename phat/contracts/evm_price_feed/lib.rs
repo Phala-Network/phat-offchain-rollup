@@ -3,16 +3,14 @@
 
 extern crate alloc;
 
-use ink_lang as ink;
-
 pub use crate::evm_price_feed::*;
 
 #[ink::contract(env = pink_extension::PinkEnvironment)]
 mod evm_price_feed {
     use alloc::{format, string::String, vec, vec::Vec};
-    use ink_storage::traits::{PackedLayout, SpreadLayout};
+    use ink::storage::traits::StorageLayout;
     use pink_extension as pink;
-    use primitive_types::{H160, U256};
+    use pink_web3::types::{H160, U256};
     use scale::{Decode, Encode};
     use serde::Deserialize;
 
@@ -32,11 +30,8 @@ mod evm_price_feed {
         config: Option<Config>,
     }
 
-    #[derive(Encode, Decode, Debug, PackedLayout, SpreadLayout)]
-    #[cfg_attr(
-        feature = "std",
-        derive(scale_info::TypeInfo, ink_storage::traits::StorageLayout)
-    )]
+    #[derive(Encode, Decode, Debug)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
     struct Config {
         /// The RPC endpoint of the target blockchain
         rpc: String,
@@ -355,7 +350,6 @@ mod evm_price_feed {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use ink_lang as ink;
 
         struct EnvVars {
             rpc: String,

@@ -8,42 +8,35 @@ name = "phat_offchain_rollup"
 path = "src/lib.rs"
 
 [dependencies]
-ink_primitives = { version = "3", default-features = false }
-ink_metadata = { version = "3", default-features = false, features = ["derive"], optional = true }
-ink_env = { version = "3", default-features = false }
-ink_storage = { version = "3", default-features = false }
-ink_lang = { version = "3", default-features = false }
+ink = { version = "4.0.1", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-primitive-types = { version = "0.11", default-features = false, features = ["codec", "scale-info"] }
+primitive-types = { version = "0.12.1", default-features = false, features = ["codec", "scale-info"] }
 hex = { version = "0.4", default-features = false, features = ["alloc"] }
 
-pink-extension = { version = "0.2", default-features = false, optional = true }
+pink-extension = { version = "0.4.1", default-features = false, optional = true }
 kv-session = { package = "pink-kv-session", version = "0.2" }
 
 # for EVM rollup
-pink-web3 = { version = "0.19", default-features = false, features = ["pink", "signing"], optional = true }
-ethabi = { version = "17.2.0", package = "pink-ethabi", default-features = false, features = [
+pink-web3 = { version = "0.20.1", default-features = false, features = ["pink", "signing"], optional = true }
+ethabi = { version = "18.0.0", default-features = false, features = [
     "serde",
     "rlp",
 ], optional = true }
 
 # for Substrate rollup
-subrpc = { package = "pink-subrpc", version = "0.1", default-features = false, optional = true }
+subrpc = { package = "pink-subrpc", version = "0.4.1", default-features = false, optional = true }
 
 [features]
 default = ["std", "logging"]
 std = [
-    "ink_metadata/std",
-    "ink_env/std",
-    "ink_storage/std",
-    "ink_primitives/std",
-    "ink_lang/std",
+    "ink/std",
     "scale/std",
     "scale-info/std",
-	"primitive-types/std",
+    "primitive-types/std",
     "pink-web3/std",
+    "ethabi/std",
     "subrpc/std",
 ]
 logging = [

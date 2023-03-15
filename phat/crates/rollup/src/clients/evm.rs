@@ -240,12 +240,15 @@ impl SubmittableRollupTx {
         );
 
         // Estiamte gas before submission
-        let gas = resolve_ready(self.contract.estimate_gas(
-            "rollupU256CondEq",
-            params.clone(),
-            pair.address(),
-            Options::default(),
-        ))
+        let gas = resolve_ready(
+            self.contract
+                .estimate_gas::<(Token, Token, Token, Token, Token)>(
+                    "rollupU256CondEq",
+                    params.clone(),
+                    pair.address(),
+                    Options::default(),
+                ),
+        )
         .map_err(Error::EvmFailedToEstimateGas)?;
 
         // Actually submit the tx (no guarantee for success)

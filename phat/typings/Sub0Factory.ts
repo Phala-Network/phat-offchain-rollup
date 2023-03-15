@@ -6,11 +6,12 @@ import type { ContractCallOutcome, ContractOptions } from "@polkadot/api-contrac
 import type { Codec } from "@polkadot/types/types";
 
 export namespace Sub0Factory {
-    type InkEnv_Types_AccountId = any;
-    type InkEnv_Types_Hash = any;
+    type InkPrimitives_Types_AccountId = any;
+    type InkPrimitives_Types_Hash = any;
+    type InkPrimitives_LangError = { CouldNotReadInput: null };
+    type Result = { Ok: InkPrimitives_Types_AccountId } | { Err: InkPrimitives_LangError };
     type Sub0Factory_Sub0Factory_Error = { BadOrigin: null } | { NotConfigured: null } | { InvalidKeyLength: null } | { FailedToDeployContract: null } | { FailedToConfigContract: null } | { FailedToTransferOwnership: null };
-    type Result = { Ok: Sub0Factory_Sub0Factory_Deployment[] } | { Err: Sub0Factory_Sub0Factory_Error };
-    type Sub0Factory_Sub0Factory_Deployment = { name: string, owner: InkEnv_Types_AccountId, contract_id: InkEnv_Types_AccountId, created_at: number, expired_at: number };
+    type Sub0Factory_Sub0Factory_Deployment = { name: string, owner: InkPrimitives_Types_AccountId, contract_id: InkPrimitives_Types_AccountId, created_at: number, expired_at: number };
 
     /** */
     /** Queries */
@@ -25,7 +26,7 @@ export namespace Sub0Factory {
         }
 
         export interface Owner extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<InkEnv_Types_AccountId>>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result>>>;
         }
     }
 
@@ -40,7 +41,7 @@ export namespace Sub0Factory {
     /** */
     namespace ContractTx {
         export interface Config extends DPT.ContractTx {
-            (options: ContractOptions, rpc: string, pallet_id: number, submit_key: number[], price_feed_code: InkEnv_Types_Hash): DPT.SubmittableExtrinsic;
+            (options: ContractOptions, rpc: string, pallet_id: number, submit_key: number[], price_feed_code: InkPrimitives_Types_Hash): DPT.SubmittableExtrinsic;
         }
 
         export interface DeployPriceFeed extends DPT.ContractTx {

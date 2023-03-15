@@ -2,21 +2,15 @@
 
 extern crate alloc;
 
-use ink_lang as ink;
-
 #[ink::contract(env = pink_extension::PinkEnvironment)]
 mod local_scheduler {
     use alloc::{string::String, vec::Vec};
-    use ink_storage::{
-        traits::{PackedLayout, SpreadAllocate, SpreadLayout},
-        Mapping,
-    };
+    use ink::storage::{traits::StorageLayout, Mapping};
     use pink::ResultExt;
     use pink_extension as pink;
     use scale::{Decode, Encode};
 
     #[ink(storage)]
-    #[derive(SpreadAllocate, Default)]
     pub struct LocalScheduler {
         owner: AccountId,
         num_jobs: u32,
@@ -24,11 +18,8 @@ mod local_scheduler {
         active_jobs: Vec<u32>,
     }
 
-    #[derive(Encode, Decode, Debug, PartialEq, Eq, PackedLayout, SpreadLayout)]
-    #[cfg_attr(
-        feature = "std",
-        derive(scale_info::TypeInfo, ink_storage::traits::StorageLayout)
-    )]
+    #[derive(Encode, Decode, Debug, PartialEq, Eq)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
     pub struct JobConfig {
         name: String,
         cron_expr: String,
@@ -55,10 +46,12 @@ mod local_scheduler {
     impl LocalScheduler {
         #[ink(constructor)]
         pub fn default() -> Self {
-            ink_lang::utils::initialize_contract(|this: &mut Self| {
-                this.owner = Self::env().caller();
-                this.num_jobs = 0;
-            })
+            Self {
+                owner: Self::env().caller(),
+                num_jobs: 0,
+                jobs: Default::default(),
+                active_jobs: Default::default(),
+            }
         }
 
         #[ink(message)]
@@ -242,7 +235,8 @@ mod local_scheduler {
                 let next_ts = next_date.timestamp_millis() as u64;
                 let value = Encode::encode(&(next_ts, &job.cron_expr));
                 // Log an error for StorageQuotaExceeded for now
-                let _ = pink::ext().cache_set(&job_key, &value)
+                let _ = pink::ext()
+                    .cache_set(&job_key, &value)
                     .log_err("failed to set cache key");
                 pink::debug!("[Job-{id}] Scheduling at timestamp {next_ts}");
             } else {
@@ -262,8 +256,7 @@ mod local_scheduler {
             // Build CallParams
             let call_params = build_call::<pink::PinkEnvironment>()
                 .call_type(
-                    Call::new()
-                        .callee(job.target.clone())
+                    Call::new(job.target.clone())
                         // .gas_limit(5000)
                         .transferred_value(0),
                 )
@@ -297,7 +290,6 @@ mod local_scheduler {
         use super::*;
 
         use ink::ToAccountId;
-        use ink_lang as ink;
 
         #[ink::test]
         fn it_works() {

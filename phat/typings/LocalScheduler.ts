@@ -6,12 +6,11 @@ import type { ContractCallOutcome, ContractOptions } from "@polkadot/api-contrac
 import type { Codec } from "@polkadot/types/types";
 
 export namespace LocalScheduler {
-    type InkEnv_Types_AccountId = any;
-    type InkPrimitives_Key = any;
-    type InkStorage_Lazy_Mapping_Mapping = { offset_key: InkPrimitives_Key };
-    type LocalScheduler_LocalScheduler_JobConfig = { name: string, cron_expr: string, target: InkEnv_Types_AccountId, call: number[], enabled: boolean };
+    type InkPrimitives_Types_AccountId = any;
+    type InkPrimitives_LangError = { CouldNotReadInput: null };
+    type Result = { Ok: InkPrimitives_Types_AccountId } | { Err: InkPrimitives_LangError };
+    type LocalScheduler_LocalScheduler_JobConfig = { name: string, cron_expr: string, target: InkPrimitives_Types_AccountId, call: number[], enabled: boolean };
     type LocalScheduler_LocalScheduler_Error = { BadOrigin: null } | { JobNotFound: null } | { NotChanged: null } | { InvalidCronExpression: null } | { CronExpressionNeverFire: null } | { InternalErrorCacheCorrupted: null } | { CallDataTooShort: null } | { FailedToCallJob: null };
-    type Result = { Ok: never[] } | { Err: LocalScheduler_LocalScheduler_Error };
     type Option = { None: null } | { Some: [ number, LocalScheduler_LocalScheduler_JobConfig ] };
 
     /** */
@@ -19,7 +18,7 @@ export namespace LocalScheduler {
     /** */
     namespace ContractQuery {
         export interface GetNumJobs extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.INumber>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result>>>;
         }
 
         export interface GetJob extends DPT.ContractQuery {
@@ -27,15 +26,15 @@ export namespace LocalScheduler {
         }
 
         export interface GetActiveJobs extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IVec<DPT.INumber>>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result>>>;
         }
 
         export interface GetJobSchedule extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions, id: number): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Option>>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions, id: number): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result>>>;
         }
 
         export interface Owner extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<InkEnv_Types_AccountId>>>;
+            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result>>>;
         }
 
         export interface Poll extends DPT.ContractQuery {
@@ -57,7 +56,7 @@ export namespace LocalScheduler {
     /** */
     namespace ContractTx {
         export interface AddJob extends DPT.ContractTx {
-            (options: ContractOptions, name: string, cron_expr: string, target: InkEnv_Types_AccountId, call: number[]): DPT.SubmittableExtrinsic;
+            (options: ContractOptions, name: string, cron_expr: string, target: InkPrimitives_Types_AccountId, call: number[]): DPT.SubmittableExtrinsic;
         }
 
         export interface SetJobCron extends DPT.ContractTx {
@@ -65,7 +64,7 @@ export namespace LocalScheduler {
         }
 
         export interface SetJobTarget extends DPT.ContractTx {
-            (options: ContractOptions, id: number, target: InkEnv_Types_AccountId, call: number[]): DPT.SubmittableExtrinsic;
+            (options: ContractOptions, id: number, target: InkPrimitives_Types_AccountId, call: number[]): DPT.SubmittableExtrinsic;
         }
 
         export interface SetJobEnabled extends DPT.ContractTx {

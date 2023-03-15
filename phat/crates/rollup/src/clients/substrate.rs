@@ -3,7 +3,6 @@ use crate::{Action, Error, Result, RollupTx};
 use alloc::{borrow::ToOwned, vec::Vec};
 use scale::{Decode, Encode};
 
-use ink_env::AccountId;
 use kv_session::{
     rollup,
     traits::{BumpVersion, KvSnapshot, QueueIndexCodec},
@@ -11,6 +10,7 @@ use kv_session::{
 };
 use pink::ResultExt;
 use pink_extension as pink;
+use pink_extension::AccountId;
 use primitive_types::H256;
 
 const METHOD_CLAIM_NAME: u8 = 0u8;
@@ -38,8 +38,10 @@ impl<'a> KvSnapshot for SubstrateSnapshot<'a> {
         let prefix = subrpc::storage::storage_prefix("PhatRollupAnchor", "States");
         let key1: &[u8] = self.contract_id.as_ref();
         let key2: &[u8] = &key.to_owned().encode();
-        let storage_key =
-            subrpc::storage::storage_double_map_blake2_128_prefix(&prefix, key1, key2);
+        let storage_key = subrpc::storage::storage_double_map_prefix::<
+            subrpc::hasher::Blake2_128,
+            subrpc::hasher::Blake2_128,
+        >(&prefix, key1, key2);
         let value = subrpc::get_storage(self.rpc, &storage_key, None)
             .log_err("rollup snapshot: get storage failed")
             .or(Err(kv_session::Error::FailedToGetStorage))?;
@@ -195,6 +197,7 @@ impl<'a> SubmittableRollupTx<'a> {
             self.pallet_id,                     // pallet idx
             METHOD_ROLLUP,                      // method 1: rollup
             (self.contract_id, self.tx, nonce), // (name, tx, nonce)
+            subrpc::ExtraParam::default(),
         )
         .or(Err(Error::FailedToCreateTransaction))?;
 
@@ -217,7 +220,8 @@ pub fn get_name_owner(rpc: &str, contract_id: &AccountId) -> Result<Option<Accou
     // Build key
     let prefix = subrpc::storage::storage_prefix("PhatRollupAnchor", "SubmitterByNames");
     let map_key: &[u8] = contract_id.as_ref();
-    let storage_key = subrpc::storage::storage_map_blake2_128_prefix(&prefix, map_key);
+    let storage_key =
+        subrpc::storage::storage_map_prefix::<subrpc::hasher::Blake2_128>(&prefix, map_key);
     // Get storage
     let value = subrpc::get_storage(rpc, &storage_key, None).or(Err(Error::FailedToGetStorage))?;
     if let Some(value) = value {
@@ -240,6 +244,7 @@ pub fn claim_name(
         pallet_id,
         METHOD_CLAIM_NAME,
         contract_id,
+        subrpc::ExtraParam::default(),
     )
     .or(Err(Error::FailedToCreateTransaction))?;
 

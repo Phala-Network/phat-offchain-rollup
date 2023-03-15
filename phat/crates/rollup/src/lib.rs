@@ -105,7 +105,6 @@ pub trait RollupHandler {
 
 // Make it easier to call an arbitrary contract that implements RollupHandler
 use ink::{codegen::TraitCallForwarder, reflect::TraitDefinitionRegistry};
-use ink_lang as ink;
 pub type RollupHandlerForwarder<Env> = <
     <TraitDefinitionRegistry<Env> as RollupHandler>::__ink_TraitInfo
     as TraitCallForwarder

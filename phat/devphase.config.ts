@@ -1,9 +1,17 @@
 import { ProjectConfigOptions } from 'devphase';
 
 const config : ProjectConfigOptions = {
+    directories: {
+        artifacts: 'artifacts',
+        contracts: 'contracts',
+        logs: 'logs',
+        stacks: 'stacks',
+        tests: 'tests',
+        typings: 'typings'
+    },
     stack: {
         blockTime: 500,
-        version: 'nightly-2023-01-30',
+        version: 'nightly-2023-02-20',
         node: {
             port: 39944,
             binary: '{{directories.stacks}}/{{stack.version}}/phala-node',
