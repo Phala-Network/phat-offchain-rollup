@@ -197,11 +197,7 @@ impl<'a> SubmittableRollupTx<'a> {
             self.pallet_id,                     // pallet idx
             METHOD_ROLLUP,                      // method 1: rollup
             (self.contract_id, self.tx, nonce), // (name, tx, nonce)
-            subrpc::ExtraParam {
-                tip: 0,
-                nonce: Some(nonce.try_into().expect("nonce overflow")),
-                era: None,
-            },
+            subrpc::ExtraParam::default(),
         )
         .or(Err(Error::FailedToCreateTransaction))?;
 
