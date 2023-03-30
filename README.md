@@ -9,8 +9,6 @@ Phat Offchain Rollup is an SDK designed to simplify the process of connecting Ph
 - [Getting Started](#getting-started)
     - [Add the Cargo Dependency](#add-the-cargo-dependency)
     - [Use the Rollup Client](#use-the-rollup-client)
-    - [Create an Offchain Rollup Client](#create-an-offchain-rollup-client)
-    - [Read and Write to the Blockchain](#read-and-write-to-the-blockchain)
     - [Request-Response Programming Model](#request-response-programming-model)
 - [Integration](#integration)
     - [Deploy Offchain Rollup Anchor](#deploy-offchain-rollup-anchor)
@@ -172,15 +170,51 @@ The `Reply` actions should be paird with the `pop()`. Once a reply is committed 
 
 Note that in the sample code above, the error handling is greatly simplified. In the real world scenarios, the developer should be careful about both the retry-able and non-retry-able errors. For example, a retry may be helpul with network problems, but not decoding an invalid request.
 
+Finally the consumer contract can be configured to receive response like below.
+
+```solidity
+function onPhatRollupReceived(address _from, bytes calldata action)
+    public override returns(bytes4)
+{
+    // Always check the sender. Otherwise you can get fooled.
+    require(msg.sender == anchor, "bad caller");
+    // Use `action` here.
+}
+```
+
 ## Integration
 
 To build an end-to-end project with offchain rollup, the developer needs to deploy the **Offchain Rollup Anchor** contract (pallet) to the target blockchain, and integrate it with the **Consumer Contract**. The rollup anchor is prebuilt and included in this repo. The consumer contract refers to the dapp that talks to the Phat Contract.
 
 ### Deploy Offchain Rollup Anchor
 
+Steps to deploy the EVM rollup anchor:
 
+1. Deploy the Phat Contract with a pre-generated ecdsa key pair (called submission key)
+    - Sample code: [EvmPriceFeed](./phat/contracts/evm_price_feed/lib.rs)
+2. Deploy the contract [PhatRollupAnchor](./evm/contracts/PhatRollupAnchor.sol) with the parameters
+    - `PhatRollupAnchor(address submitter, address actionCallback, bytes memory queuePrefix)`
+    - `submitter`: The `H160` address of the submission key
+    - `actionCallback`: The address of the consumer contract to receive the response
+    - `queuePrefix`: The prefix of the queue. Can be an arbitrary string, but it should match the one used to create the rollup client in the Phat Contract
+3. Transfer the ownership of `PhatRollupAnchor` to the consumer contract by call `anchor.transferOwnership(consumerContract)`
+
+> TODO: We should simplify the anchor contract in:
+>
+> - Ownership management: merge "actionCallback" and the owner as a unified "consumer contract" role
+> - Queue prefix: make it queriable by the Phat Contract, so that the developer doesn't need to specify it manually
+
+The reference script can be found [here](./evm/scripts/deploy-test.ts).
+
+TODO: Substrate pallet integration, ink! anchor deployment.
 
 ### Integrate with Your Contract
+
+TODO: Add details for the consumer contract integration.
+
+- EVM: Sample consumer contract [TestOracle](./evm/contracts/TestOracle.sol)
+- ink! (WIP)
+- Substrate: Sample conusmer pallet [phat-oracle-pallet](https://github.com/Phala-Network/phala-blockchain/blob/master/pallets/offchain-rollup/src/oracle.rs)
 
 ### Integration Resources
 
