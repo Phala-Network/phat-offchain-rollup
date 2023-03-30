@@ -1,78 +1,200 @@
 # Phat Offchain Rollup
 
-Phat Offchain Rollup is a SDK that enables Phat Contracts to easily connect to various blockchains. It is specifically designed to offer transactional and atomic cross blockchain operations.
+Phat Offchain Rollup is an SDK designed to simplify the process of connecting Phat Contracts to a wide range of blockchains. Its primary focus is on providing transactional and atomic cross-blockchain operations for seamless integration and interaction.
 
 ## Table of Contents
 
-- [Problem](#problem)
-- [Features](#features)
+- [The Challenge](#the-challenge)
+- [Key Benefits](#key-benefits)
 - [Getting Started](#getting-started)
-    - [Prerequisites](#prerequisites)
-    - [Installation](#installation)
-- [Usage](#usage)
-    - [Deploy Offchain Rollup Anchor](#deploy-offchain-rollup-anchor)
+    - [Add the Cargo Dependency](#add-the-cargo-dependency)
+    - [Use the Rollup Client](#use-the-rollup-client)
     - [Create an Offchain Rollup Client](#create-an-offchain-rollup-client)
     - [Read and Write to the Blockchain](#read-and-write-to-the-blockchain)
     - [Request-Response Programming Model](#request-response-programming-model)
+- [Integration](#integration)
+    - [Deploy Offchain Rollup Anchor](#deploy-offchain-rollup-anchor)
+    - [Integrate with Your Contract](#integrate-with-your-contract)
 - [Examples and Use Cases](#examples-and-use-cases)
 - [API Reference](#api-reference)
 - [Contributing](#contributing)
 - [License](#license)
 
-## Problem
+## The Challenge
 
-It's common to develop Phat Contracts that interact with the blokchain. However, running offchain programs are sometimes challenging due to it's concurrent execution nature. Without a synchronizing mechanism, the Phat Contract instances may conflict with each other.
+Developing Phat Contracts that interact with blockchains can be a common but challenging task, especially when it comes to handling concurrency issues in off-chain programs. Without a proper synchronization mechanism, Phat Contract instances may end up conflicting with each other.
 
-Imagine a smart contract to distribute computation tasks to Phat Contract workers. The workers may compete with each other when claiming tasks from the blockchain. Each task is supposed to be claimed only once. However, without the coordination between the workers, multiple workers may try to send the transactions to claim the same task simultaneously and overriding each other, resulting the inconsistent smart contract states.
+Consider a real-world scenario: a smart contract distributes computation tasks to Phat Contract workers. These workers compete with each other when claiming tasks from the blockchain. Ideally, each task should only be claimed once. However, without coordination among the workers, they might send transactions simultaneously to claim the same task, resulting in inconsistent smart contract states.
 
-This is a typical state consistency scenario in distributed systems. When developing a Phat Contract talking to a blockchain, it's desired to have a reliable way to perform **transactional operations**, which means the read and write operations should be combined as a single unit, and finally executed atomically on the blockchain, obeying the same **ACID** principle in a transactional DBMS.
+Consistent state management is crucial when developing a Phat Contract that communicates with a blockchain. Developers need a reliable and **transactional** way to perform operations, where read and write tasks are combined into a single unit and executed atomically on the blockchain. This approach aligns with the **ACID** principle found in transactional database management systems.
 
-Offchain Rollup aims to simplify the development of Phat Contracts by providing a stable ACID connection to various blockchains, handling concurrency issues, and enabling a request-response programming model for easy interaction between Phat Contracts and on-chain smart contracts.
+Offchain Rollup is here to simplify Phat Contract development by providing a stable, ACID-compliant connection to various blockchains. This eliminates concurrency issues and enables a request-response programming model for seamless interaction between Phat Contracts and on-chain smart contracts.
 
-## Features
+## Key Benefits
 
-- A gateway deployed on-chain to allow connection to Phat Contract
-- Store states reliablely on blockchains
-- Transactional (ACID) on-chain kv-store for stateful Phat Contract
-- Transactional (ACID) read, write and contract calls
-- Request-response programming model for easy interaction with on-chain smart contracts
-- Support EVM, Substrate, and ink! compatible blockchains
+- An on-chain gateway contract that enables seamless connectivity to Phat Contracts
+- Reliable kv-store on blockchains for durable state management
+    - Transactional (ACID) on-chain kv-store designed for stateful Phat Contracts
+    - ACID-compliant read, write, and contract call operations for consistent data handling
+- Request-response programming model that simplifies interactions between Phat Contracts and on-chain smart contracts
+- Compatibility with EVM, Substrate, and ink!-powered blockchains for enhanced flexibility
 
 ## Getting Started
 
-### Prerequisites
+![](./images/offchain-rollup-arch.png)
 
-TODO: List prerequisites, such as specific versions of Rust, Substrate, EVM, etc.
+There are three steps to use Phat Offchain Rollup, as shown on the diagram:
 
-### Installation
+1. Integrate the rollup client in the Phat Contract to connect to the anchor
+2. Deploy the Anchor contract on the target blockchain
+3. Integrate the anchor with your consumer contract (the smart contract that the Phat Contract interacts with)
 
-TODO: Describe the installation process step by step, including commands and required tools.
+The remaining of this section will focus on the Rollup Client integratoin. It explains how to use Phat Contract. The deployment of the anchor contract and the integration to the consumer contract will be discussed in the [Integration](#integration) section later.
 
-## Usage
+### Add the Cargo Dependency
 
-### Deploy Offchain Rollup Anchor
+> If you are not familir with developing Phat Contract, you can start from the [Setup Wiki Page](https://wiki.phala.network/en-us/build/stateless/setup/) for details.
 
-TODO: Explain how to deploy the Offchain Rollup Anchor to the target blockchain both for EVM and non-EVM environments.
+Update the `Cargo.toml` file in the Phat Contract project to include the phat-offchain-rollup dependency under the `[dependencies]` section:
 
-### Create an Offchain Rollup Client
+```toml
+phat_offchain_rollup = { git = "https://github.com/Phala-Network/phat-offchain-rollup.git", branch = "main", default-features = false, features = ["evm", "substrate"] }
+```
 
-TODO: Describe how to include the SDK in an offchain ink! contract project and create a client that points to the deployed anchor contract.
+Then, append the `std` feature to the `[features]` section as shown:
 
-### Read and Write to the Blockchain
+```toml
+[features]
+default = ["std"]
+std = [
+    "phat_offchain_rollup/std",
+]
+```
 
-TODO: Show examples of using the Offchain Rollup Client to perform read and write operations on the blockchain.
+The `features` attribute controls the rollup target chain activation. By default, all target chains are disabled to minimize the binary size. Enable them manually using the `features` attribute. The supported features include:
 
-### Commit Transactions to the Blockchain
+- `evm`: enable the client to connect to the EVM rollup anchor contracts
+- `substrate`: enable the client to connect to the Substrate rollup anchor pallet
+- `ink`: (WIP)
 
-TODO: Explain how to call the commit function in the client to submit a transaction to the target blockchain.
+Additionally, the `logging` feature can be used to display internal logs, including internet access, to the logger. This is helpful for debugging purposes.
+
+### Use the Rollup Client
+
+> In this section, the `EvmRollupClient` is chosen as the example. It's staightforward to replace it with Substrate or ink rolup clients.
+
+To program with Offchain Rollup, the first step is to create an offchian rollup client:
+
+```rust
+let rpc = "http://localhost:8545";
+let anchor_addr: H160 = hex!["e7f1725E7734CE288F8367e1Bb143E90bb3F0512"].into();
+let queue_prefix = b"q/";
+let client = EvmRollupClient::new(rpc, anchor_addr, queue_prefix)
+    .expect("failed to create rollup client");
+```
+
+where the parameters means:
+
+- `rpc`: The json-rpc endpoint of the target EVM compatible chain. Must be https or http (for test only).
+- `anchor_addr`: The deployed anchor contract address.
+- `queue_prefix`: The queue prefix. Must match the queue prefix specified when deploying the anchor contract.
+
+Once the client is created, the core functionalities are avaialbe to use. The code below shows how to read the kv-store:
+
+```rust
+let key = b"some-key";
+let value: Vec<u8> = client.session.get(key)
+    .expect("failed to get value");
+```
+
+Write to the kv-store.
+
+```rust
+let key = b"some-key";
+let value = b"some-value".to_vec();
+client.session.put(key, value);
+```
+
+Remove an entry in the kv-store.
+
+```rust
+let key = b"some-key";
+client.session.delete(key);
+```
+
+Note that the read operation may fail, since the network may fail when accessing the remote RPC endpoint. Writes are temporarily saved to the rollup client in the memory. It doesn't apply to the blockchain until you finally commit it.
+
+Finally, commit the changes and potentially submit the rollup transaction to the target blockchain by a transaction.
+
+```rust
+let maybe_submittable = client
+    .commit()
+    .expect("failed to commit");
+if let Some(submittable) = maybe_submittable {
+    let tx_id = submittable
+        .submit(pair)
+        .expect("failed to submit rollup tx");
+}
+```
+
+Upon a successful submission, the client should broadcast the transaction and return the `tx_id` for reference in the future. Please note that submitting a transaction doesn't guarantee the transaction will be included to the blockchain.
 
 ### Request-Response Programming Model
 
-TODO: Explain how to use the request-response programming model to create Phat Contracts that interact with on-chain smart contracts.
+A typical use case of offchain rollup is to build a stable Request-Reponse connection between the Phat Contract and the blockchain. The anchor contract allows the developer to push arbitrary message to the request queue. For example, in the EVM Rollup Anchor contract, it can be done like below:
+
+```solidity
+uint id = 1000;
+string tradingPair = "polkadot/usd";
+bytes message = abi.encode(id, tradingPair);
+IPhatRollupAnchor(anchor).pushMessage(message);
+```
+
+On the Phat Contract side, the rollup client can connect to the anchor, check the queue, and potentially reply the requests.
+
+```rust
+// Get a request if presents
+if let Some(raw_req) = client
+    .session()
+    .pop()
+    .expect("failed to read queue") {
+    // let action: Vec<u8> = ... Create your response based on the raw_req ...
+    client.action(Action::Reply(action));
+}
+```
+
+The rollup cient provides the features to deal with the requests:
+
+- `client.session().pop()`: Return a unprocessed request from the queue. Otherwise return `None`.
+- `client.action(Action::Reply(action))`: Add a reply action to send an arbitrary `Vec<u8>` data blob back to the anchor contract.
+
+The `Reply` actions should be paird with the `pop()`. Once a reply is committed and submitted to the target blockchain, the anchor contract will pop the pending request accordingly in an ACID way. So if the Phat Contract fails in this process, the developer can retry the execution multiple times until it succeeds.
+
+Note that in the sample code above, the error handling is greatly simplified. In the real world scenarios, the developer should be careful about both the retry-able and non-retry-able errors. For example, a retry may be helpul with network problems, but not decoding an invalid request.
+
+## Integration
+
+To build an end-to-end project with offchain rollup, the developer needs to deploy the **Offchain Rollup Anchor** contract (pallet) to the target blockchain, and integrate it with the **Consumer Contract**. The rollup anchor is prebuilt and included in this repo. The consumer contract refers to the dapp that talks to the Phat Contract.
+
+### Deploy Offchain Rollup Anchor
+
+
+
+### Integrate with Your Contract
+
+### Integration Resources
+
+- EVM
+    - [An Phat-EVM oracle sample](./phat/contracts/evm_price_feed/README.md)
+    - [pink-web3](https://docs.rs/pink-web3): The web3 client to call EVM chain json-rpc and handle EVM ABI codec.
+- ink! (WIP)
+- Substrate
+    - [An Phat-Substrate oracle sample](./phat/contracts/sub_price_feed)
+    - [pink-subrpc](https://docs.rs/pink-subrpc/): The subxt-like client to call Substrate json-rpc (https-only).
 
 ## Technical Details
 
-Please refer to [this page](./technical-details.md)
+Please refer to the [Technical Details](./technical-details.md) page.
 
 ## Examples and Use Cases
 
@@ -82,7 +204,11 @@ Please refer to [this page](./technical-details.md)
 
 ## API Reference
 
-*TODO: Provide a detailed API reference for the Offchain Rollup SDK, including available functions, parameters, return values, and error handling.*
+- phat-offchain-rollup (WIP)
+- [pink-kv-session](https://docs.rs/pink-kv-session/)
+- EVM [PhatRollupAnchor](./evm/contracts/PhatRollupAnchor.sol)
+- ink! anchor contract (WIP)
+- Substrate [Offchain Rollup Anchor Pallet](https://github.com/Phala-Network/phala-blockchain/blob/master/pallets/offchain-rollup/src/anchor.rs)
 
 ## Contributing
 
