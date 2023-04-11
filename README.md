@@ -233,7 +233,7 @@ Through these steps and resources, developers can seamlessly integrate Offchain 
 
 ## Technical Details
 
-For an in-depth explanation of the project's technical aspects, please refer to the [Technical Details](./technical-details.md) page.
+For an in-depth explanation of the project's technical aspects, please refer to the [Technical Details](./TechnicalDetails.md) page.
 
 ## Examples and Use Cases
 
