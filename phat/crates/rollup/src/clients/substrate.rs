@@ -39,8 +39,8 @@ impl<'a> KvSnapshot for SubstrateSnapshot<'a> {
         let key1: &[u8] = self.contract_id.as_ref();
         let key2: &[u8] = &key.to_owned().encode();
         let storage_key = subrpc::storage::storage_double_map_prefix::<
-            subrpc::hasher::Blake2_128,
-            subrpc::hasher::Blake2_128,
+            subrpc::hasher::Blake2_128Concat,
+            subrpc::hasher::Blake2_128Concat,
         >(&prefix, key1, key2);
         let value = subrpc::get_storage(self.rpc, &storage_key, None)
             .log_err("rollup snapshot: get storage failed")
@@ -221,7 +221,7 @@ pub fn get_name_owner(rpc: &str, contract_id: &AccountId) -> Result<Option<Accou
     let prefix = subrpc::storage::storage_prefix("PhatRollupAnchor", "SubmitterByNames");
     let map_key: &[u8] = contract_id.as_ref();
     let storage_key =
-        subrpc::storage::storage_map_prefix::<subrpc::hasher::Blake2_128>(&prefix, map_key);
+        subrpc::storage::storage_map_prefix::<subrpc::hasher::Blake2_128Concat>(&prefix, map_key);
     // Get storage
     let value = subrpc::get_storage(rpc, &storage_key, None).or(Err(Error::FailedToGetStorage))?;
     if let Some(value) = value {
