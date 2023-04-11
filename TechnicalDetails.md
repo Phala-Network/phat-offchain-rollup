@@ -1,15 +1,6 @@
 # Technical Details
 
-## Table of Content
-
-- [Offchain Rollup Components](#offchain-rollup-components)
-- [KV-store and Versioning](#kv-store-and-versioning)
-- [Concurrency and Optimistic Locking](#concurrency-and-optimistic-locking)
-- [Request Queue](#request-queue)
-
-## Technical Details
-
-## 2. Architecture and Components
+## 1. Architecture and Components
 
 ![](./images/offchain-rollup-arch.png)
 
@@ -21,17 +12,17 @@ This anchor contract also includes the implementation of the Request-Response Qu
 
 **Consumer Contract**: The customized contract to integrate with Phat Contract with Offchain Rollup.
 
-## 3. Design Details
+## 2. Design Details
 
-### 3.1. Key-value Store and Transactional Framework
+### 2.1. Key-value Store and Transactional Framework
 
 Offchain Rollup uses dedicated key-value (kv) databases for each Phat Contract stored in the anchor contract. These databases form the foundation of a transactional framework based on Multi-Version Concurrency Control (MVCC), which enables simultaneous processing of multiple read, write, and custom actions grouped as rollup transactions while ensuring atomicity and avoiding data races.
 
 Each row in the kv store is versioned, starting from version 0 and incrementing with each update. This versioning system allows for effective conflict resolution and data consistency across concurrent transactions.
 
-### 3.2. Rollup Transaction
+### 2.2. Rollup Transaction
 
-Offchain Rollup's rollup transactions are structured as below, containing a `RollupTx` struct with three main components: conditions (`conds`), actions (`actions`), and updates (`updates`):
+Offchain Rollup's rollup transactions are structured as follows, containing a `RollupTx` struct with three main components: conditions (`conds`), actions (`actions`), and updates (`updates`):
 
 ```rust
 pub struct RollupTx {
@@ -53,7 +44,7 @@ When a rollup transaction arrives at the anchor contract, the contract checks if
 
 However, if the version numbers in the transaction do not match the current state of the data store, or the conditions are not met, this indicates a conflict due to another transaction modifying the data. In such cases, the transaction is dropped to maintain the integrity of the data.
 
-### 3.3. Conflict Resolution by Optimistic Lock
+### 2.3. Conflict Resolution by Optimistic Lock
 
 Specifically, the conflict resolution in Offchain Rollup involves two steps: storing versions for each key-value pair in the kv store and validating these versions against the current state of the kv store within transaction conditions.
 
@@ -99,7 +90,7 @@ By incorporating version checking with separate version entry keys in rollup tra
 
 By using optimistic locking, versioning, and a well-defined transaction structure, Offchain Rollup maintains consistency across concurrent transactions and ensures that only non-conflicting and valid transactions are accepted.
 
-### 3.4. Request-Response Protocol Built on KV Store
+### 2.4. Request-Response Protocol Built on KV Store
 
 The Request-Response Programming Model is implemented on top of the kv store, providing a simple and efficient communication system between on-chain smart contracts and off-chain Phat Contracts. It enables consumer contracts to push requests to a queue stored in the rollup kv store. Then, Phat Contracts periodically check the queue, process requests, and send responses back to the blockchain, removing processed requests from the queue.
 
@@ -107,19 +98,19 @@ This Request-Response model supports various use cases, such as on-demand oracle
 
 By combining a transactional framework, conflict resolution through optimistic locking and versioning, and a request-response protocol built on the kv store, Offchain Rollup provides a robust and efficient solution for handling concurrency, consistency, and communication in blockchain environments.
 
-## 4. Performance and Limitations
+## 3. Performance and Limitations
 
-### 4.1. Throughput and Concurrency Advantages
+### 3.1. Throughput and Concurrency Advantages
 
 Offchain Rollup introduces concurrency improvements by implementing a fine-grained optimistic lock, allowing for maximum throughput when transactions do not conflict with each other. This helps avoid data races and inconsistencies that can occur in naive methods of sending transactions directly from Phat Contracts to the blockchain.
 
 Additionally, as Offchain Rollup operates off-chain, it is not limited by the consensus algorithm of the underlying blockchain, contributing to higher transaction-per-second (TPS) rates. The pure computation performed off-chain runs up to 10 times faster than on-chain computation and can scale linearly as more workers are added to execute Phat Contracts.
 
-### 4.2. Limitations and Trade-offs
+### 3.2. Limitations and Trade-offs
 
 While Offchain Rollup provides atomic execution between off-chain Phat Contracts and a single blockchain, it cannot perform atomic operations involving two or more blockchains. This limitation can impact use cases that require cross-chain transactions for which Offchain Rollup may not be the most suitable solution.
 
-### 4.3. Real-world Performance Metrics
+### 3.3. Real-world Performance Metrics
 
 > TODO: add benchmarks data
 
