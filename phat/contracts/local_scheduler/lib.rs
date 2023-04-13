@@ -38,7 +38,8 @@ mod local_scheduler {
         CronExpressionNeverFire,
         InternalErrorCacheCorrupted,
         CallDataTooShort,
-        FailedToCallJob,
+        FailedToExecuteCall,
+        CalledJobReturnedError,
     }
 
     type Result<T> = core::result::Result<T, Error>;
@@ -263,9 +264,11 @@ mod local_scheduler {
                 .exec_input(ExecutionInput::new(Selector::new(selector)).push_arg(args))
                 .returns::<()>()
                 .params();
-            self.env()
+            let msg_result = self
+                .env()
                 .invoke_contract(&call_params)
-                .or(Err(Error::FailedToCallJob))?;
+                .or(Err(Error::FailedToExecuteCall))?;
+            msg_result.or(Err(Error::CalledJobReturnedError))?;
             Ok(())
         }
     }
@@ -293,31 +296,28 @@ mod local_scheduler {
 
         #[ink::test]
         fn it_works() {
-            /*
             let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();
 
             // Register contracts
-            let hash1 = ink_env::Hash::try_from([10u8; 32]).unwrap();
-            let hash2 = ink_env::Hash::try_from([20u8; 32]).unwrap();
+            let hash1 = ink::primitives::Hash::try_from([10u8; 32]).unwrap();
+            let hash2 = ink::primitives::Hash::try_from([20u8; 32]).unwrap();
             ink_env::test::register_contract::<LocalScheduler>(hash1.as_ref());
-            ink_env::test::register_contract::<sample_oracle::SampleOracle>(hash2.as_ref());
+            ink_env::test::register_contract::<sub_price_feed::SubPriceFeed>(hash2.as_ref());
 
             // Deploy Scheduler
             let mut scheduler = LocalSchedulerRef::default()
                 .code_hash(hash1)
                 .endowment(0)
                 .salt_bytes([0u8; 0])
-                .instantiate()
-                .expect("failed to deploy EvmTransactor");
+                .instantiate();
 
             // Deploy Oracle
-            let oracle = ::sample_oracle::SampleOracleRef::default()
+            let oracle = ::sub_price_feed::SubPriceFeedRef::default()
                 .code_hash(hash2)
                 .endowment(0)
                 .salt_bytes([0u8; 0])
-                .instantiate()
-                .expect("failed to deploy SampleOracle");
+                .instantiate();
 
             // Can add a job
             scheduler
@@ -340,7 +340,6 @@ mod local_scheduler {
             scheduler.poll().expect("first poll should succeed");
             let (next_ms, _) = scheduler.get_job_schedule(0).expect("should be triggered");
             assert_eq!(next_ms, 60_000);
-            */
         }
     }
 }

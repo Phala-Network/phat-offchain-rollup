@@ -292,6 +292,7 @@ mod sub_price_feed {
         }
 
         #[ink::test]
+        #[ignore = "run a phala node at 39933 to test"]
         fn default_works() {
             let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();

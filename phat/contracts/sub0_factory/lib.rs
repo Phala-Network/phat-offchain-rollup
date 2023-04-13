@@ -181,7 +181,6 @@ mod sub0_factory {
         use sub_price_feed::SubPriceFeedRef;
 
         #[ink::test]
-        #[ignore = "off-chain environment does not support contract instantiation"]
         fn it_works() {
             let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();
@@ -189,7 +188,8 @@ mod sub0_factory {
             // Mock code hash of contracts
             let hash1 = ink::primitives::Hash::try_from([10u8; 32]).unwrap();
             let hash2 = ink::primitives::Hash::try_from([20u8; 32]).unwrap();
-
+            ink_env::test::register_contract::<Sub0Factory>(hash1.as_ref());
+            ink_env::test::register_contract::<sub_price_feed::SubPriceFeed>(hash2.as_ref());
             let alice = AccountId::from([1u8; 32]);
 
             // Deploy the factory

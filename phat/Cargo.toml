@@ -9,4 +9,6 @@ members = [
 
 # Sneak peek of the new test engine!
 [patch.crates-io]
+ink = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-4.0.1" }
+ink_env = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-4.0.1" }
 serde = { git = "https://github.com/kvinwang/serde.git", branch = "pink" }
