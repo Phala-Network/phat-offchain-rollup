@@ -20,7 +20,7 @@ env_logger = "0.10.0"
 hex-literal = "0.3"
 pink-extension-runtime = "0.4.0"
 
-# sample_oracle = { path = "../sample_oracle", features = ["ink-as-dependency"] }
+sub_price_feed = { path = "../sub_price_feed", features = ["ink-as-dependency"] }
 
 [lib]
 name = "local_scheduler"
