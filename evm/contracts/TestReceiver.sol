@@ -1,28 +1,30 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "./PhatRollupReceiver.sol";
+import "./PhatRollupAnchor.sol";
 
-contract TestReceiver is PhatRollupReceiver {
-    address[] recvFroms;
+contract TestReceiver is PhatRollupAnchor {
     bytes[] recvActions;
 
-    event MsgReceived(address, bytes);
+    event MsgReceived(bytes);
 
-    function onPhatRollupReceived(address from, bytes calldata action)
-        public override returns(bytes4)
-    {
-        recvFroms.push(from);
+    constructor(address submitter) PhatRollupAnchor(submitter) {
+    }
+
+    function pushMessage(bytes memory data) public {
+        _pushMessage(data);
+    }
+
+    function _onMessageReceived(bytes calldata action) internal override {
         recvActions.push(action);
-        emit MsgReceived(from, action);
-        return ROLLUP_RECEIVED;
+        emit MsgReceived(action);
     }
 
     function getRecvLength() public view returns (uint) {
-        return recvFroms.length;
+        return recvActions.length;
     }
 
-    function getRecv(uint i) public view returns (address, bytes memory) {
-        return (recvFroms[i], recvActions[i]);
+    function getRecv(uint i) public view returns (bytes memory) {
+        return recvActions[i];
     }
 }
