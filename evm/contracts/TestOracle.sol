@@ -2,10 +2,9 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./Interfaces.sol";
-import "./PhatRollupReceiver.sol";
+import "./PhatRollupAnchor.sol";
 
-contract TestOracle is PhatRollupReceiver, Ownable {
+contract TestOracle is PhatRollupAnchor, Ownable {
     event PriceReceived(uint reqId, string pair, uint256 price);
     event FeedReceived(uint feedId, string pair,  uint256 price);
     event ErrorReceived(uint reqId, string pair,  uint256 errno);
@@ -19,16 +18,13 @@ contract TestOracle is PhatRollupReceiver, Ownable {
     mapping (uint => string) requests;
     uint nextRequest = 1;
 
-    function setAnchor(address anchor_) public onlyOwner() {
-        anchor = anchor_;
-    }
+    constructor(address phatSubmitter) PhatRollupAnchor(phatSubmitter) {}
 
     function request(string calldata tradingPair) public {
-        require(anchor != address(0), "anchor not configured");
         // assemble the request
         uint id = nextRequest;
         requests[id] = tradingPair;
-        IPhatRollupAnchor(anchor).pushMessage(abi.encode(id, tradingPair));
+        _pushMessage(abi.encode(id, tradingPair));
         nextRequest += 1;
     }
 
@@ -36,12 +32,7 @@ contract TestOracle is PhatRollupReceiver, Ownable {
         feeds[id] = name;
     }
 
-    function onPhatRollupReceived(address /*_from*/, bytes calldata action)
-        public override returns(bytes4)
-    {
-        // Always check the sender. Otherwise you can get fooled.
-        require(msg.sender == anchor, "bad caller");
-
+    function _onMessageReceived(bytes calldata action) internal override {
         require(action.length == 32 * 3, "cannot parse action");
         (uint respType, uint id, uint256 data) = abi.decode(action, (uint, uint, uint256));
         if (respType == TYPE_RESPONSE) {
@@ -53,6 +44,5 @@ contract TestOracle is PhatRollupReceiver, Ownable {
             emit ErrorReceived(id, requests[id], data);
             delete requests[id];
         }
-        return ROLLUP_RECEIVED;
     }
 }
