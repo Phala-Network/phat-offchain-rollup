@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "./MetaTransaction.sol";
 
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
-
 
 /// Adds the Offchain Rollup functionalities to your contract
 ///
@@ -42,25 +43,29 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 /// - `<prefix>/_head`: `uint` - index of the first element
 /// - `<prefix>/_tail`: `uint` - index of the next element to push to the queue
 /// - `<prefix/<n>`: `bytes` - the `n`-th message; `n` is encoded as uint32
-abstract contract PhatRollupAnchor is ReentrancyGuard {
+abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessControl {
     // Constants aligned with the Phat Contract rollup queue implementation.
     bytes constant QUEUE_PREFIX = "q/";
     bytes constant KEY_HEAD = "_head";
     bytes constant KEY_TAIL = "_tail";
+
+    // Submitters are also admin
+    bytes32 public constant SUBMITTER_ROLE = DEFAULT_ADMIN_ROLE;
 
     event MessageQueued(uint256 idx, bytes data);
     event MessageProcessedTo(uint256);
 
     uint8 constant ACTION_REPLY = 0;
     uint8 constant ACTION_SET_QUEUE_HEAD = 1;
+    uint8 constant ACTION_GRANT_SUBMITTER = 10;
+    uint8 constant ACTION_REVOKE_SUBMITTER = 11;
     
-    address submitter;
     mapping (bytes => bytes) kvStore;
 
-    constructor(address submitter_) {
-        submitter = submitter_;
+    constructor(address submitter) {
+        _grantRole(SUBMITTER_ROLE, submitter);
     }
-    
+
     /// Triggers a rollup transaction with `eq` conditoin check on uint256 values
     ///
     /// - actions: Starts with one byte to define the action type and followed by the parameter of
@@ -71,8 +76,35 @@ abstract contract PhatRollupAnchor is ReentrancyGuard {
         bytes[] calldata updateKeys,
         bytes[] calldata updateValues,
         bytes[] calldata actions
-    ) public nonReentrant() returns (bool) {
-        require(msg.sender == submitter, "bad submitter");
+    ) public returns (bool) {
+        // Allow meta tx to call itself
+        require(msg.sender == address(this) || hasRole(SUBMITTER_ROLE, msg.sender), "bad submitter");
+        return _rollupU256CondEqInternal(condKeys, condValues, updateKeys, updateValues, actions);
+    }
+
+    function metaTxRollupU256CondEq(
+        ForwardRequest calldata req,
+        bytes calldata signature
+    ) public requireValidMetaTx(req, signature) returns (bool) {
+        require(hasRole(SUBMITTER_ROLE, req.from), "bad submitter");
+        (
+            bytes[] memory condKeys,
+            bytes[] memory condValues,
+            bytes[] memory updateKeys,
+            bytes[] memory updateValues,
+            bytes[] memory actions
+            ) = abi.decode(req.data, (bytes[], bytes[], bytes[], bytes[], bytes[]));
+        // Self-call to move memory bytes to calldata
+        return this.rollupU256CondEq(condKeys, condValues, updateKeys, updateValues, actions);
+    }
+
+    function _rollupU256CondEqInternal(
+        bytes[] calldata condKeys,
+        bytes[] calldata condValues,
+        bytes[] calldata updateKeys,
+        bytes[] calldata updateValues,
+        bytes[] calldata actions
+    ) internal nonReentrant() returns (bool) {
         require(condKeys.length == condValues.length, "bad cond len");
         require(updateKeys.length == updateValues.length, "bad update len");
         
@@ -106,6 +138,14 @@ abstract contract PhatRollupAnchor is ReentrancyGuard {
             require(action.length >= 1 + 32, "ACTION_SET_QUEUE_HEAD cannot decode");
             uint32 targetIdx = abi.decode(action[1:], (uint32));
             _popTo(targetIdx);
+        } else if (actionType == ACTION_GRANT_SUBMITTER) {
+            require(action.length >= 1 + 20, "ACTION_GRANT_SUBMITTER cannot decode");
+            address submitter = abi.decode(action[1:], (address));
+            _grantRole(SUBMITTER_ROLE, submitter);
+        } else if (actionType == ACTION_REVOKE_SUBMITTER) {
+            require(action.length >= 1 + 20, "ACTION_REVOKE_SUBMITTER cannot decode");
+            address submitter = abi.decode(action[1:], (address));
+            _revokeRole(SUBMITTER_ROLE, submitter);
         } else {
             revert("unsupported action");
         }

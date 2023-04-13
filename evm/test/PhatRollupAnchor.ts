@@ -1,15 +1,16 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
 describe("RollupAnchor", function () {
   async function deployFixture() {
     // Contracts are deployed using the first signer/account by default
-    const [owner, submitter] = await ethers.getSigners();
+    const [owner, submitter, submitter2] = await ethers.getSigners();
 
     const TestReceiver = await ethers.getContractFactory("TestReceiver");
     const target = await TestReceiver.deploy(submitter.address);
-    return { target, owner, submitter };
+    return { target, owner, submitter, submitter2 };
   }
 
   // describe("Deployment", function () {
@@ -165,6 +166,68 @@ describe("RollupAnchor", function () {
         expect(await target.queueGetUint(hex('_head'))).to.be.equals(1);
     })
   });
+
+  describe("Meta Transaction", function () {
+    it("Can process requests", async function () {
+        const { target, owner, submitter, submitter2 } = await loadFixture(deployFixture);
+        // Add submitter 2
+        const submitterRole = await target.SUBMITTER_ROLE();
+        const grantTx = await target
+          .connect(submitter)
+          .grantRole(submitterRole, submitter2.address);
+        await expect(grantTx).not.to.be.reverted;
+        await expect(grantTx).to
+            .emit(target, 'RoleGranted')
+            .withArgs(submitterRole, submitter2.address, submitter.address);
+
+        // Push a message
+        const pushTx = await target.connect(owner).pushMessage('0xdecaffee');
+        await expect(pushTx).not.to.be.reverted;
+        await expect(pushTx).to
+            .emit(target, 'MessageQueued')
+            .withArgs(0, '0xdecaffee');
+
+        // Rollup with meta-tx
+        const rollupParams = ethers.utils.defaultAbiCoder.encode(
+          ['bytes[]', 'bytes[]', 'bytes[]', 'bytes[]', 'bytes[]'],
+          [
+            ['0x00'],
+            [encodeUint32(0)],
+            ['0x00'],
+            [encodeUint32(1)],
+            [
+                // Callback: req 00 responded with 0xDEADBEEF
+                ethers.utils.hexConcat(['0x00', encodeUint32(0), '0xDEADBEEF']),
+                // Custom: queue processed to 1
+                ethers.utils.hexConcat(['0x01', encodeUint32(1)]),
+            ],
+          ]
+        );
+        const metaTxData = {
+          from: submitter2.address,
+          nonce: 0,
+          data: rollupParams,
+        };
+        const metaTxSig = await signMetaTx(submitter2, target.address, metaTxData);
+        const rollupTx = await target.connect(submitter).metaTxRollupU256CondEq(metaTxData, metaTxSig);
+        await expect(rollupTx).not.to.be.reverted;
+        await expect(rollupTx).to
+            .emit(target, 'MessageProcessedTo')
+            .withArgs(1);
+
+        // Check queue processed
+        expect(await target.getRecvLength()).to.be.equals('1');
+        expect(await target.getRecv(0)).to.be.eql('0x0000000000000000000000000000000000000000000000000000000000000000deadbeef');
+        // end
+        expect(await target.queueGetUint(hex('_tail'))).to.be.equals(1);
+        // start
+        expect(await target.queueGetUint(hex('_head'))).to.be.equals(1);
+    })
+  });
+
+  it.skip("can control submitter via meta tx",  async function () {
+    // TODO
+  });
 });
 
 
@@ -176,4 +239,21 @@ function encodeUint32(v: number) {
 }
 function hex(str: string): string {
   return ethers.utils.hexlify(ethers.utils.toUtf8Bytes(str));
+}
+async function signMetaTx(signer: SignerWithAddress, contractAddress: string, value: { from: string, nonce: number, data: string }) {
+  // All properties on a domain are optional
+  const domain = {
+    name: 'PhatRollupMetaTxReceiver',
+    version: '0.0.1',
+    chainId: 31337,  // hardhat chain id
+    verifyingContract: contractAddress
+  };
+  const types = {
+    ForwardRequest: [
+        { name: 'from', type: 'address' },
+        { name: 'nonce', type: 'uint256' },
+        { name: 'data', type: 'bytes' }
+    ]
+  };
+  return await signer._signTypedData(domain, types, value);
 }
