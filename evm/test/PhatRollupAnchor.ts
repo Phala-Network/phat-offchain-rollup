@@ -173,12 +173,12 @@ describe("RollupAnchor", function () {
         // Add submitter 2
         const submitterRole = await target.SUBMITTER_ROLE();
         const grantTx = await target
-          .connect(submitter)
+          .connect(owner)
           .grantRole(submitterRole, submitter2.address);
         await expect(grantTx).not.to.be.reverted;
         await expect(grantTx).to
             .emit(target, 'RoleGranted')
-            .withArgs(submitterRole, submitter2.address, submitter.address);
+            .withArgs(submitterRole, submitter2.address, owner.address);
 
         // Push a message
         const pushTx = await target.connect(owner).pushMessage('0xdecaffee');

@@ -16,18 +16,28 @@ import "./MetaTransaction.sol";
 ///
 /// ## Solidity Usage
 ///
-/// Inherit this abstract contract in your consumer contract. You will need to initialize the
-/// rollup `submitter`, which is the address the Phat Contract used to submit rollup transactions.
-/// Then you should implement `_onMessageReceived()` to receive response.
-///
 /// ```solidity
 /// contract ConsumerContract is PhatRollupAnchor {
-///     constructor(address submitter) PhatRollupAnchor(submitter) {}
+///     constructor(address submitter) {
+///         _grantRole(PhatRollupAnchor.SUBMITTER_ROLE, submitter);
+///     }
 ///     function _onMessageReceived(bytes calldata action) internal override {
 ///         emit MsgReceived(action);
 ///     }
 /// }
 /// ```
+///
+/// Inherit this abstract contract in your consumer contract. To allow the Phat Contract to connect
+/// to your consumer contract properly, you will need to specify `submitter`, an address generated
+/// and controlled by the Phat Contract as its credential.
+///
+/// Add a submitter by `_grantRole()` as above. The submitters are controlled by OpenZeppelin's
+/// `AccessControl` library. It allows to add and remove members to the role. You should have at
+/// least one `submitter` to receive response from Phat Contract.
+///
+/// Then you should implement `_onMessageReceived()` to receive response. The parameter `action` is
+/// the raw data provided by the Phat Contract. Usually it's encoded meaningful data in some
+/// predefined schema (e.g. `abi.encode()`).
 ///
 /// Call `_pushMessage(data)` to push the raw message to the Phat Contract. It returns the request
 /// id, which can be used to link the response to the request later.
@@ -50,7 +60,7 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
     bytes constant KEY_TAIL = "_tail";
 
     // Submitters are also admin
-    bytes32 public constant SUBMITTER_ROLE = DEFAULT_ADMIN_ROLE;
+    bytes32 public constant SUBMITTER_ROLE = keccak256("SUBMITTER_ROLE");
 
     event MessageQueued(uint256 idx, bytes data);
     event MessageProcessedTo(uint256);
@@ -61,10 +71,6 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
     uint8 constant ACTION_REVOKE_SUBMITTER = 11;
     
     mapping (bytes => bytes) kvStore;
-
-    constructor(address submitter) {
-        _grantRole(SUBMITTER_ROLE, submitter);
-    }
 
     /// Triggers a rollup transaction with `eq` conditoin check on uint256 values
     ///
