@@ -168,17 +168,23 @@ describe("RollupAnchor", function () {
   });
 
   describe("Meta Transaction", function () {
-    it("Can process requests", async function () {
+    it("Can grant role and process requests", async function () {
         const { target, owner, submitter, submitter2 } = await loadFixture(deployFixture);
-        // Add submitter 2
+        // Add submitter 2 by a meta-tx
         const submitterRole = await target.SUBMITTER_ROLE();
+        const [metaTxData1, metaTxSig1] = await metaTx([
+          [], [], [], [],
+          // 0x0a: ACTION_GRANT_SUBMITTER
+          [ethers.utils.hexConcat(['0x0a', abiEncode('address', submitter2.address)])],
+        ], submitter, 0, target.address);
+        // Send meta-tx via owner on behalf of submitter
         const grantTx = await target
           .connect(owner)
-          .grantRole(submitterRole, submitter2.address);
+          .metaTxRollupU256CondEq(metaTxData1, metaTxSig1);
         await expect(grantTx).not.to.be.reverted;
         await expect(grantTx).to
             .emit(target, 'RoleGranted')
-            .withArgs(submitterRole, submitter2.address, owner.address);
+            .withArgs(submitterRole, submitter2.address, target.address);
 
         // Push a message
         const pushTx = await target.connect(owner).pushMessage('0xdecaffee');
@@ -187,29 +193,23 @@ describe("RollupAnchor", function () {
             .emit(target, 'MessageQueued')
             .withArgs(0, '0xdecaffee');
 
-        // Rollup with meta-tx
-        const rollupParams = ethers.utils.defaultAbiCoder.encode(
-          ['bytes[]', 'bytes[]', 'bytes[]', 'bytes[]', 'bytes[]'],
+        // Rollup by a meta-tx
+        const [metaTxData, metaTxSig] = await metaTx([
+          ['0x00'],
+          [encodeUint32(0)],
+          ['0x00'],
+          [encodeUint32(1)],
           [
-            ['0x00'],
-            [encodeUint32(0)],
-            ['0x00'],
-            [encodeUint32(1)],
-            [
-                // Callback: req 00 responded with 0xDEADBEEF
-                ethers.utils.hexConcat(['0x00', encodeUint32(0), '0xDEADBEEF']),
-                // Custom: queue processed to 1
-                ethers.utils.hexConcat(['0x01', encodeUint32(1)]),
-            ],
-          ]
-        );
-        const metaTxData = {
-          from: submitter2.address,
-          nonce: 0,
-          data: rollupParams,
-        };
-        const metaTxSig = await signMetaTx(submitter2, target.address, metaTxData);
-        const rollupTx = await target.connect(submitter).metaTxRollupU256CondEq(metaTxData, metaTxSig);
+              // Callback: req 00 responded with 0xDEADBEEF
+              ethers.utils.hexConcat(['0x00', encodeUint32(0), '0xDEADBEEF']),
+              // Custom: queue processed to 1
+              ethers.utils.hexConcat(['0x01', encodeUint32(1)]),
+          ],
+        ], submitter2, 0, target.address);
+        // Send meta-tx via submitter on behalf of submitter2
+        const rollupTx = await target
+          .connect(submitter)
+          .metaTxRollupU256CondEq(metaTxData, metaTxSig);
         await expect(rollupTx).not.to.be.reverted;
         await expect(rollupTx).to
             .emit(target, 'MessageProcessedTo')
@@ -224,10 +224,6 @@ describe("RollupAnchor", function () {
         expect(await target.queueGetUint(hex('_head'))).to.be.equals(1);
     })
   });
-
-  it.skip("can control submitter via meta tx",  async function () {
-    // TODO
-  });
 });
 
 
@@ -240,7 +236,15 @@ function encodeUint32(v: number) {
 function hex(str: string): string {
   return ethers.utils.hexlify(ethers.utils.toUtf8Bytes(str));
 }
-async function signMetaTx(signer: SignerWithAddress, contractAddress: string, value: { from: string, nonce: number, data: string }) {
+
+interface MetaTxData {
+  from: string;
+  nonce: number;
+  data: string;
+};
+type RollupParams = [string[], string[], string[], string[], string[]];
+
+async function signMetaTx(signer: SignerWithAddress, contractAddress: string, value: MetaTxData) {
   // All properties on a domain are optional
   const domain = {
     name: 'PhatRollupMetaTxReceiver',
@@ -256,4 +260,18 @@ async function signMetaTx(signer: SignerWithAddress, contractAddress: string, va
     ]
   };
   return await signer._signTypedData(domain, types, value);
+}
+
+async function metaTx(rollupParams: RollupParams, signer: SignerWithAddress, nonce: number, contractAddress: string): Promise<[MetaTxData, string]> {
+  const data = ethers.utils.defaultAbiCoder.encode(
+    ['bytes[]', 'bytes[]', 'bytes[]', 'bytes[]', 'bytes[]'],
+    rollupParams,
+  );
+  const metaTxData = {
+    from: signer.address,
+    nonce,
+    data,
+  };
+  const metaTxSig = await signMetaTx(signer, contractAddress, metaTxData);
+  return [metaTxData, metaTxSig]
 }
