@@ -7,9 +7,8 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract MetaTxReceiver is EIP712, Context, ReentrancyGuard {
+contract MetaTxReceiver is EIP712, Context {
     using ECDSA for bytes32;
 
     struct ForwardRequest {
@@ -22,11 +21,8 @@ contract MetaTxReceiver is EIP712, Context, ReentrancyGuard {
         keccak256("ForwardRequest(address from,uint256 nonce,bytes data)");
 
     mapping(address => uint256) private _nonces;
-    bool private _isMetaTx;
 
-    constructor() EIP712("PhatRollupMetaTxReceiver", "0.0.1") {
-        _isMetaTx = false;
-    }
+    constructor() EIP712("PhatRollupMetaTxReceiver", "0.0.1") {}
 
     function metaTxGetNonce(address from) public view returns (uint256) {
         return _nonces[from];
