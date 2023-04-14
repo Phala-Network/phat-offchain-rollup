@@ -70,6 +70,9 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
     ///
     /// - actions: Starts with one byte to define the action type and followed by the parameter of
     ///     the actions. Supported actions: ACTION_REPLY, ACTION_SET_QUEUE_HEAD
+    ///
+    /// Note that calling from `address(this)` is allowed to make parameters a calldata. Don't
+    /// abuse it.
     function rollupU256CondEq(
         bytes[] calldata condKeys,
         bytes[] calldata condValues,
@@ -85,7 +88,7 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
     function metaTxRollupU256CondEq(
         ForwardRequest calldata req,
         bytes calldata signature
-    ) public requireValidMetaTx(req, signature) returns (bool) {
+    ) public useMetaTx(req, signature) returns (bool) {
         require(hasRole(SUBMITTER_ROLE, req.from), "bad submitter");
         (
             bytes[] memory condKeys,

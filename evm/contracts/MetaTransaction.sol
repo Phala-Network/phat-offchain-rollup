@@ -39,7 +39,7 @@ contract MetaTxReceiver is EIP712, Context, ReentrancyGuard {
         return _nonces[req.from] == req.nonce && signer == req.from;
     }
 
-    modifier requireValidMetaTx(
+    modifier useMetaTx(
         ForwardRequest calldata req,
         bytes calldata signature
     ) {
