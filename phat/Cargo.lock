@@ -576,7 +576,7 @@ dependencies = [
  "ethabi",
  "fixed",
  "hex",
- "hex-literal",
+ "hex-literal 0.3.4",
  "ink",
  "ink_env",
  "parity-scale-codec",
@@ -859,6 +859,12 @@ name = "hex-literal"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ebdb29d2ea9ed0083cd8cece49bbd968021bd99b0849edb4a9a7ee0fdf6a4e0"
+
+[[package]]
+name = "hex-literal"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
 
 [[package]]
 name = "hex_fmt"
@@ -1379,7 +1385,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "env_logger",
- "hex-literal",
+ "hex-literal 0.3.4",
  "ink",
  "ink_env",
  "parity-scale-codec",
@@ -1642,9 +1648,11 @@ version = "0.1.0"
 dependencies = [
  "ethabi",
  "hex",
+ "hex-literal 0.4.1",
  "ink",
  "parity-scale-codec",
  "pink-extension",
+ "pink-extension-runtime",
  "pink-kv-session",
  "pink-subrpc",
  "pink-web3",
@@ -1772,7 +1780,7 @@ checksum = "ada84ef47e0fd6b10e0fdee583ed731161a578ee8e2a59e8431802a3fd86b559"
 dependencies = [
  "base58",
  "hex",
- "hex-literal",
+ "hex-literal 0.3.4",
  "impl-serde",
  "parity-scale-codec",
  "pink-extension",
@@ -2581,7 +2589,7 @@ name = "sub0_factory"
 version = "0.1.0"
 dependencies = [
  "env_logger",
- "hex-literal",
+ "hex-literal 0.3.4",
  "ink",
  "ink_env",
  "parity-scale-codec",
@@ -2599,7 +2607,7 @@ dependencies = [
  "env_logger",
  "fixed",
  "hex",
- "hex-literal",
+ "hex-literal 0.3.4",
  "ink",
  "ink_env",
  "parity-scale-codec",

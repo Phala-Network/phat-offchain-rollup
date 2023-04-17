@@ -88,8 +88,7 @@ To work with Offchain Rollup, follow these steps:
 ```rust
 let rpc = "http://localhost:8545";
 let anchor_addr: H160 = hex!["e7f1725E7734CE288F8367e1Bb143E90bb3F0512"].into();
-let queue_prefix = b"q/";
-let client = EvmRollupClient::new(rpc, anchor_addr, queue_prefix)
+let client = EvmRollupClient::new(rpc, anchor_addr)
     .expect("failed to create rollup client");
 ```
 
@@ -97,7 +96,6 @@ The parameters represent:
 
 - `rpc`: The JSON-RPC endpoint of the target EVM compatible chain. It must be HTTPS or HTTP (for testing only).
 - `anchor_addr`: The deployed anchor contract address.
-- `queue_prefix`: The queue prefix. This must match the queue prefix specified when deploying the anchor contract.
 
 #### 2. Access the core functionalities:
 
@@ -196,16 +194,11 @@ To deploy the EVM rollup anchor, follow these steps:
 
 1. Deploy the Phat Contract with a pre-generated ECDSA key pair (called submission key)
     - Sample code: [EvmPriceFeed](./phat/contracts/evm_price_feed/lib.rs)
-2. Deploy the contract: [PhatRollupAnchor](./evm/contracts/PhatRollupAnchor.sol) with the following parameters
-    - `PhatRollupAnchor(address submitter, address actionCallback, bytes memory queuePrefix)`
+2. (FIXIT) Deploy the contract: [PhatRollupAnchor](./evm/contracts/PhatRollupAnchor.sol) with the following parameters
+    - `PhatRollupAnchor()`
     - `submitter`: The `H160` address of the submission key
     - `actionCallback`: The address of the consumer contract to receive the response
-    - `queuePrefix`: The prefix of the queue; it can be an arbitrary string, but it should match the one used to create the rollup client in the Phat Contract
 3. Transfer the ownership of `PhatRollupAnchor` to the consumer contract by calling `anchor.transferOwnership(consumerContract)`
-
-> Note: In future updates, we plan to simplify the anchor contract by:
-> - Merging "actionCallback" and the owner as a unified "consumer contract" role
-> - Making the queue prefix queryable by the Phat Contract, so developers don't have to specify it manually
 
 Find a reference script [here](./evm/scripts/deploy-test.ts).
 

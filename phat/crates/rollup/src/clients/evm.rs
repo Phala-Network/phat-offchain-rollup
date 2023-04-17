@@ -4,6 +4,7 @@ use alloc::{borrow::ToOwned, vec::Vec};
 use primitive_types::{H160, U256};
 use scale::Encode;
 
+use ethabi::Token;
 use kv_session::{
     rollup,
     traits::{BumpVersion, KvSnapshot, QueueIndexCodec},
@@ -15,11 +16,13 @@ use pink_web3::{
     api::{Eth, Namespace},
     contract::{Contract, Options},
     keys::pink::KeyPair,
+    signing::Key,
     transports::{resolve_ready, PinkHttp},
     types::{BlockId, BlockNumber, Bytes, U64},
 };
 
 const ANCHOR_ABI: &[u8] = include_bytes!("../../res/anchor.abi.json");
+const DEFAULT_QUEUE_PREFIX: &[u8] = b"q/";
 
 pub struct EvmSnapshot {
     contract_id: H160,
@@ -120,6 +123,7 @@ pub struct EvmRollupClient {
 pub struct SubmittableRollupTx {
     contract: Contract<PinkHttp>,
     tx: RollupTx,
+    at: u64,
 }
 
 impl Action {
@@ -139,12 +143,12 @@ impl Action {
 }
 
 impl EvmRollupClient {
-    pub fn new(rpc: &str, contract_id: H160, queue_prefix: &[u8]) -> Result<Self> {
+    pub fn new(rpc: &str, contract_id: H160) -> Result<Self> {
         let kvdb = EvmSnapshot::new(rpc, contract_id)?;
         let access_tracker = RwTracker::new();
         Ok(Self {
             actions: Default::default(),
-            session: Session::new(kvdb, access_tracker, queue_prefix)
+            session: Session::new(kvdb, access_tracker, DEFAULT_QUEUE_PREFIX)
                 .map_err(Error::SessionError)?,
         })
     }
@@ -195,9 +199,11 @@ impl EvmRollupClient {
                 .collect(),
         };
 
+        let at = kvdb.at;
         Ok(Some(SubmittableRollupTx {
             contract: kvdb.destruct(),
             tx,
+            at,
         }))
     }
 
@@ -211,9 +217,6 @@ impl EvmRollupClient {
 
 impl SubmittableRollupTx {
     pub fn submit(self, pair: KeyPair) -> Result<Vec<u8>> {
-        use ethabi::Token;
-        use pink_web3::signing::Key;
-
         // Prepare rollupU256CondEq params
         let (cond_keys, cond_values): (Vec<Vec<u8>>, Vec<Vec<u8>>) = self
             .tx

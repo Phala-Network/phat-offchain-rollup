@@ -28,6 +28,10 @@ ethabi = { version = "18.0.0", default-features = false, features = [
 # for Substrate rollup
 subrpc = { package = "pink-subrpc", version = "0.4.2", default-features = false, optional = true }
 
+[dev-dependencies]
+hex-literal = "0.4.1"
+pink-extension-runtime = { version = "0.4.0", default-features = false }
+
 [features]
 default = ["std", "logging"]
 std = [

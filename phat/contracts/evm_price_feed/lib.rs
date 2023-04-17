@@ -313,7 +313,7 @@ mod evm_price_feed {
 
     fn connect(config: &Config) -> Result<EvmRollupClient> {
         let anchor_addr: H160 = config.anchor_addr.into();
-        EvmRollupClient::new(&config.rpc, anchor_addr, b"q/")
+        EvmRollupClient::new(&config.rpc, anchor_addr)
             .log_err("failed to create rollup client")
             .or(Err(Error::FailedToCreateClient))
     }
