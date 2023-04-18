@@ -247,11 +247,10 @@ impl SubmittableRollupTx {
         Ok(tx_id.encode())
     }
 
-    fn meta_tx(self, pair: &KeyPair, relay_pair: &KeyPair) -> Result<Vec<u8>> {
+    pub fn submit_meta_tx(self, pair: &KeyPair, relay_pair: &KeyPair) -> Result<Vec<u8>> {
         let params = self.tx.into_params();
         let data = ethabi::encode(&[params.0, params.1, params.2, params.3, params.4]);
         let meta_params = sign_meta_tx(&self.contract, self.at, &data, pair).unwrap();
-        // println!("{tx:?} {sig:?}");
 
         // Estiamte gas before submission
         let gas = resolve_ready(self.contract.estimate_gas::<(Token, Bytes)>(
@@ -386,6 +385,6 @@ mod tests {
             .expect("failed to connect to testnet anchor");
         client.action(Action::Reply(vec![]));
         let rollup_tx = client.commit().expect("failed to commit").unwrap();
-        rollup_tx.meta_tx(&pair, &pair).unwrap();
+        rollup_tx.submit_meta_tx(&pair, &pair).unwrap();
     }
 }

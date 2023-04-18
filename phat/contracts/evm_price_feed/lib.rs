@@ -36,8 +36,10 @@ mod evm_price_feed {
         rpc: String,
         /// The rollup anchor address on the target blockchain
         anchor_addr: [u8; 20],
-        /// Key for submiting rollup transaction
-        submit_key: [u8; 32],
+        /// Key for signing the rollup tx. If `sender_key` is None, use it to sign the EVM tx.
+        attest_key: [u8; 32],
+        /// Key for sending out the rollup meta-tx. None to fallback to the wallet based auth.
+        sender_key: Option<[u8; 32]>,
         /// The first token in the trading pair
         token0: String,
         /// The sedon token in the trading pair
@@ -96,7 +98,8 @@ mod evm_price_feed {
             &mut self,
             rpc: String,
             anchor_addr: Vec<u8>,
-            submit_key: Vec<u8>,
+            attest_key: Vec<u8>,
+            sender_key: Option<Vec<u8>>,
             token0: String,
             token1: String,
             feed_id: u32,
@@ -107,7 +110,11 @@ mod evm_price_feed {
                 anchor_addr: anchor_addr
                     .try_into()
                     .or(Err(Error::InvalidAddressLength))?,
-                submit_key: submit_key.try_into().or(Err(Error::InvalidKeyLength))?,
+                attest_key: attest_key.try_into().or(Err(Error::InvalidKeyLength))?,
+                sender_key: match sender_key {
+                    Some(key) => Some(key.try_into().or(Err(Error::InvalidKeyLength))?),
+                    None => None,
+                },
                 token0,
                 token1,
                 feed_id,
@@ -228,7 +235,8 @@ mod evm_price_feed {
             &self,
             rpc: String,
             anchor_addr: [u8; 20],
-            submit_key: [u8; 32],
+            attest_key: [u8; 32],
+            sender_key: Option<[u8; 32]>,
             feed_id: u32,
             price: u128,
         ) -> Result<Option<Vec<u8>>> {
@@ -236,7 +244,8 @@ mod evm_price_feed {
             let custom_config = Config {
                 rpc,
                 anchor_addr,
-                submit_key,
+                attest_key,
+                sender_key,
                 token0: Default::default(),
                 token1: Default::default(),
                 feed_id,
@@ -319,16 +328,27 @@ mod evm_price_feed {
     }
 
     fn maybe_submit_tx(client: EvmRollupClient, config: &Config) -> Result<Option<Vec<u8>>> {
+        use pink_web3::keys::pink::KeyPair;
         let maybe_submittable = client
             .commit()
             .log_err("failed to commit")
             .or(Err(Error::FailedToCommitTx))?;
         if let Some(submittable) = maybe_submittable {
-            let pair = pink_web3::keys::pink::KeyPair::from(config.submit_key);
-            let tx_id = submittable
-                .submit(pair)
-                .log_err("failed to submit rollup tx")
-                .or(Err(Error::FailedToSendTransaction))?;
+            let attest_pair = KeyPair::from(config.attest_key);
+            let tx_id = if let Some(sender_key) = config.sender_key {
+                // Prefer to meta-tx
+                let sender_pair = KeyPair::from(sender_key);
+                submittable
+                    .submit_meta_tx(&attest_pair, &sender_pair)
+                    .log_err("failed to submit rollup meta-tx")
+                    .or(Err(Error::FailedToSendTransaction))?
+            } else {
+                // Fallback to account-based authentication
+                submittable
+                    .submit(attest_pair)
+                    .log_err("failed to submit rollup tx")
+                    .or(Err(Error::FailedToSendTransaction))?
+            };
             return Ok(Some(tx_id));
         }
         Ok(None)
@@ -352,7 +372,8 @@ mod evm_price_feed {
 
         struct EnvVars {
             rpc: String,
-            key: Vec<u8>,
+            attest_key: Vec<u8>,
+            sender_key: Option<Vec<u8>>,
             anchor: Vec<u8>,
         }
 
@@ -362,9 +383,17 @@ mod evm_price_feed {
         fn config() -> EnvVars {
             dotenvy::dotenv().ok();
             let rpc = get_env("RPC");
-            let key = hex::decode(get_env("PRIVKEY")).expect("hex decode failed");
+            let attest_key = hex::decode(get_env("ATTEST_KEY")).expect("hex decode failed");
+            let sender_key = std::env::var("SENDER_KEY")
+                .map(|s| hex::decode(s).expect("hex decode failed"))
+                .ok();
             let anchor = hex::decode(get_env("ANCHOR")).expect("hex decode failed");
-            EnvVars { rpc, key, anchor }
+            EnvVars {
+                rpc,
+                attest_key,
+                sender_key,
+                anchor,
+            }
         }
 
         #[ink::test]
@@ -380,14 +409,20 @@ mod evm_price_feed {
         fn submit_price_feed() {
             let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();
-            let EnvVars { rpc, key, anchor } = config();
+            let EnvVars {
+                rpc,
+                attest_key,
+                sender_key,
+                anchor,
+            } = config();
 
             let mut price_feed = EvmPriceFeed::default();
             price_feed
                 .config(
                     rpc,
                     anchor,
-                    key,
+                    attest_key,
+                    sender_key,
                     "polkadot".to_string(),
                     "usd".to_string(),
                     0,
@@ -403,14 +438,20 @@ mod evm_price_feed {
         fn answer_price_request() {
             let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();
-            let EnvVars { rpc, key, anchor } = config();
+            let EnvVars {
+                rpc,
+                attest_key,
+                sender_key,
+                anchor,
+            } = config();
 
             let mut price_feed = EvmPriceFeed::default();
             price_feed
                 .config(
                     rpc,
                     anchor,
-                    key,
+                    attest_key,
+                    sender_key,
                     "polkadot".to_string(),
                     "usd".to_string(),
                     0,
