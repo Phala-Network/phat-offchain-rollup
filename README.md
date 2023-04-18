@@ -43,6 +43,8 @@ Offchain Rollup is here to simplify Phat Contract development by providing a sta
 
 To successfully use the Phat Offchain Rollup, follow these three steps illustrated in the diagram:
 
+TODO: actor refactor
+
 1. Integrate the rollup client within the Phat Contract to establish a connection with the anchor.
 2. Deploy the Anchor contract onto the target blockchain.
 3. Integrate the anchor with your consumer contract (the smart contract that interacts with the Phat Contract).
@@ -141,13 +143,15 @@ Upon a successful submission, the client will broadcast the transaction and retu
 
 ### Request-Response Programming Model
 
+TODO: actor refactor
+
 A common use case of offchain rollup is to establish a stable Request-Response connection between the Phat Contract and the blockchain. The anchor contract enables developers to push arbitrary messages to the request queue. For instance, in the EVM Rollup Anchor contract, this can be done as follows:
 
 ```solidity
 uint id = 1000;
 string tradingPair = "polkadot/usd";
 bytes message = abi.encode(id, tradingPair);
-IPhatRollupAnchor(anchor).pushMessage(message);
+uint256 reqId = _pushMessage(message);
 ```
 
 On the Phat Contract side, the rollup client can connect to the anchor, check the queue, and potentially reply to the requests.
@@ -175,12 +179,8 @@ Note that the error handling in the sample code above is simplified. In real-wor
 Finally, the consumer contract can be configured to receive responses as shown below.
 
 ```solidity
-function onPhatRollupReceived(address _from, bytes calldata action)
-    public override returns(bytes4)
-{
-    // Always check the sender. Otherwise, you can be gamed by hackers.
-    require(msg.sender == anchor, "bad caller");
-    // Utilize `action` here.
+function _onMessageReceived(bytes calldata message) internal override {
+    emit MsgReceived(message);
 }
 ```
 
@@ -189,6 +189,8 @@ function onPhatRollupReceived(address _from, bytes calldata action)
 To build an end-to-end project with offchain rollup, follow these steps to deploy the **Offchain Rollup Anchor** contract or pallet to the target blockchain and integrate it with the **Consumer Contract**. The rollup anchor is provided in this repository, while the consumer contract refers to the dApp that communicates with the Phat Contract.
 
 ### Deploy Offchain Rollup Anchor
+
+TODO: actor refactor
 
 To deploy the EVM rollup anchor, follow these steps:
 
