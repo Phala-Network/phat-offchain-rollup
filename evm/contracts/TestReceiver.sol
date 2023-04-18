@@ -8,9 +8,9 @@ contract TestReceiver is PhatRollupAnchor {
 
     event MsgReceived(bytes);
 
-    constructor(address submitter) {
+    constructor(address attestor) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(PhatRollupAnchor.SUBMITTER_ROLE, submitter);
+        _grantRole(PhatRollupAnchor.ATTESTOR_ROLE, attestor);
     }
 
     function pushMessage(bytes memory data) public {

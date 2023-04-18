@@ -17,8 +17,8 @@ contract TestOracle is PhatRollupAnchor, Ownable {
     mapping (uint => string) requests;
     uint nextRequest = 1;
 
-    constructor(address phatSubmitter) {
-        _grantRole(PhatRollupAnchor.SUBMITTER_ROLE, phatSubmitter);
+    constructor(address phatAttestor) {
+        _grantRole(PhatRollupAnchor.ATTESTOR_ROLE, phatAttestor);
     }
 
     function request(string calldata tradingPair) public {

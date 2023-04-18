@@ -6,8 +6,8 @@ async function main() {
   const [deployer] = await ethers.getSigners();
 
   console.log('Deploying...');
-  const submitter = deployer.address;  // When deploy for real e2e test, change it to the real submitter wallet.
-  const oracle = await TestOracle.deploy(submitter);
+  const attestor = deployer.address;  // When deploy for real e2e test, change it to the real attestor wallet.
+  const oracle = await TestOracle.deploy(attestor);
   await oracle.deployed();
   console.log('Deployed', {
     oracle: oracle.address,

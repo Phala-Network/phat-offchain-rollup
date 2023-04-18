@@ -196,7 +196,7 @@ To deploy the EVM rollup anchor, follow these steps:
     - Sample code: [EvmPriceFeed](./phat/contracts/evm_price_feed/lib.rs)
 2. (FIXIT) Deploy the contract: [PhatRollupAnchor](./evm/contracts/PhatRollupAnchor.sol) with the following parameters
     - `PhatRollupAnchor()`
-    - `submitter`: The `H160` address of the submission key
+    - `attestor`: The `H160` address of the submission key
     - `actionCallback`: The address of the consumer contract to receive the response
 3. Transfer the ownership of `PhatRollupAnchor` to the consumer contract by calling `anchor.transferOwnership(consumerContract)`
 

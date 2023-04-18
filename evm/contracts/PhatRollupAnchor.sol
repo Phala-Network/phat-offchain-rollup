@@ -18,8 +18,8 @@ import "./MetaTransaction.sol";
 ///
 /// ```solidity
 /// contract ConsumerContract is PhatRollupAnchor {
-///     constructor(address submitter) {
-///         _grantRole(PhatRollupAnchor.SUBMITTER_ROLE, submitter);
+///     constructor(address attestor) {
+///         _grantRole(PhatRollupAnchor.ATTESTOR_ROLE, attestor);
 ///     }
 ///     function _onMessageReceived(bytes calldata action) internal override {
 ///         emit MsgReceived(action);
@@ -28,12 +28,12 @@ import "./MetaTransaction.sol";
 /// ```
 ///
 /// Inherit this abstract contract in your consumer contract. To allow the Phat Contract to connect
-/// to your consumer contract properly, you will need to specify `submitter`, an address generated
+/// to your consumer contract properly, you will need to specify `attestor`, an address generated
 /// and controlled by the Phat Contract as its credential.
 ///
-/// Add a submitter by `_grantRole()` as above. The submitters are controlled by OpenZeppelin's
+/// Add a attestor by `_grantRole()` as above. The attestors are controlled by OpenZeppelin's
 /// `AccessControl` library. It allows to add and remove members to the role. You should have at
-/// least one `submitter` to receive response from Phat Contract.
+/// least one `attestor` to receive response from Phat Contract.
 ///
 /// Then you should implement `_onMessageReceived()` to receive response. The parameter `action` is
 /// the raw data provided by the Phat Contract. Usually it's encoded meaningful data in some
@@ -59,16 +59,16 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
     bytes constant KEY_HEAD = "_head";
     bytes constant KEY_TAIL = "_tail";
 
-    // Submitters are also admin
-    bytes32 public constant SUBMITTER_ROLE = keccak256("SUBMITTER_ROLE");
+    // Only submission from attestor is allowed.
+    bytes32 public constant ATTESTOR_ROLE = keccak256("ATTESTOR_ROLE");
 
     event MessageQueued(uint256 idx, bytes data);
     event MessageProcessedTo(uint256);
 
     uint8 constant ACTION_REPLY = 0;
     uint8 constant ACTION_SET_QUEUE_HEAD = 1;
-    uint8 constant ACTION_GRANT_SUBMITTER = 10;
-    uint8 constant ACTION_REVOKE_SUBMITTER = 11;
+    uint8 constant ACTION_GRANT_ATTESTOR = 10;
+    uint8 constant ACTION_REVOKE_ATTESTOR = 11;
     
     mapping (bytes => bytes) kvStore;
 
@@ -87,7 +87,7 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
         bytes[] calldata actions
     ) public returns (bool) {
         // Allow meta tx to call itself
-        require(msg.sender == address(this) || hasRole(SUBMITTER_ROLE, msg.sender), "bad submitter");
+        require(msg.sender == address(this) || hasRole(ATTESTOR_ROLE, msg.sender), "bad attestor");
         return _rollupU256CondEqInternal(condKeys, condValues, updateKeys, updateValues, actions);
     }
 
@@ -95,7 +95,7 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
         ForwardRequest calldata req,
         bytes calldata signature
     ) public useMetaTx(req, signature) returns (bool) {
-        require(hasRole(SUBMITTER_ROLE, req.from), "bad submitter");
+        require(hasRole(ATTESTOR_ROLE, req.from), "bad attestor");
         (
             bytes[] memory condKeys,
             bytes[] memory condValues,
@@ -147,14 +147,14 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
             require(action.length >= 1 + 32, "ACTION_SET_QUEUE_HEAD cannot decode");
             uint32 targetIdx = abi.decode(action[1:], (uint32));
             _popTo(targetIdx);
-        } else if (actionType == ACTION_GRANT_SUBMITTER) {
-            require(action.length >= 1 + 20, "ACTION_GRANT_SUBMITTER cannot decode");
-            address submitter = abi.decode(action[1:], (address));
-            _grantRole(SUBMITTER_ROLE, submitter);
-        } else if (actionType == ACTION_REVOKE_SUBMITTER) {
-            require(action.length >= 1 + 20, "ACTION_REVOKE_SUBMITTER cannot decode");
-            address submitter = abi.decode(action[1:], (address));
-            _revokeRole(SUBMITTER_ROLE, submitter);
+        } else if (actionType == ACTION_GRANT_ATTESTOR) {
+            require(action.length >= 1 + 20, "ACTION_GRANT_ATTESTOR cannot decode");
+            address attestor = abi.decode(action[1:], (address));
+            _grantRole(ATTESTOR_ROLE, attestor);
+        } else if (actionType == ACTION_REVOKE_ATTESTOR) {
+            require(action.length >= 1 + 20, "ACTION_REVOKE_ATTESTOR cannot decode");
+            address attestor = abi.decode(action[1:], (address));
+            _revokeRole(ATTESTOR_ROLE, attestor);
         } else {
             revert("unsupported action");
         }

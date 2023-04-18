@@ -6,11 +6,11 @@ import { ethers } from "hardhat";
 describe("RollupAnchor", function () {
   async function deployFixture() {
     // Contracts are deployed using the first signer/account by default
-    const [owner, submitter, submitter2] = await ethers.getSigners();
+    const [owner, attestor, attestor2] = await ethers.getSigners();
 
     const TestReceiver = await ethers.getContractFactory("TestReceiver");
-    const target = await TestReceiver.deploy(submitter.address);
-    return { target, owner, submitter, submitter2 };
+    const target = await TestReceiver.deploy(attestor.address);
+    return { target, owner, attestor, attestor2 };
   }
 
   // describe("Deployment", function () {
@@ -32,7 +32,7 @@ describe("RollupAnchor", function () {
   // });
 
   describe("Rollup", function () {
-    it("Should not forward from random submitter", async function () {
+    it("Should not forward from random attestor", async function () {
       const { target, owner } = await loadFixture(deployFixture);
       await expect(
         target.connect(owner).rollupU256CondEq(
@@ -43,14 +43,14 @@ describe("RollupAnchor", function () {
           // actions
           ['0x00DEADBEEF'],
         )
-      ).to.be.revertedWith('bad submitter');
+      ).to.be.revertedWith('bad attestor');
     });
 
     it("Should not allow invalid input arrays", async function () {
-      const { target, submitter } = await loadFixture(deployFixture);
+      const { target, attestor } = await loadFixture(deployFixture);
 
       await expect(
-        target.connect(submitter).rollupU256CondEq(
+        target.connect(attestor).rollupU256CondEq(
           // cond
           ['0x01'], [],
           // updates
@@ -61,7 +61,7 @@ describe("RollupAnchor", function () {
       ).to.be.revertedWith('bad cond len');
 
       await expect(
-        target.connect(submitter).rollupU256CondEq(
+        target.connect(attestor).rollupU256CondEq(
           // cond
           [], [],
           // updates
@@ -73,10 +73,10 @@ describe("RollupAnchor", function () {
     });
 
     it("Should forward actions", async function () {
-      const { target, submitter } = await loadFixture(deployFixture);
+      const { target, attestor } = await loadFixture(deployFixture);
 
       await expect(
-        target.connect(submitter).rollupU256CondEq(
+        target.connect(attestor).rollupU256CondEq(
           // cond
           ['0x01'],
           [encodeUint32(0)],
@@ -96,10 +96,10 @@ describe("RollupAnchor", function () {
 
   describe("OptimisticLock", function () {
     it("Should reject conflicting transaction", async function () {
-      const { target, submitter } = await loadFixture(deployFixture);
+      const { target, attestor } = await loadFixture(deployFixture);
       // Rollup from v0 to v1
       await expect(
-        target.connect(submitter).rollupU256CondEq(
+        target.connect(attestor).rollupU256CondEq(
           // cond
           ['0x01'],
           [encodeUint32(0)],
@@ -113,7 +113,7 @@ describe("RollupAnchor", function () {
       expect(await target.getStorage('0x01')).to.be.equals(encodeUint32(1));
       // Rollup to v1 again
       await expect(
-        target.connect(submitter).rollupU256CondEq(
+        target.connect(attestor).rollupU256CondEq(
           // cond
           ['0x01'],
           [encodeUint32(0)],
@@ -130,14 +130,14 @@ describe("RollupAnchor", function () {
 
   describe("Rollup", function () {
     it("Can process requests", async function () {
-        const { target, owner, submitter } = await loadFixture(deployFixture);
+        const { target, owner, attestor } = await loadFixture(deployFixture);
         const pushTx = await target.connect(owner).pushMessage('0xdecaffee');
         await expect(pushTx).not.to.be.reverted;
         await expect(pushTx).to
             .emit(target, 'MessageQueued')
             .withArgs(0, '0xdecaffee');
         // Simulate a rollup
-        const rollupTx = await target.connect(submitter).rollupU256CondEq(
+        const rollupTx = await target.connect(attestor).rollupU256CondEq(
                 // cond (global=1)
                 ['0x00'],
                 [encodeUint32(0)],
@@ -169,22 +169,22 @@ describe("RollupAnchor", function () {
 
   describe("Meta Transaction", function () {
     it("Can grant role and process requests", async function () {
-        const { target, owner, submitter, submitter2 } = await loadFixture(deployFixture);
-        // Add submitter 2 by a meta-tx
-        const submitterRole = await target.SUBMITTER_ROLE();
+        const { target, owner, attestor, attestor2 } = await loadFixture(deployFixture);
+        // Add attestor 2 by a meta-tx
+        const attestorRole = await target.ATTESTOR_ROLE();
         const [metaTxData1, metaTxSig1] = await metaTx([
           [], [], [], [],
-          // 0x0a: ACTION_GRANT_SUBMITTER
-          [ethers.utils.hexConcat(['0x0a', abiEncode('address', submitter2.address)])],
-        ], submitter, 0, target.address);
-        // Send meta-tx via owner on behalf of submitter
+          // 0x0a: ACTION_GRANT_ATTESTOR
+          [ethers.utils.hexConcat(['0x0a', abiEncode('address', attestor2.address)])],
+        ], attestor, 0, target.address);
+        // Send meta-tx via owner on behalf of attestor
         const grantTx = await target
           .connect(owner)
           .metaTxRollupU256CondEq(metaTxData1, metaTxSig1);
         await expect(grantTx).not.to.be.reverted;
         await expect(grantTx).to
             .emit(target, 'RoleGranted')
-            .withArgs(submitterRole, submitter2.address, target.address);
+            .withArgs(attestorRole, attestor2.address, target.address);
 
         // Push a message
         const pushTx = await target.connect(owner).pushMessage('0xdecaffee');
@@ -205,10 +205,10 @@ describe("RollupAnchor", function () {
               // Custom: queue processed to 1
               ethers.utils.hexConcat(['0x01', encodeUint32(1)]),
           ],
-        ], submitter2, 0, target.address);
-        // Send meta-tx via submitter on behalf of submitter2
+        ], attestor2, 0, target.address);
+        // Send meta-tx via attestor on behalf of attestor2
         const rollupTx = await target
-          .connect(submitter)
+          .connect(attestor)
           .metaTxRollupU256CondEq(metaTxData, metaTxSig);
         await expect(rollupTx).not.to.be.reverted;
         await expect(rollupTx).to
