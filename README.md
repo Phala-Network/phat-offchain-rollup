@@ -43,6 +43,8 @@ Offchain Rollup is here to simplify Phat Contract development by providing a sta
 
 To successfully use the Phat Offchain Rollup, follow these three steps illustrated in the diagram:
 
+TODO: actor refactor
+
 1. Integrate the rollup client within the Phat Contract to establish a connection with the anchor.
 2. Deploy the Anchor contract onto the target blockchain.
 3. Integrate the anchor with your consumer contract (the smart contract that interacts with the Phat Contract).
@@ -88,8 +90,7 @@ To work with Offchain Rollup, follow these steps:
 ```rust
 let rpc = "http://localhost:8545";
 let anchor_addr: H160 = hex!["e7f1725E7734CE288F8367e1Bb143E90bb3F0512"].into();
-let queue_prefix = b"q/";
-let client = EvmRollupClient::new(rpc, anchor_addr, queue_prefix)
+let client = EvmRollupClient::new(rpc, anchor_addr)
     .expect("failed to create rollup client");
 ```
 
@@ -97,7 +98,6 @@ The parameters represent:
 
 - `rpc`: The JSON-RPC endpoint of the target EVM compatible chain. It must be HTTPS or HTTP (for testing only).
 - `anchor_addr`: The deployed anchor contract address.
-- `queue_prefix`: The queue prefix. This must match the queue prefix specified when deploying the anchor contract.
 
 #### 2. Access the core functionalities:
 
@@ -143,13 +143,15 @@ Upon a successful submission, the client will broadcast the transaction and retu
 
 ### Request-Response Programming Model
 
+TODO: actor refactor
+
 A common use case of offchain rollup is to establish a stable Request-Response connection between the Phat Contract and the blockchain. The anchor contract enables developers to push arbitrary messages to the request queue. For instance, in the EVM Rollup Anchor contract, this can be done as follows:
 
 ```solidity
 uint id = 1000;
 string tradingPair = "polkadot/usd";
 bytes message = abi.encode(id, tradingPair);
-IPhatRollupAnchor(anchor).pushMessage(message);
+uint256 reqId = _pushMessage(message);
 ```
 
 On the Phat Contract side, the rollup client can connect to the anchor, check the queue, and potentially reply to the requests.
@@ -177,12 +179,8 @@ Note that the error handling in the sample code above is simplified. In real-wor
 Finally, the consumer contract can be configured to receive responses as shown below.
 
 ```solidity
-function onPhatRollupReceived(address _from, bytes calldata action)
-    public override returns(bytes4)
-{
-    // Always check the sender. Otherwise, you can be gamed by hackers.
-    require(msg.sender == anchor, "bad caller");
-    // Utilize `action` here.
+function _onMessageReceived(bytes calldata message) internal override {
+    emit MsgReceived(message);
 }
 ```
 
@@ -192,20 +190,17 @@ To build an end-to-end project with offchain rollup, follow these steps to deplo
 
 ### Deploy Offchain Rollup Anchor
 
+TODO: actor refactor
+
 To deploy the EVM rollup anchor, follow these steps:
 
 1. Deploy the Phat Contract with a pre-generated ECDSA key pair (called submission key)
     - Sample code: [EvmPriceFeed](./phat/contracts/evm_price_feed/lib.rs)
-2. Deploy the contract: [PhatRollupAnchor](./evm/contracts/PhatRollupAnchor.sol) with the following parameters
-    - `PhatRollupAnchor(address submitter, address actionCallback, bytes memory queuePrefix)`
-    - `submitter`: The `H160` address of the submission key
+2. (FIXIT) Deploy the contract: [PhatRollupAnchor](./evm/contracts/PhatRollupAnchor.sol) with the following parameters
+    - `PhatRollupAnchor()`
+    - `attestor`: The `H160` address of the submission key
     - `actionCallback`: The address of the consumer contract to receive the response
-    - `queuePrefix`: The prefix of the queue; it can be an arbitrary string, but it should match the one used to create the rollup client in the Phat Contract
 3. Transfer the ownership of `PhatRollupAnchor` to the consumer contract by calling `anchor.transferOwnership(consumerContract)`
-
-> Note: In future updates, we plan to simplify the anchor contract by:
-> - Merging "actionCallback" and the owner as a unified "consumer contract" role
-> - Making the queue prefix queryable by the Phat Contract, so developers don't have to specify it manually
 
 Find a reference script [here](./evm/scripts/deploy-test.ts).
 

@@ -10,32 +10,26 @@ const TYPE_ERROR = 2;
 
 describe("SampleOracle", function () {
   async function deployFixture() {
-    const [owner, submitter] = await ethers.getSigners();
+    const [owner, attestor] = await ethers.getSigners();
 
-    const Anchor = await ethers.getContractFactory("PhatRollupAnchor");
     const TestOracle = await ethers.getContractFactory("TestOracle");
-    const oracle = await TestOracle.deploy();
-    const anchor = await Anchor.deploy(submitter.address, oracle.address, "0x712F"); // Q/
+    const oracle = await TestOracle.deploy(attestor.address);
 
-    // Set receiver as the owner of the anchor because the receiver will push requests.
-    await expect(anchor.connect(owner).transferOwnership(oracle.address)).not.to.be.reverted;
-    await expect(oracle.connect(owner).setAnchor(anchor.address)).not.to.be.reverted;
-
-    return { anchor, oracle, owner, submitter };
+    return { oracle, owner, attestor };
   }
 
   describe("Oracle", function () {
     it("Can receive price", async function () {
-      const { anchor, oracle, owner, submitter } = await loadFixture(deployFixture);
+      const { oracle, owner, attestor } = await loadFixture(deployFixture);
 
       // Send a request
       const reqTx = await oracle.connect(owner).request("btc/usdt");
       await expect(reqTx).not.to.be.reverted;
-      await expect(reqTx).to.emit(anchor, 'MessageQueued');
+      await expect(reqTx).to.emit(oracle, 'MessageQueued');
 
       // Simulate a rollup to respond
       const btcPrice = BigNumber.from(10).pow(18).mul(19500);
-      const rollupTx = await anchor.connect(submitter).rollupU256CondEq(
+      const rollupTx = await oracle.connect(attestor).rollupU256CondEq(
               // cond (global=0)
               ['0x00'], [uint(0)],
               // updates (global=1)
@@ -53,7 +47,7 @@ describe("SampleOracle", function () {
           )
       await expect(rollupTx).not.to.be.reverted;
       await expect(rollupTx).to
-          .emit(anchor, 'MessageProcessedTo')
+          .emit(oracle, 'MessageProcessedTo')
           .withArgs(1);
       await expect(rollupTx).to
           .emit(oracle, 'PriceReceived')
@@ -61,14 +55,14 @@ describe("SampleOracle", function () {
     })
 
     it("Can receive feed", async function () {
-      const { anchor, oracle, owner, submitter } = await loadFixture(deployFixture);
+      const { oracle, owner, attestor } = await loadFixture(deployFixture);
 
       const reqTx = await oracle.connect(owner).registerFeed(0, "btc/usdt");
       await expect(reqTx).not.to.be.reverted;
 
       // Simulate a rollup to respond
       const btcPrice = BigNumber.from(10).pow(18).mul(19510);
-      const rollupTx = await anchor.connect(submitter).rollupU256CondEq(
+      const rollupTx = await oracle.connect(attestor).rollupU256CondEq(
               // cond (global=0)
               ['0x00'], [uint(0)],
               // updates (global=1)
@@ -89,14 +83,14 @@ describe("SampleOracle", function () {
     })
 
     it("Can process error", async function () {
-      const { anchor, oracle, owner, submitter } = await loadFixture(deployFixture);
+      const { oracle, owner, attestor } = await loadFixture(deployFixture);
 
       const reqTx = await oracle.connect(owner).request("btc/usdt");
       await expect(reqTx).not.to.be.reverted;
-      await expect(reqTx).to.emit(anchor, 'MessageQueued');
+      await expect(reqTx).to.emit(oracle, 'MessageQueued');
 
       // Simulate a rollup to respond
-      const rollupTx = await anchor.connect(submitter).rollupU256CondEq(
+      const rollupTx = await oracle.connect(attestor).rollupU256CondEq(
               // cond (global=0)
               ['0x00'], [uint(0)],
               // updates (global=1)
