@@ -11,3 +11,10 @@ REPORT_GAS=true npx hardhat test
 npx hardhat node
 npx hardhat run scripts/deploy.ts
 ```
+
+## Gas metering
+
+```shell
+REPORT_GAS=1 npx hardhat test ./test/PhatRollupAnchor.ts
+REPORT_GAS=1 npx hardhat test ./test/SampleOracle.ts
+```
