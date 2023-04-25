@@ -66,9 +66,6 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
     event MessageQueued(uint256 idx, bytes data);
     event MessageProcessedTo(uint256);
 
-    error MetaTxCallReverted(string reason);
-    error MetaTxCallFailed(bytes reason);
-    error MetaTxCallPanicked(uint reason);
     error BadAttestor();
     error BadCondLen(uint kenLen, uint valueLen);
     error BadUpdateLen(uint kenLen, uint valueLen);
