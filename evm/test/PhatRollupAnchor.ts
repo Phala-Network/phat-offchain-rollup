@@ -243,7 +243,7 @@ describe("RollupAnchor", function () {
       // Send meta-tx
       const rollupTx = target
         .connect(attestor)
-        .metaTxRollupU256CondEq(metaTxData, metaTxSig, {gasLimit: 1000000});
+        .metaTxRollupU256CondEq(metaTxData, metaTxSig);
       await expect(rollupTx).to.be.revertedWithCustomError(target, 'InvalidPopTarget');
     })
   });
