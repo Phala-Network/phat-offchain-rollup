@@ -19,6 +19,9 @@ contract MetaTxReceiver is EIP712, Context {
 
     bytes32 private constant _TYPEHASH =
         keccak256("ForwardRequest(address from,uint256 nonce,bytes data)");
+    
+    error NonceTooLow(uint256 actual, uint256 currentNonce);
+    error MetaTxSignatureNotMatch();
 
     mapping(address => uint256) private _nonces;
 
@@ -35,7 +38,9 @@ contract MetaTxReceiver is EIP712, Context {
     }
 
     function metaTxPrepareWithNonce(address from, bytes calldata data, uint256 nonce) public view returns (ForwardRequest memory, bytes32) {
-        require(nonce >= _nonces[from], "nonce too low");
+        if (nonce < _nonces[from]) {
+            revert NonceTooLow(nonce, _nonces[from]);
+        }
         ForwardRequest memory req = ForwardRequest(from, nonce, data);
         bytes32 hash = _hashTypedDataV4(
             keccak256(abi.encode(_TYPEHASH, from, nonce, keccak256(data)))
@@ -56,7 +61,9 @@ contract MetaTxReceiver is EIP712, Context {
         ForwardRequest calldata req,
         bytes calldata signature
     ) {
-        require(metaTxVerify(req, signature), "MetaTxReceiver: signature does not match request");
+        if (!metaTxVerify(req, signature)) {
+            revert MetaTxSignatureNotMatch();
+        }
         _nonces[req.from] = req.nonce + 1;
         _;
     }
