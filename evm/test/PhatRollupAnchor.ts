@@ -43,7 +43,7 @@ describe("RollupAnchor", function () {
           // actions
           ['0x00DEADBEEF'],
         )
-      ).to.be.revertedWith('bad attestor');
+      ).to.be.revertedWithCustomError(target, 'BadAttestor');
     });
 
     it("Should not allow invalid input arrays", async function () {
@@ -58,7 +58,7 @@ describe("RollupAnchor", function () {
           // actions
           ['0x00DEADBEEF'],
         )
-      ).to.be.revertedWith('bad cond len');
+      ).to.be.revertedWithCustomError(target, 'BadCondLen');
 
       await expect(
         target.connect(attestor).rollupU256CondEq(
@@ -69,7 +69,7 @@ describe("RollupAnchor", function () {
           // actions
           ['0x00DEADBEEF'],
         )
-      ).to.be.revertedWith('bad update len');
+      ).to.be.revertedWithCustomError(target, 'BadUpdateLen');
     });
 
     it("Should forward actions", async function () {
@@ -123,7 +123,10 @@ describe("RollupAnchor", function () {
           // actions
           ['0x00DEADBEEF'],
         )
-      ).to.be.revertedWith('cond not met');
+      ).to.be
+        .revertedWithCustomError(target, 'CondNotMet')
+        // We want to ensure 0x01 to match 0, but the value is 1.
+        .withArgs('0x01', 0, 1);
     });
   });
 
@@ -222,6 +225,26 @@ describe("RollupAnchor", function () {
         expect(await target.queueGetUint(hex('_tail'))).to.be.equals(1);
         // start
         expect(await target.queueGetUint(hex('_head'))).to.be.equals(1);
+    })
+
+    it("Can propogate internal call error", async function () {
+      const { target, attestor } = await loadFixture(deployFixture);
+      // Rollup by a meta-tx
+      const [metaTxData, metaTxSig] = await metaTx([
+        ['0x00'],
+        [encodeUint32(0)],
+        ['0x00'],
+        [encodeUint32(1)],
+        [
+            ethers.utils.hexConcat(['0x00', encodeUint32(0), '0xDEADBEEF']),
+            ethers.utils.hexConcat(['0x01', encodeUint32(1)]),
+        ],
+      ], attestor, 0, target.address);
+      // Send meta-tx
+      const rollupTx = target
+        .connect(attestor)
+        .metaTxRollupU256CondEq(metaTxData, metaTxSig, {gasLimit: 1000000});
+      await expect(rollupTx).to.be.revertedWithCustomError(target, 'InvalidPopTarget');
     })
   });
 });

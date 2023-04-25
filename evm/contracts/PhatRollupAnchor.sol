@@ -66,6 +66,18 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
     event MessageQueued(uint256 idx, bytes data);
     event MessageProcessedTo(uint256);
 
+    error MetaTxCallReverted(string reason);
+    error MetaTxCallFailed(bytes reason);
+    error MetaTxCallPanicked(uint reason);
+    error BadAttestor();
+    error BadCondLen(uint kenLen, uint valueLen);
+    error BadUpdateLen(uint kenLen, uint valueLen);
+    error CondNotMet(bytes cond, uint32 expected, uint32 actual);
+    error CannotDecodeAction(uint8 actionId);
+    error UnsupportedAction(uint8 actionId);
+    error Internal_toUint32Strict_outOfBounds(bytes data);
+    error InvalidPopTarget(uint256 targetIdx, uint256 tailIdx);
+
     uint8 constant ACTION_REPLY = 0;
     uint8 constant ACTION_SET_QUEUE_HEAD = 1;
     uint8 constant ACTION_GRANT_ATTESTOR = 10;
@@ -88,24 +100,35 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
         bytes[] calldata actions
     ) public returns (bool) {
         // Allow meta tx to call itself
-        require(msg.sender == address(this) || hasRole(ATTESTOR_ROLE, msg.sender), "bad attestor");
+        if (msg.sender != address(this) && !hasRole(ATTESTOR_ROLE, msg.sender)) {
+            revert BadAttestor();
+        }
         return _rollupU256CondEqInternal(condKeys, condValues, updateKeys, updateValues, actions);
     }
 
+    /// Triggers a rollup transaction similar to `rollupU256CondEq` but with meta-tx.
+    ///
+    /// Note to error handling. Most of the errors are propagated to the transaction error.
+    /// However in case of out-of-gas, the error will not be propagated. It results in a bare
+    /// "reverted" in etherscan. It's hard to debug, but you will find the gas is 100% used like
+    /// [this tx](https://mumbai.polygonscan.com/tx/0x0abe643ada209ec31a0a6da4fab546b7071e1cf265f3b4681b9bede209c400c9).
     function metaTxRollupU256CondEq(
         ForwardRequest calldata req,
         bytes calldata signature
     ) public useMetaTx(req, signature) returns (bool) {
-        require(hasRole(ATTESTOR_ROLE, req.from), "bad attestor");
+        if (!hasRole(ATTESTOR_ROLE, req.from)) {
+            revert BadAttestor();            
+        }
         (
             bytes[] memory condKeys,
             bytes[] memory condValues,
             bytes[] memory updateKeys,
             bytes[] memory updateValues,
             bytes[] memory actions
-            ) = abi.decode(req.data, (bytes[], bytes[], bytes[], bytes[], bytes[]));
+        ) = abi.decode(req.data, (bytes[], bytes[], bytes[], bytes[], bytes[]));
         emit MetaTxDecoded();
-        // Self-call to move memory bytes to calldata
+        // Self-call to move memory bytes to calldata. Check "error handling" notes in docstring
+        // to learn more.
         return this.rollupU256CondEq(condKeys, condValues, updateKeys, updateValues, actions);
     }
 
@@ -116,15 +139,19 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
         bytes[] calldata updateValues,
         bytes[] calldata actions
     ) internal nonReentrant() returns (bool) {
-        require(condKeys.length == condValues.length, "bad cond len");
-        require(updateKeys.length == updateValues.length, "bad update len");
+        if (condKeys.length != condValues.length) {
+            revert BadCondLen(condKeys.length, condValues.length);
+        }
+        if (updateKeys.length != updateValues.length) {
+            revert BadUpdateLen(updateKeys.length, updateValues.length);
+        }
         
         // check cond
         for (uint i = 0; i < condKeys.length; i++) {
             uint32 value = toUint32Strict(kvStore[condKeys[i]]);
             uint32 expected = toUint32Strict(condValues[i]);
             if (value != expected) {
-                revert("cond not met");
+                revert CondNotMet(condKeys[i], expected, value);
             }
         }
         
@@ -146,19 +173,25 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
         if (actionType == ACTION_REPLY) {
             _onMessageReceived(action[1:]);
         } else if (actionType == ACTION_SET_QUEUE_HEAD) {
-            require(action.length >= 1 + 32, "ACTION_SET_QUEUE_HEAD cannot decode");
+            if (action.length < 1 + 32) {
+                revert CannotDecodeAction(ACTION_SET_QUEUE_HEAD);
+            }
             uint32 targetIdx = abi.decode(action[1:], (uint32));
             _popTo(targetIdx);
         } else if (actionType == ACTION_GRANT_ATTESTOR) {
-            require(action.length >= 1 + 20, "ACTION_GRANT_ATTESTOR cannot decode");
+            if (action.length < 1 + 20) {
+                revert CannotDecodeAction(ACTION_GRANT_ATTESTOR);
+            }
             address attestor = abi.decode(action[1:], (address));
             _grantRole(ATTESTOR_ROLE, attestor);
         } else if (actionType == ACTION_REVOKE_ATTESTOR) {
-            require(action.length >= 1 + 20, "ACTION_REVOKE_ATTESTOR cannot decode");
+            if (action.length < 1 + 20) {
+                revert CannotDecodeAction(ACTION_REVOKE_ATTESTOR);
+            }
             address attestor = abi.decode(action[1:], (address));
             _revokeRole(ATTESTOR_ROLE, attestor);
         } else {
-            revert("unsupported action");
+            revert UnsupportedAction(actionType);
         }
     }
 
@@ -170,7 +203,9 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
         if (_bytes.length == 0) {
             return 0;
         }
-        require(_bytes.length == 32, "toUint32Strict_outOfBounds");
+        if (_bytes.length != 32) {
+            revert Internal_toUint32Strict_outOfBounds(_bytes);
+        }
         uint32 v = abi.decode(_bytes, (uint32));
         return v;
     }
@@ -191,7 +226,9 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
 
     function _popTo(uint32 targetIdx) internal {
         uint32 curTail = queueGetUint(KEY_TAIL);
-        require(targetIdx <= curTail, "invalid pop target");
+        if (targetIdx > curTail) {
+            revert InvalidPopTarget(targetIdx, curTail);
+        }
         for (uint32 i = queueGetUint(KEY_HEAD); i < targetIdx; i++) {
             queueRemoveItem(i);
         }
