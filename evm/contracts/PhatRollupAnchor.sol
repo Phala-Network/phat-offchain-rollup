@@ -62,6 +62,7 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
     // Only submission from attestor is allowed.
     bytes32 public constant ATTESTOR_ROLE = keccak256("ATTESTOR_ROLE");
 
+    event MetaTxDecoded();
     event MessageQueued(uint256 idx, bytes data);
     event MessageProcessedTo(uint256);
 
@@ -103,6 +104,7 @@ abstract contract PhatRollupAnchor is ReentrancyGuard, MetaTxReceiver, AccessCon
             bytes[] memory updateValues,
             bytes[] memory actions
             ) = abi.decode(req.data, (bytes[], bytes[], bytes[], bytes[], bytes[]));
+        emit MetaTxDecoded();
         // Self-call to move memory bytes to calldata
         return this.rollupU256CondEq(condKeys, condValues, updateKeys, updateValues, actions);
     }
