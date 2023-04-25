@@ -18,3 +18,10 @@ npx hardhat run scripts/deploy.ts
 REPORT_GAS=1 npx hardhat test ./test/PhatRollupAnchor.ts
 REPORT_GAS=1 npx hardhat test ./test/SampleOracle.ts
 ```
+
+## Coverage
+
+``shell
+npx hardhat coverage
+# miniserve ./coverage
+```
