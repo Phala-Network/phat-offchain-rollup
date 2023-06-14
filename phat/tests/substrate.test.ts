@@ -3,7 +3,7 @@ import { Sub0Factory } from '@/typings/Sub0Factory'
 import * as PhalaSdk from '@phala/sdk';
 import { ApiPromise } from '@polkadot/api';
 import type { KeyringPair } from '@polkadot/keyring/types';
-import { ContractType } from 'devphase';
+import { ContractType } from '@devphase/service';
 
 import 'dotenv/config';
 import { LocalScheduler } from '@/typings/LocalScheduler';
@@ -13,8 +13,10 @@ async function delay(ms: number): Promise<void> {
 }
 
 describe('Substrate Offchain Rollup', () => {
-    const httpRpc: string = "http://127.0.0.1:39933";
+    const httpRpc: string = "http://localhost:39933";
     const secretBob: string = "0x398f0c28f98885e046333d4a41c19cee4c37368a9832c6502f6cfd182e2aef89";
+    const defaultDelay: number = 10_000;
+    const defaultTimeout: number = 120_000;
 
     let priceFeedFactory: SubPriceFeed.Factory;
     let priceFeed: SubPriceFeed.Contract;
@@ -31,6 +33,12 @@ describe('Substrate Offchain Rollup', () => {
         priceFeedFactory = await this.devPhase.getFactory('sub_price_feed');
         sub0Factory = await this.devPhase.getFactory('sub0_factory');
         priceFeedCodeHash = priceFeedFactory.metadata.source.hash;
+
+        // Set contract type which is required for deploying.
+        // The current devPhase generated factory does not have the contract type set.
+        priceFeedFactory.contractType = ContractType.InkCode;
+        sub0Factory.contractType = ContractType.InkCode;
+
         await priceFeedFactory.deploy();
         await sub0Factory.deploy();
         expect(priceFeedCodeHash.startsWith('0x')).to.be.true;
@@ -47,41 +55,46 @@ describe('Substrate Offchain Rollup', () => {
 
     describe('SubPriceFeed', () => {
         before(async function() {
-            this.timeout(30_000);
+            this.timeout(defaultTimeout);
+
             // Deploy contract
             priceFeed = await priceFeedFactory.instantiate('default', [], {transferToCluster: 1e12});
             console.log('SubPriceFeed deployed at', priceFeed.address.toString());
         });
 
-        it('should has correct owners', async function() {
+        it('should have correct owners', async function() {
             const feedOwner = await priceFeed.query.owner(certAlice, {});
             expect(feedOwner.result.isOk).to.be.true;
             expect(feedOwner.output.asOk.toString()).to.be.equal(alice.address.toString());
         });
 
-        it('should be configurable', async function() {
+        it('can be configured', async function() {
+            this.timeout(defaultTimeout);
+
             // Config the oracle
             const feedConfig = await priceFeed.tx
                 .config(txConf, httpRpc, 100, secretBob as any, 'polkadot', 'usd')
                 .signAndSend(alice, {nonce: -1});
             console.log('Feed configured', feedConfig.toHuman());
-            await delay(4*1000);
+            await delay(defaultDelay);
 
             // Init the rollup on the blockchain
             const init = await priceFeed.query.maybeInitRollup(certAlice, {});
+            console.log('Result: ', init.result.toHuman())
+            console.log('Output: ', init.output.toHuman())
             expect(init.result.isOk).to.be.true;
             expect(init.output.isOk).to.be.true;
             expect(init.output.asOk.isOk).to.be.true;
         });
 
         it('can submit tx', async function() {
-            this.timeout(1000*30_000);
+            this.timeout(defaultTimeout);
 
             const feed = await priceFeed.query.feedPrice(certAlice, {});
             expect(feed.result.isOk).to.be.true;
             expect(feed.output.isOk).to.be.true;
             expect(feed.output.asOk.isOk).to.be.true;
-            await delay(3*1000);
+            await delay(defaultDelay);
 
             // The response should be received on the blockchain
             const receivedPrice = await api.query.phatOracle.priceFeeds.entries(alice.address);
@@ -91,19 +104,22 @@ describe('Substrate Offchain Rollup', () => {
 
     describe('Sub0Factory', () => {
         before(async function() {
-            this.timeout(30_000);
+            this.timeout(defaultTimeout);
+
             // Deploy contract
             sub0 = await sub0Factory.instantiate('default', [], {transferToCluster: 1e12});
             console.log('Sub0Factory deployed at', sub0.address.toString());
         });
 
-        it('should has correct owners', async function() {
+        it('should have correct owners', async function() {
             const sub0Owner = await sub0.query.owner(certAlice, {});
             expect(sub0Owner.result.isOk).to.be.true;
             expect(sub0Owner.output.asOk.toString()).to.be.equal(alice.address.toString());
         });
 
         it('can be configured', async function() {
+            this.timeout(defaultTimeout);
+
             // Config the oracle
             const sub0Config = await sub0.tx
                 .config(txConf, httpRpc, 100, secretBob as any, priceFeedCodeHash)
@@ -119,13 +135,15 @@ describe('Substrate Offchain Rollup', () => {
 
         let priceFeed1: SubPriceFeed.Contract;
         it('can deploy price feeds', async function() {
+            this.timeout(defaultTimeout);
+
             let deploy = await api.tx.utility.batchAll([
                 sub0.tx.deployPriceFeed(txConf, 'feed1', 'polkadot', 'usd'),
                 sub0.tx.deployPriceFeed(txConf, 'feed2', 'bitcoin', 'usd'),
             ]).signAndSend(alice, {nonce: -1});
 
             console.log('PriceFeed1&2 deployed', deploy.toHuman());
-            await delay(5*1000);
+            await delay(defaultDelay);
 
             let deployments = await sub0.query.getDeployments(certAlice, {});
             expect(deployments.result.isOk).to.be.true;
@@ -140,24 +158,26 @@ describe('Substrate Offchain Rollup', () => {
         });
 
         it('can trigger a rollup', async function() {
+            this.timeout(defaultTimeout);
+
             // Init the rollup on the blockchain
             const init = await priceFeed1.query.maybeInitRollup(certAlice, {});
             expect(init.result.isOk).to.be.true;
             expect(init.output.isOk).to.be.true;
             expect(init.output.asOk.isOk).to.be.true;
-            await delay(3*1000);
+            await delay(defaultDelay);
 
             // Trigger a rollup
             const feed = await priceFeed1.query.feedPrice(certAlice, {});
             expect(feed.result.isOk).to.be.true;
             expect(feed.output.isOk).to.be.true;
             expect(feed.output.asOk.isOk).to.be.true;
-            await delay(3*1000);
+            await delay(defaultDelay);
 
             // The response should be received on the blockchain
             const receivedPrice = await api.query.phatOracle.priceFeeds.entries(alice.address);
             expect(receivedPrice.length).to.be.equal(2);  // 2 in totoal: 1 existing & 1 more
-        }).timeout(30000);
+        });
 
     });
 
