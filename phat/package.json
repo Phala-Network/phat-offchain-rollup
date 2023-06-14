@@ -4,7 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "devphase": "^0.2.2",
+    "@devphase/cli": "^0.2.1",
+    "@devphase/service": "^0.2.1",
     "dotenv": "^16.0.3"
   },
   "devDependencies": {

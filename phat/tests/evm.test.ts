@@ -2,7 +2,7 @@ import { SampleOracle } from '@/typings/SampleOracle';
 import { EvmTransactor } from '@/typings/EvmTransactor';
 import * as PhalaSdk from '@phala/sdk';
 import type { KeyringPair } from '@polkadot/keyring/types';
-import { Contract, ContractType } from 'devphase';
+import { Contract, ContractType } from '@devphase/service';
 
 import 'dotenv/config';
 import { LocalScheduler } from '@/typings/LocalScheduler';
