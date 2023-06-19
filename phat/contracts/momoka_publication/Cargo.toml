@@ -1,0 +1,62 @@
+[package]
+name = "momoka_publication"
+version = "0.1.0"
+authors = ["Shelven <favoring.zhou49@gmail.com>"]
+edition = "2021"
+
+# Necessary due to the cargo bug bug: https://github.com/rust-lang/cargo/issues/10118
+[profile.release]
+overflow-checks = false
+
+[dependencies]
+ink_env = { version = "4.0.1", default-features = false }
+ink = { version = "4.0.1", default-features = false }
+
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
+serde = { version = "1.0.140", default-features = false, features = ["derive", "alloc"]}
+fixed = { version = "1", default-features = false, features = ["serde"] }
+
+this-crate = "0.1.0"
+pink-extension = { version = "0.4.1", default-features = false }
+pink-json = { git = "https://github.com/Phala-Network/pink-json.git", branch = "pink", default-features = false, features = ["de-number-as-str"] }
+pink-web3 = { version = "0.20.1", default-features = false, features = ["pink", "signing"] }
+ethabi = { version = "18.0.0", default-features = false, features = [
+    "serde",
+    "rlp",
+] }
+
+phat_offchain_rollup = { path = "../../crates/rollup", default-features = false, features = ["evm"] }
+pink-kv-session = "0.2"
+
+hex = { version = "0.4", default-features = false }
+
+[dev-dependencies]
+dotenvy = "0.15"
+env_logger = "0.10.0"
+pink-extension-runtime = { version = "0.4.0", default-features = false }
+phat_offchain_rollup = { path = "../../crates/rollup", default-features = false, features = ["evm", "logging"] }
+hex-literal = "0.3"
+
+[lib]
+name = "momoka_publication"
+path = "lib.rs"
+
+[features]
+default = ["std"]
+std = [
+    "ink_env/std",
+    "ink/std",
+    "scale/std",
+    "scale-info/std",
+    "phat_offchain_rollup/std",
+    "pink-extension/std",
+    "pink-json/std",
+    "pink-web3/std",
+    "ethabi/std",
+]
+ink-as-dependency = []
+
+# Leave for `cargo contract` build.
+[patch.crates-io]
+serde = { git = "https://github.com/kvinwang/serde.git", branch = "pink" }
