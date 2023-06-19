@@ -78,7 +78,7 @@ mod momoka_publication {
             const NONCE_ATTEST_KEY: &[u8] = b"attest_key";
             let random_attest_key = signing::derive_sr25519_key(NONCE_ATTEST_KEY);
             Self::new(
-                random_attest_key
+                random_attest_key[..32]
                     .try_into()
                     .expect("should be long enough; qed."),
             )
@@ -124,11 +124,13 @@ mod momoka_publication {
             Ok(())
         }
 
+        /// Return abi::encode(forwardRequest, sig)
+        #[ink(message)]
         pub fn check_lens_publication(
             &self,
             publication_id: String,
             mainnet: bool,
-        ) -> Result<(Token, Bytes)> {
+        ) -> Result<Vec<u8>> {
             let client = self.ensure_client_configured()?;
 
             let (profile_id, publication_id) =
@@ -139,12 +141,15 @@ mod momoka_publication {
             ]);
 
             let attest_key = KeyPair::from(self.attest_key);
-            sign_meta_tx(
+            let (forward_request, sig) = sign_meta_tx(
                 client.rpc.clone(),
                 H160(client.client_addr),
                 &data,
                 &attest_key,
-            )
+            )?;
+
+            let r = ethabi::encode(&[forward_request, Token::Bytes(sig.0)]);
+            Ok(r)
         }
 
         /// Return (profileId, publicationId)
@@ -353,7 +358,7 @@ mod momoka_publication {
             let r = momoka_publication
                 .check_lens_publication(String::from("0x814a-0x01-DA-0e18b370"), false)
                 .expect("failed to check publication");
-            pink::warn!("publication proof: {r:?}");
+            pink::warn!("publication proof: {}", hex::encode(&r));
         }
     }
 }
