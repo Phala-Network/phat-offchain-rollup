@@ -5,6 +5,7 @@ members = [
     "contracts/sub0_factory",
     "contracts/sub_price_feed",
     "contracts/evm_price_feed",
+    "contracts/momoka_publication",
 ]
 
 # Sneak peek of the new test engine!
