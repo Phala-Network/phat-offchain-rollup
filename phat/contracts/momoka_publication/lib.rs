@@ -111,6 +111,11 @@ mod momoka_publication {
             sk.address()
         }
 
+        #[ink(message)]
+        pub fn get_client(&self) -> Result<Client> {
+            self.client.clone().ok_or(Error::ClientNotConfigured)
+        }
+
         /// Configures the rollup target (admin only)
         #[ink(message)]
         pub fn config_client(&mut self, rpc: String, client_addr: Vec<u8>) -> Result<()> {
