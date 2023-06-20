@@ -164,7 +164,10 @@ mod momoka_publication {
             } else {
                 "https://api-mumbai.lens.dev/"
             };
-            let headers = vec![("Content-Type".into(), "application/json".into())];
+            let headers = vec![
+                ("Content-Type".into(), "application/json".into()),
+                ("user-agent".into(), "phat-contract".into()),
+            ];
             let body = format!("{{\"query\":\"query Publication {{\\n  publication(request: {{\\n    publicationId: \\\"{publication_id}\\\",\\n  }}) {{\\n    ... on Post {{\\n      ...PostFields\\n    }}\\n  }}\\n}}\\n\\nfragment PostFields on Post {{\\n  id\\n}}\"}}");
 
             let resp = pink::http_post!(lens_api, body.as_bytes(), headers);
@@ -338,6 +341,12 @@ mod momoka_publication {
             assert_eq!(profile_id, 0x814a);
             assert_eq!(publication_id, 0x01);
             pink::warn!("Profile: {profile_id:?}, Publication: {publication_id:?}");
+
+            let res = MomokaPublication::fetch_lens_publication(
+                String::from("0x814a-0x01-DA-0e18b37"),
+                true,
+            );
+            assert_eq!(res, Err(Error::PublicationNotExists));
 
             let res = MomokaPublication::fetch_lens_publication(
                 String::from("0x814a-0x01-DA-0e18b37"),
