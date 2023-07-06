@@ -29,6 +29,9 @@ mod momoka_publication {
 
     const ANCHOR_ABI: &[u8] = include_bytes!("./res/anchor.abi.json");
 
+    const MAINNET_FREE_COLLECT_MODULE: &str = "0x23b9467334bEb345aAa6fd1545538F3d54436e96";
+    const TESTNET_FREE_COLLECT_MODULE: &str = "0x0BE6bD7092ee83D44a6eC1D949626FeE48caB30c";
+
     #[ink(storage)]
     pub struct MomokaPublication {
         owner: AccountId,
@@ -149,10 +152,21 @@ mod momoka_publication {
             &self,
             publication_id: String,
             mainnet: bool,
+            override_collect_module: bool,
         ) -> Result<Vec<u8>> {
             let client = self.ensure_client_configured()?;
 
-            let pub_resp = Self::fetch_lens_publication(publication_id, mainnet)?;
+            let mut pub_resp = Self::fetch_lens_publication(publication_id, mainnet)?;
+
+            if override_collect_module {
+                let addr = if mainnet {
+                    MAINNET_FREE_COLLECT_MODULE
+                } else {
+                    TESTNET_FREE_COLLECT_MODULE
+                };
+                pub_resp.root_collect_module = Self::decode_hex(addr).unwrap().try_into().unwrap()
+            }
+
             let data = ethabi::encode(&[
                 Token::Uint(pub_resp.profile_id.into()),
                 Token::Uint(pub_resp.pub_id.into()),
@@ -495,7 +509,6 @@ mod momoka_publication {
         }
 
         #[ink::test]
-        #[ignore]
         fn check_lens_publication() {
             let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();
@@ -509,7 +522,7 @@ mod momoka_publication {
             momoka_publication.config_client(rpc, client_addr).unwrap();
 
             let r = momoka_publication
-                .check_lens_publication(String::from("0x814a-0x01-DA-0e18b370"), false)
+                .check_lens_publication(String::from("0x9d72-0x0457-DA-64abf0b0"), true, true)
                 .expect("failed to check publication");
             pink::warn!("publication proof: {}", hex::encode(&r));
         }
