@@ -1,3 +1,5 @@
+[workspace]
+
 [package]
 name = "momoka_publication"
 version = "0.1.0"
@@ -56,7 +58,3 @@ std = [
     "ethabi/std",
 ]
 ink-as-dependency = []
-
-# Leave for `cargo contract` build.
-[patch.crates-io]
-serde = { git = "https://github.com/kvinwang/serde.git", branch = "pink" }
