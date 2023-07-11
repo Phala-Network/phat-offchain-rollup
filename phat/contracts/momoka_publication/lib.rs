@@ -56,6 +56,7 @@ mod momoka_publication {
         root_profile_id: u64,
         root_pub_id: u64,
         root_collect_module: [u8; 20],
+        root_content_uri: String,
     }
 
     #[derive(Encode, Decode, PartialEq, Debug)]
@@ -79,6 +80,8 @@ mod momoka_publication {
 
         BadEvmAnchorAbi,
         EvmFailedToPrepareMetaTx,
+        BadPublicationId,
+        BadDaId,
     }
 
     impl From<Error> for U256 {
@@ -156,6 +159,13 @@ mod momoka_publication {
         ) -> Result<Vec<u8>> {
             let client = self.ensure_client_configured()?;
 
+            // Check and extract DA id
+            let da_id_hex = publication_id.split("-DA-").nth(1)
+                .ok_or(Error::BadPublicationId)?;
+            let da_id: U256 = u32::from_str_radix(&da_id_hex, 16)
+                .or(Err(Error::BadDaId))?
+                .into();
+
             let mut pub_resp = Self::fetch_lens_publication(publication_id, mainnet)?;
 
             if override_collect_module {
@@ -167,12 +177,23 @@ mod momoka_publication {
                 pub_resp.root_collect_module = Self::decode_hex(addr).unwrap().try_into().unwrap()
             }
 
-            let data = ethabi::encode(&[
+            let orig_pub_id: U256 = pub_resp.pub_id.into();
+            let orig_root_pub_id: U256 = pub_resp.root_pub_id.into();
+            let pub_id = orig_pub_id | (da_id << 128);
+            let root_pub_id = orig_root_pub_id | (da_id << 128);
+
+            let hub_data = ethabi::encode(&[
+                Token::FixedBytes(vec![0u8, 0, 0, 0]),
                 Token::Uint(pub_resp.profile_id.into()),
-                Token::Uint(pub_resp.pub_id.into()),
+                Token::Uint(pub_id),
                 Token::Uint(pub_resp.root_profile_id.into()),
-                Token::Uint(pub_resp.root_pub_id.into()),
+                Token::Uint(root_pub_id),
                 Token::Address(pub_resp.root_collect_module.into()),
+            ]);
+            let module_data = [0u8; 0];
+            let data = ethabi::encode(&[
+                Token::Bytes(hub_data),
+                Token::Bytes(module_data.into()),
             ]);
 
             let attest_key = KeyPair::from(self.attest_key);
@@ -201,7 +222,7 @@ mod momoka_publication {
                 ("Content-Type".into(), "application/json".into()),
                 ("User-Agent".into(), "phat-contract".into()),
             ];
-            let body = format!("{{\"query\": \"query Publication {{\\n  publication(request: {{\\n    publicationId: \\\"{publication_id}\\\"\\n  }}) {{\\n   __typename\\n    ... on Post {{\\n      ...PostFields\\n    }}\\n    ... on Mirror {{\\n      ...MirrorFields\\n    }}\\n  }}\\n}}\\n\\nfragment PostFields on Post {{\\n  id\\n  collectModule {{\\n    ...CollectModuleFields\\n  }}\\n}}\\n\\nfragment MirrorBaseFields on Mirror {{\\n  id\\n}}\\n\\nfragment MirrorFields on Mirror {{\\n  ...MirrorBaseFields\\n  mirrorOf {{\\n   ... on Post {{\\n      ...PostFields\\n   }}\\n  }}\\n}}\\n\\nfragment CollectModuleFields on CollectModule {{\\n  ... on FreeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on FeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on LimitedFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on LimitedTimedFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on RevertCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on TimedFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on MultirecipientFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on SimpleCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on ERC4626FeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on AaveFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on UnknownCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n}}\"}}");
+            let body = format!("{{\"query\": \"query Publication {{\\n  publication(request: {{\\n    publicationId: \\\"{publication_id}\\\"\\n  }}) {{\\n   __typename\\n    ... on Post {{\\n      ...PostFields\\n    }}\\n    ... on Mirror {{\\n      ...MirrorFields\\n    }}\\n  }}\\n}}\\n\\nfragment PostFields on Post {{\\n  id\\n  onChainContentURI\\n  collectModule {{\\n    ...CollectModuleFields\\n  }}\\n}}\\n\\nfragment MirrorBaseFields on Mirror {{\\n  id\\n}}\\n\\nfragment MirrorFields on Mirror {{\\n  ...MirrorBaseFields\\n  mirrorOf {{\\n   ... on Post {{\\n      ...PostFields\\n   }}\\n  }}\\n}}\\n\\nfragment CollectModuleFields on CollectModule {{\\n  ... on FreeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on FeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on LimitedFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on LimitedTimedFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on RevertCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on TimedFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on MultirecipientFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on SimpleCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on ERC4626FeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on AaveFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on UnknownCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n}}\"}}");
 
             let resp = pink::http_post!(lens_api, body.as_bytes(), headers);
             if resp.status_code != 200 {
@@ -259,6 +280,7 @@ mod momoka_publication {
                 "Post" => {
                     let id = pub_info.id.ok_or(Error::PublicationNotExists)?;
                     let (profile_id, pub_id) = Self::extract_ids(String::from(id))?;
+                    let content_uri = pub_info.on_chain_content_uri.expect("no post content uri");
 
                     let collect_module = pub_info
                         .collect_module
@@ -274,6 +296,7 @@ mod momoka_publication {
                         root_profile_id: profile_id,
                         root_pub_id: pub_id,
                         root_collect_module: collect_module,
+                        root_content_uri: content_uri.to_string(),
                     }
                 }
                 "Mirror" => {
@@ -295,6 +318,7 @@ mod momoka_publication {
                         root_profile_id,
                         root_pub_id,
                         root_collect_module,
+                        root_content_uri: mirror_of.on_chain_content_uri.to_string(),
                     }
                 }
                 "Comment" => Err(Error::NoProofForComment)?,
@@ -410,6 +434,8 @@ mod momoka_publication {
         __typename: &'a str,
         #[serde(borrow)]
         id: Option<&'a str>,
+        #[serde(borrow, alias = "onChainContentURI")]
+        on_chain_content_uri: Option<&'a str>,
         #[serde(borrow, alias = "mirrorOf")]
         mirror_of: Option<MirrorOf<'a>>,
         #[serde(borrow, alias = "collectModule")]
@@ -419,6 +445,8 @@ mod momoka_publication {
     #[derive(Deserialize, Clone)]
     struct MirrorOf<'a> {
         id: &'a str,
+        #[serde(alias = "onChainContentURI")]
+        on_chain_content_uri: &'a str,
         #[serde(borrow, alias = "collectModule")]
         collect_module: CollectModule<'a>,
     }
@@ -488,6 +516,10 @@ mod momoka_publication {
                 hex::encode(pub_resp.root_collect_module),
                 "a31FF85E840ED117E172BC9Ad89E55128A999205".to_lowercase()
             );
+            assert_eq!(
+                pub_resp.root_content_uri,
+                "ar://s7-KUGt9F0TuJ4xTP01kbybqz0QLsk7NKp4zy4day1M".to_string()
+            );
 
             let res = MomokaPublication::fetch_lens_publication(
                 String::from("0x73b1-0x2b05-DA-ebdf984e"),
@@ -522,7 +554,7 @@ mod momoka_publication {
             momoka_publication.config_client(rpc, client_addr).unwrap();
 
             let r = momoka_publication
-                .check_lens_publication(String::from("0x9d72-0x0457-DA-64abf0b0"), true, true)
+                .check_lens_publication(String::from("0x01-0x01ef-DA-eb395e21"), true, true)
                 .expect("failed to check publication");
             pink::warn!("publication proof: {}", hex::encode(&r));
         }

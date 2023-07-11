@@ -1780,30 +1780,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "momoka_publication"
-version = "0.1.0"
-dependencies = [
- "dotenvy",
- "env_logger",
- "ethabi",
- "fixed",
- "hex",
- "hex-literal 0.3.4",
- "ink",
- "ink_env",
- "parity-scale-codec",
- "phat_offchain_rollup",
- "pink-extension",
- "pink-extension-runtime",
- "pink-json 0.4.0 (git+https://github.com/Phala-Network/pink-json.git?branch=pink)",
- "pink-kv-session",
- "pink-web3",
- "scale-info",
- "serde",
- "this-crate",
-]
-
-[[package]]
 name = "nom"
 version = "5.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3271,12 +3247,6 @@ checksum = "6093bad37da69aab9d123a8091e4be0aa4a03e4d601ec641c327398315f62b64"
 dependencies = [
  "winapi-util",
 ]
-
-[[package]]
-name = "this-crate"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23c3dac231fac5770597ae4670029b06ea5adab46e2fd192838e9a77007ec656"
 
 [[package]]
 name = "thiserror"
