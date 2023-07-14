@@ -1,0 +1,6 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/phat_rollup_anchor_ink",
+    "contracts/test_oracle",
+]
