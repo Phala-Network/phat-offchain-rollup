@@ -25,8 +25,9 @@ ethabi = { version = "18.0.0", default-features = false, features = [
     "rlp",
 ], optional = true }
 
-# for Substrate rollup
-subrpc = { package = "pink-subrpc", version = "0.4.2", default-features = false, optional = true }
+# for Substrate and ink! rollup
+#subrpc = { package = "pink-subrpc", version = "0.4.2", default-features = false, optional = true }
+subrpc = { git = "https://github.com/GuiGou12358/phala-blockchain/", package = "pink-subrpc", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = "0.4.1"
@@ -53,5 +54,9 @@ substrate = [
 evm = [
     "pink-web3",
     "ethabi",
+    "pink-extension",
+]
+ink = [
+    "subrpc",
     "pink-extension",
 ]

@@ -41,6 +41,25 @@ pub enum Error {
     QueueIndexOverflow,
     LockVersionOverflow,
     RpcNetworkError,
+
+    #[cfg(feature = "ink")]
+    InkFailedToCallContract(subrpc::contracts::Error),
+    #[cfg(feature = "ink")]
+    InkFailedToQueryContract(subrpc::contracts::Error),
+    #[cfg(feature = "ink")]
+    InkFailedToDryRunContract(subrpc::traits::common::Error),
+    #[cfg(feature = "ink")]
+    InkFailedToCreateTransaction(subrpc::traits::common::Error),
+    #[cfg(feature = "ink")]
+    InkFailedToSendTransaction(subrpc::traits::common::Error),
+    #[cfg(feature = "ink")]
+    InkFailedToPrepareMetaTx,
+    #[cfg(feature = "ink")]
+    InkFailedToDecode(scale::Error),
+    #[cfg(feature = "ink")]
+    KVError(kv_session::Error),
+    #[cfg(feature = "ink")]
+    InvalidAddressLength,
 }
 pub type Result<T> = core::result::Result<T, Error>;
 
