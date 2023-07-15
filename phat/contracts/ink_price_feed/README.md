@@ -12,7 +12,7 @@ To build the contract:
 cargo contract build
 ```
 
-## Run e2e tests
+## Run Integration tests
 
 ### Deploy the ink! smart contract `test_oracle`
 
@@ -32,14 +32,14 @@ cargo contract build
 And use Contracts-UI or Polkadot.js to deploy your contract and interact with it.
 You will have to configure `alice` as attestor.
 
-### Run the e2e tests
-And finally execute the following command to start e2e tests execution.
+### Run the integration tests
+And finally execute the following command to start integration tests execution.
 
 ```bash
 cargo test  -- --ignored --test-threads=1
 ```
 
-### Parallel in Unit Tests
+### Parallel in Intgration Tests
 
 The flag `--test-threads=1` is necessary because by default [Rust unit tests run in parallel](https://doc.rust-lang.org/book/ch11-02-running-tests.html).
 There may have a few tests trying to sending out transactions at the same time, resulting
