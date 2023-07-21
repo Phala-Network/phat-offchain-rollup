@@ -18,17 +18,10 @@ pub struct Data {
 
 impl<T> MetaTxReceiver for T
 where
+    T: Internal,
     T: Storage<Data>,
     T: Storage<access_control::Data>,
 {
-    default fn _get_nonce(&self, from: AccountId) -> Nonce {
-        self.data::<Data>()
-            .nonces_and_ecdsa_public_key
-            .get(&from)
-            .map(|(n, _)| n)
-            .unwrap_or(0)
-    }
-
     default fn get_ecdsa_public_key(&self, from: AccountId) -> [u8; 33] {
         match self.data::<Data>().nonces_and_ecdsa_public_key.get(&from) {
             None => [0; 33],
@@ -67,6 +60,19 @@ where
         ink::env::hash_encoded::<Blake2x256, _>(&request, &mut hash);
 
         Ok((request, hash.into()))
+    }
+}
+
+impl<T> Internal for T
+where
+    T: Storage<Data>,
+{
+    default fn _get_nonce(&self, from: AccountId) -> Nonce {
+        self.data::<Data>()
+            .nonces_and_ecdsa_public_key
+            .get(&from)
+            .map(|(n, _)| n)
+            .unwrap_or(0)
     }
 
     default fn _verify(

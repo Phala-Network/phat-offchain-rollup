@@ -18,11 +18,10 @@ pub type MetatTxRolupCondEqMethodParams = (meta_transaction::ForwardRequest, [u8
 impl<T> RollupAnchor for T
 where
     T: rollup_anchor::Internal,
-    T: kv_store::KVStore,
-    T: message_queue::MessageQueue,
+    T: rollup_anchor::EventBroadcaster,
     T: Storage<access_control::Data>,
     T: access_control::AccessControl,
-    T: meta_transaction::MetaTxReceiver,
+    T: meta_transaction::Internal,
 {
     #[openbrush::modifiers(access_control::only_role(ATTESTOR_ROLE))]
     default fn rollup_cond_eq(
@@ -59,7 +58,15 @@ where
         // call the rollup
         self._rollup_cond_eq(data.0, data.1, data.2)
     }
+}
 
+impl<T> Internal for T
+where
+    T: rollup_anchor::MessageHandler,
+    T: kv_store::Internal,
+    T: message_queue::Internal,
+    T: access_control::AccessControl,
+{
     default fn _rollup_cond_eq(
         &mut self,
         conditions: Vec<(Key, Option<Value>)>,

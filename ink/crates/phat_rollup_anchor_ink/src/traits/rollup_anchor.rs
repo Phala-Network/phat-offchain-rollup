@@ -64,6 +64,15 @@ pub trait RollupAnchor {
         actions: Vec<HandleActionInput>,
     ) -> Result<bool, RollupAnchorError>;
 
+    #[ink(message)]
+    fn meta_tx_rollup_cond_eq(
+        &mut self,
+        request: ForwardRequest,
+        signature: [u8; 65],
+    ) -> Result<bool, RollupAnchorError>;
+}
+
+pub trait Internal {
     fn _rollup_cond_eq(
         &mut self,
         conditions: Vec<(Key, Option<Value>)>,
@@ -71,19 +80,13 @@ pub trait RollupAnchor {
         actions: Vec<HandleActionInput>,
     ) -> Result<bool, RollupAnchorError>;
 
-    #[ink(message)]
-    fn meta_tx_rollup_cond_eq(
-        &mut self,
-        request: ForwardRequest,
-        signature: [u8; 65],
-    ) -> Result<bool, RollupAnchorError>;
-
     fn _handle_action(&mut self, input: HandleActionInput) -> Result<(), RollupAnchorError>;
 }
 
-#[openbrush::trait_definition]
-pub trait Internal {
+pub trait MessageHandler {
     fn _on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError>;
+}
 
+pub trait EventBroadcaster {
     fn _emit_event_meta_tx_decoded(&self);
 }

@@ -1,7 +1,7 @@
 use kv_session::traits::QueueIndex;
 use scale::{Decode, Encode};
 
-use crate::traits::kv_store::KVStore;
+use crate::traits::kv_store;
 pub use crate::traits::message_queue::{self, *};
 
 const QUEUE_PREFIX: &[u8] = b"q/";
@@ -39,7 +39,25 @@ macro_rules! get_queue_index {
 impl<T> MessageQueue for T
 where
     T: message_queue::Internal,
-    T: KVStore,
+    T: kv_store::Internal,
+{
+    default fn get_queue_tail(&self) -> Result<QueueIndex, MessageQueueError> {
+        let key = get_tail_key!();
+        let index = get_queue_index!(self, key);
+        Ok(index)
+    }
+
+    default fn get_queue_head(&self) -> Result<QueueIndex, MessageQueueError> {
+        let key = get_head_key!();
+        let index = get_queue_index!(self, key);
+        Ok(index)
+    }
+}
+
+impl<T> Internal for T
+where
+    T: message_queue::EventBroadcaster,
+    T: kv_store::Internal,
 {
     default fn _push_message<M: Encode>(
         &mut self,
@@ -93,18 +111,6 @@ where
         self._emit_event_message_processed_to(target_id);
 
         Ok(())
-    }
-
-    default fn get_queue_tail(&self) -> Result<QueueIndex, MessageQueueError> {
-        let key = get_tail_key!();
-        let index = get_queue_index!(self, key);
-        Ok(index)
-    }
-
-    default fn get_queue_head(&self) -> Result<QueueIndex, MessageQueueError> {
-        let key = get_head_key!();
-        let index = get_queue_index!(self, key);
-        Ok(index)
     }
 
     default fn _set_queue_tail(&mut self, id: QueueIndex) {

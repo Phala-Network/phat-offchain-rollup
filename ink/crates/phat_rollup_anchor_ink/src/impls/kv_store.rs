@@ -14,12 +14,17 @@ pub struct Data {
 
 impl<T> KVStore for T
 where
-    T: Storage<Data>,
+    T: Internal,
 {
     default fn get_value(&self, key: Key) -> Option<Value> {
         self._get_value(&key)
     }
+}
 
+impl<T> Internal for T
+    where
+        T: Storage<Data>,
+{
     default fn _get_value(&self, key: &Key) -> Option<Value> {
         self.data::<Data>().kv_store.get(key)
     }

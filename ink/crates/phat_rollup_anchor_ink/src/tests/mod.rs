@@ -51,7 +51,20 @@ pub mod test_contract {
         }
     }
 
-    impl message_queue::Internal for MyContract {
+    impl rollup_anchor::MessageHandler for MyContract {
+        fn _on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
+            debug_println!("Message received {:?}'", action);
+            Ok(())
+        }
+    }
+
+    impl rollup_anchor::EventBroadcaster for MyContract {
+        fn _emit_event_meta_tx_decoded(&self) {
+            debug_println!("Meta transaction decoded");
+        }
+    }
+
+    impl message_queue::EventBroadcaster for MyContract {
         fn _emit_event_message_queued(&self, id: u32, data: Vec<u8>) {
             debug_println!(
                 "Emit event 'message queued {{ id: {:?}, data: {:2x?} }}",
@@ -61,17 +74,6 @@ pub mod test_contract {
         }
         fn _emit_event_message_processed_to(&self, id: u32) {
             debug_println!("Emit event 'message processed to {:?}'", id);
-        }
-    }
-
-    impl rollup_anchor::Internal for MyContract {
-        fn _on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
-            debug_println!("Message received {:?}'", action);
-            Ok(())
-        }
-
-        fn _emit_event_meta_tx_decoded(&self) {
-            debug_println!("Meta transaction decoded");
         }
     }
 }

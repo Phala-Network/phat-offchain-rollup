@@ -36,8 +36,6 @@ pub type PrepareResult = (ForwardRequest, Hash);
 
 #[openbrush::trait_definition]
 pub trait MetaTxReceiver {
-    fn _get_nonce(&self, from: AccountId) -> Nonce;
-
     #[ink(message)]
     fn get_ecdsa_public_key(&self, from: AccountId) -> [u8; 33];
 
@@ -50,6 +48,10 @@ pub trait MetaTxReceiver {
 
     #[ink(message)]
     fn prepare(&self, from: AccountId, data: Vec<u8>) -> Result<PrepareResult, MetaTxError>;
+}
+
+pub trait Internal {
+    fn _get_nonce(&self, from: AccountId) -> Nonce;
 
     fn _verify(&self, request: &ForwardRequest, signature: &[u8; 65]) -> Result<(), MetaTxError>;
 

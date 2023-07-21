@@ -13,8 +13,8 @@ pub mod test_oracle {
     use scale::{Decode, Encode};
 
     use phat_rollup_anchor_ink::impls::{
-        kv_store, kv_store::*, message_queue, message_queue::*, meta_transaction,
-        meta_transaction::*, rollup_anchor, rollup_anchor::*,
+        kv_store, kv_store::*, message_queue, message_queue::Internal, message_queue::*,
+        meta_transaction, meta_transaction::*, rollup_anchor, rollup_anchor::*,
     };
 
     pub type TradingPairId = u32;
@@ -209,7 +209,7 @@ pub mod test_oracle {
         }
     }
 
-    impl rollup_anchor::Internal for TestOracle {
+    impl rollup_anchor::MessageHandler for TestOracle {
         fn _on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
             // parse the response
             let message: PriceResponseMessage =
@@ -247,7 +247,9 @@ pub mod test_oracle {
 
             Ok(())
         }
+    }
 
+    impl rollup_anchor::EventBroadcaster for TestOracle {
         fn _emit_event_meta_tx_decoded(&self) {
             self.env().emit_event(MetaTxDecoded {});
         }
@@ -270,7 +272,7 @@ pub mod test_oracle {
         pub id: u32,
     }
 
-    impl message_queue::Internal for TestOracle {
+    impl message_queue::EventBroadcaster for TestOracle {
         fn _emit_event_message_queued(&self, id: u32, data: Vec<u8>) {
             self.env().emit_event(MessageQueued { id, data });
         }
