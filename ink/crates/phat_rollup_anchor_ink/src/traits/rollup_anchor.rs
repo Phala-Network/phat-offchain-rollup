@@ -72,7 +72,7 @@ pub trait RollupAnchor {
     ) -> Result<bool, RollupAnchorError>;
 }
 
-pub trait Internal {
+pub(crate) trait Internal {
     fn _rollup_cond_eq(
         &mut self,
         conditions: Vec<(Key, Option<Value>)>,
@@ -84,9 +84,9 @@ pub trait Internal {
 }
 
 pub trait MessageHandler {
-    fn _on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError>;
+    fn on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError>;
 }
 
 pub trait EventBroadcaster {
-    fn _emit_event_meta_tx_decoded(&self);
+    fn emit_event_meta_tx_decoded(&self);
 }

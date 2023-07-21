@@ -13,7 +13,7 @@ pub mod test_oracle {
     use scale::{Decode, Encode};
 
     use phat_rollup_anchor_ink::impls::{
-        kv_store, kv_store::*, message_queue, message_queue::Internal, message_queue::*,
+        kv_store, kv_store::*, message_queue, message_queue::*,
         meta_transaction, meta_transaction::*, rollup_anchor, rollup_anchor::*,
     };
 
@@ -120,7 +120,6 @@ pub mod test_oracle {
     impl Ownable for TestOracle {}
     impl AccessControl for TestOracle {}
     impl KVStore for TestOracle {}
-    impl MessageQueue for TestOracle {}
     impl MetaTxReceiver for TestOracle {}
     impl RollupAnchor for TestOracle {}
 
@@ -174,7 +173,7 @@ pub mod test_oracle {
                         token0: t.token0,
                         token1: t.token1,
                     };
-                    self._push_message(&message)?
+                    self.push_message(&message)?
                 }
                 _ => return Err(ContractError::MissingTradingPair),
             };
@@ -210,7 +209,7 @@ pub mod test_oracle {
     }
 
     impl rollup_anchor::MessageHandler for TestOracle {
-        fn _on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
+        fn on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
             // parse the response
             let message: PriceResponseMessage =
                 Decode::decode(&mut &action[..]).or(Err(RollupAnchorError::FailedToDecode))?;
@@ -250,7 +249,7 @@ pub mod test_oracle {
     }
 
     impl rollup_anchor::EventBroadcaster for TestOracle {
-        fn _emit_event_meta_tx_decoded(&self) {
+        fn emit_event_meta_tx_decoded(&self) {
             self.env().emit_event(MetaTxDecoded {});
         }
     }
@@ -273,11 +272,11 @@ pub mod test_oracle {
     }
 
     impl message_queue::EventBroadcaster for TestOracle {
-        fn _emit_event_message_queued(&self, id: u32, data: Vec<u8>) {
+        fn emit_event_message_queued(&self, id: u32, data: Vec<u8>) {
             self.env().emit_event(MessageQueued { id, data });
         }
 
-        fn _emit_event_message_processed_to(&self, id: u32) {
+        fn emit_event_message_processed_to(&self, id: u32) {
             self.env().emit_event(MessageProcessedTo { id });
         }
     }

@@ -9,20 +9,17 @@ pub enum MessageQueueError {
     FailedToDecode,
 }
 
-#[openbrush::trait_definition]
 pub trait MessageQueue {
-    #[ink(message)]
+    fn push_message<M: Encode>(&mut self, data: &M) -> Result<QueueIndex, MessageQueueError>;
+
+    fn get_message<M: Decode>(&self, id: QueueIndex) -> Result<Option<M>, MessageQueueError>;
+
     fn get_queue_tail(&self) -> Result<QueueIndex, MessageQueueError>;
 
-    #[ink(message)]
     fn get_queue_head(&self) -> Result<QueueIndex, MessageQueueError>;
 }
 
-pub trait Internal {
-    fn _push_message<M: Encode>(&mut self, data: &M) -> Result<QueueIndex, MessageQueueError>;
-
-    fn _get_message<M: Decode>(&self, id: QueueIndex) -> Result<Option<M>, MessageQueueError>;
-
+pub(crate) trait Internal {
     fn _pop_to(&mut self, target_id: QueueIndex) -> Result<(), MessageQueueError>;
 
     fn _set_queue_tail(&mut self, id: QueueIndex);
@@ -31,7 +28,7 @@ pub trait Internal {
 }
 
 pub trait EventBroadcaster {
-    fn _emit_event_message_queued(&self, id: QueueIndex, data: Vec<u8>);
+    fn emit_event_message_queued(&self, id: QueueIndex, data: Vec<u8>);
 
-    fn _emit_event_message_processed_to(&self, id: QueueIndex);
+    fn emit_event_message_processed_to(&self, id: QueueIndex);
 }

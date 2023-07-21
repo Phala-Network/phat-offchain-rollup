@@ -6,7 +6,7 @@ pub trait KVStore {
     fn get_value(&self, key: Key) -> Option<Value>;
 }
 
-pub trait Internal {
+pub(crate) trait Internal {
     fn _get_value(&self, key: &Key) -> Option<Value>;
 
     fn _set_value(&mut self, key: &Key, value: Option<&Value>);

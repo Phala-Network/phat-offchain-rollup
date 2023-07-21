@@ -53,7 +53,7 @@ where
             .map_err(|_| RollupAnchorError::FailedToDecode)?;
 
         // emit the event
-        self._emit_event_meta_tx_decoded();
+        self.emit_event_meta_tx_decoded();
 
         // call the rollup
         self._rollup_cond_eq(data.0, data.1, data.2)
@@ -109,7 +109,7 @@ where
     ) -> Result<(), RollupAnchorError> {
         match input.action_type {
             ACTION_REPLY => {
-                self._on_message_received(input.action.ok_or(RollupAnchorError::MissingData)?)?
+                self.on_message_received(input.action.ok_or(RollupAnchorError::MissingData)?)?
             }
             ACTION_SET_QUEUE_HEAD => {
                 self._pop_to(input.id.ok_or(RollupAnchorError::MissingData)?)?
@@ -243,8 +243,8 @@ mod tests {
         );
 
         let message = 4589u16;
-        contract._push_message(&message).unwrap();
-        contract._push_message(&message).unwrap();
+        contract.push_message(&message).unwrap();
+        contract.push_message(&message).unwrap();
 
         assert_eq!(contract.rollup_cond_eq(vec![], vec![], actions), Ok(true));
     }
