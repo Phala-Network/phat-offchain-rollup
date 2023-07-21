@@ -4,32 +4,23 @@ use openbrush::traits::Storage;
 
 pub use crate::traits::kv_store::*;
 
-pub const STORAGE_KEY: u32 = openbrush::storage_unique_key!(Data);
-
 #[derive(Default, Debug)]
-#[openbrush::upgradeable_storage(STORAGE_KEY)]
+#[openbrush::storage_item]
 pub struct Data {
-    kv_store: Mapping<Key, Value>,
+    pub kv_store: Mapping<Key, Value>,
 }
 
-impl<T> KVStore for T
-where
-    T: Internal,
-{
-    default fn get_value(&self, key: Key) -> Option<Value> {
+pub trait KvStoreImpl: Internal {
+    fn get_value(&self, key: Key) -> Option<Value> {
         self._get_value(&key)
     }
 }
-
-impl<T> Internal for T
-    where
-        T: Storage<Data>,
-{
-    default fn _get_value(&self, key: &Key) -> Option<Value> {
+pub trait InternalImpl: Storage<Data> {
+    fn _get_value(&self, key: &Key) -> Option<Value> {
         self.data::<Data>().kv_store.get(key)
     }
 
-    default fn _set_value(&mut self, key: &Key, value: Option<&Value>) {
+    fn _set_value(&mut self, key: &Key, value: Option<&Value>) {
         match value {
             None => self.data::<Data>().kv_store.remove(key),
             Some(v) => self.data::<Data>().kv_store.insert(key, v),

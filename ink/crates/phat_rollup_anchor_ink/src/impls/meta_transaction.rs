@@ -1,36 +1,28 @@
 use ink::env::hash::{Blake2x256, HashOutput};
 use ink::prelude::vec::Vec;
-use openbrush::contracts::access_control;
 use openbrush::storage::Mapping;
 use openbrush::traits::{AccountId, Hash, Storage};
 
 pub use crate::traits::meta_transaction::{self, *};
 
-pub const STORAGE_KEY: u32 = openbrush::storage_unique_key!(Data);
-
 type NonceAndEcdsaPk = (Nonce, Vec<u8>);
 
 #[derive(Default, Debug)]
-#[openbrush::upgradeable_storage(STORAGE_KEY)]
+#[openbrush::storage_item]
 pub struct Data {
     nonces_and_ecdsa_public_key: Mapping<AccountId, NonceAndEcdsaPk>,
 }
 
-impl<T> MetaTxReceiver for T
-where
-    T: Internal,
-    T: Storage<Data>,
-    T: Storage<access_control::Data>,
-{
-    default fn get_ecdsa_public_key(&self, from: AccountId) -> [u8; 33] {
+pub trait MetaTxReceiverImpl: Internal + Storage<Data> {
+
+    fn get_ecdsa_public_key(&self, from: AccountId) -> [u8; 33] {
         match self.data::<Data>().nonces_and_ecdsa_public_key.get(&from) {
             None => [0; 33],
             Some((_, p)) => p.try_into().unwrap_or([0; 33]),
         }
     }
 
-    #[openbrush::modifiers(access_control::only_role(MANAGER_ROLE))]
-    default fn register_ecdsa_public_key(
+    fn register_ecdsa_public_key(
         &mut self,
         from: AccountId,
         ecdsa_public_key: [u8; 33],
@@ -48,7 +40,7 @@ where
         Ok(())
     }
 
-    default fn prepare(
+    fn prepare(
         &self,
         from: AccountId,
         data: Vec<u8>,
@@ -63,11 +55,9 @@ where
     }
 }
 
-impl<T> Internal for T
-where
-    T: Storage<Data>,
-{
-    default fn _get_nonce(&self, from: AccountId) -> Nonce {
+pub trait InternalImpl : Storage<Data> {
+
+    fn _get_nonce(&self, from: AccountId) -> Nonce {
         self.data::<Data>()
             .nonces_and_ecdsa_public_key
             .get(&from)
@@ -75,7 +65,7 @@ where
             .unwrap_or(0)
     }
 
-    default fn _verify(
+    fn _verify(
         &self,
         request: &ForwardRequest,
         signature: &[u8; 65],
@@ -110,7 +100,7 @@ where
         Ok(())
     }
 
-    default fn _use_meta_tx(
+    fn _use_meta_tx(
         &mut self,
         request: &ForwardRequest,
         signature: &[u8; 65],

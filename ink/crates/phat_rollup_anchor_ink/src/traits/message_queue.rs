@@ -11,15 +11,15 @@ pub enum MessageQueueError {
 
 pub trait MessageQueue {
     fn push_message<M: Encode>(&mut self, data: &M) -> Result<QueueIndex, MessageQueueError>;
-
-    fn get_message<M: Decode>(&self, id: QueueIndex) -> Result<Option<M>, MessageQueueError>;
-
-    fn get_queue_tail(&self) -> Result<QueueIndex, MessageQueueError>;
-
-    fn get_queue_head(&self) -> Result<QueueIndex, MessageQueueError>;
 }
 
-pub(crate) trait Internal {
+pub trait Internal {
+    fn _get_message<M: Decode>(&self, id: QueueIndex) -> Result<Option<M>, MessageQueueError>;
+
+    fn _get_queue_tail(&self) -> Result<QueueIndex, MessageQueueError>;
+
+    fn _get_queue_head(&self) -> Result<QueueIndex, MessageQueueError>;
+
     fn _pop_to(&mut self, target_id: QueueIndex) -> Result<(), MessageQueueError>;
 
     fn _set_queue_tail(&mut self, id: QueueIndex);

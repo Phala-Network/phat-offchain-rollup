@@ -72,7 +72,7 @@ pub trait RollupAnchor {
     ) -> Result<bool, RollupAnchorError>;
 }
 
-pub(crate) trait Internal {
+pub trait Internal {
     fn _rollup_cond_eq(
         &mut self,
         conditions: Vec<(Key, Option<Value>)>,

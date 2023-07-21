@@ -50,7 +50,7 @@ pub trait MetaTxReceiver {
     fn prepare(&self, from: AccountId, data: Vec<u8>) -> Result<PrepareResult, MetaTxError>;
 }
 
-pub(crate) trait Internal {
+pub trait Internal {
     fn _get_nonce(&self, from: AccountId) -> Nonce;
 
     fn _verify(&self, request: &ForwardRequest, signature: &[u8; 65]) -> Result<(), MetaTxError>;

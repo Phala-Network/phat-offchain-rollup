@@ -35,18 +35,13 @@ macro_rules! get_queue_index {
         }
     }};
 }
+pub trait MessageQueueImpl: message_queue::Internal + message_queue::EventBroadcaster + kv_store::Internal {
 
-impl<T> MessageQueue for T
-where
-    T: message_queue::Internal,
-    T: message_queue::EventBroadcaster,
-    T: kv_store::Internal,
-{
-    default fn push_message<M: Encode>(
+    fn push_message<M: Encode>(
         &mut self,
         data: &M,
     ) -> Result<QueueIndex, MessageQueueError> {
-        let id = self.get_queue_tail()?;
+        let id = self._get_queue_tail()?;
         let key = get_key!(id);
         let encoded_value = data.encode();
         self._set_value(&key, Some(&encoded_value));
@@ -56,8 +51,11 @@ where
 
         Ok(id)
     }
+}
 
-    fn get_message<M: Decode>(&self, id: QueueIndex) -> Result<Option<M>, MessageQueueError> {
+pub trait InternalImpl: kv_store::Internal + message_queue::EventBroadcaster {
+
+    fn _get_message<M: Decode>(&self, id: QueueIndex) -> Result<Option<M>, MessageQueueError> {
         let key = get_key!(id);
         match self._get_value(&key) {
             Some(v) => {
@@ -69,31 +67,25 @@ where
         }
     }
 
-    default fn get_queue_tail(&self) -> Result<QueueIndex, MessageQueueError> {
+    fn _get_queue_tail(&self) -> Result<QueueIndex, MessageQueueError> {
         let key = get_tail_key!();
         let index = get_queue_index!(self, key);
         Ok(index)
     }
 
-    default fn get_queue_head(&self) -> Result<QueueIndex, MessageQueueError> {
+    fn _get_queue_head(&self) -> Result<QueueIndex, MessageQueueError> {
         let key = get_head_key!();
         let index = get_queue_index!(self, key);
         Ok(index)
     }
-}
 
-impl<T> Internal for T
-where
-    T: kv_store::Internal,
-    T: message_queue::EventBroadcaster,
-{
-    default fn _pop_to(&mut self, target_id: QueueIndex) -> Result<(), MessageQueueError> {
-        let current_tail_id = self.get_queue_tail()?;
+    fn _pop_to(&mut self, target_id: QueueIndex) -> Result<(), MessageQueueError> {
+        let current_tail_id = self._get_queue_tail()?;
         if target_id > current_tail_id {
             return Err(MessageQueueError::InvalidPopTarget);
         }
 
-        let current_head_id = self.get_queue_head()?;
+        let current_head_id = self._get_queue_head()?;
         if target_id < current_head_id {
             return Err(MessageQueueError::InvalidPopTarget);
         }
@@ -114,12 +106,12 @@ where
         Ok(())
     }
 
-    default fn _set_queue_tail(&mut self, id: QueueIndex) {
+    fn _set_queue_tail(&mut self, id: QueueIndex) {
         let key = get_tail_key!();
         self._set_value(&key, Some(&id.encode()));
     }
 
-    default fn _set_queue_head(&mut self, id: QueueIndex) {
+    fn _set_queue_head(&mut self, id: QueueIndex) {
         let key = get_head_key!();
         self._set_value(&key, Some(&id.encode()));
     }

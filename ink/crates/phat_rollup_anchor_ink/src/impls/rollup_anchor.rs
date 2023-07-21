@@ -1,7 +1,6 @@
 use ink::prelude::vec::Vec;
 use kv_session::traits::{Key, Value};
 use openbrush::contracts::access_control;
-use openbrush::traits::Storage;
 
 use crate::traits::kv_store;
 use crate::traits::message_queue;
@@ -15,16 +14,10 @@ pub type RolupCondEqMethodParams = (
 );
 pub type MetatTxRolupCondEqMethodParams = (meta_transaction::ForwardRequest, [u8; 65]);
 
-impl<T> RollupAnchor for T
-where
-    T: rollup_anchor::Internal,
-    T: rollup_anchor::EventBroadcaster,
-    T: Storage<access_control::Data>,
-    T: access_control::AccessControl,
-    T: meta_transaction::Internal,
-{
-    #[openbrush::modifiers(access_control::only_role(ATTESTOR_ROLE))]
-    default fn rollup_cond_eq(
+pub trait RollupAnchorImpl: rollup_anchor::Internal + rollup_anchor::EventBroadcaster
++ access_control::AccessControl + meta_transaction::Internal {
+
+    fn rollup_cond_eq(
         &mut self,
         conditions: Vec<(Key, Option<Value>)>,
         updates: Vec<(Key, Option<Value>)>,
@@ -33,7 +26,7 @@ where
         self._rollup_cond_eq(conditions, updates, actions)
     }
 
-    default fn meta_tx_rollup_cond_eq(
+    fn meta_tx_rollup_cond_eq(
         &mut self,
         request: meta_transaction::ForwardRequest,
         signature: [u8; 65],
@@ -42,7 +35,7 @@ where
         self._use_meta_tx(&request, &signature)?;
 
         // check the attestor role
-        if !self.has_role(ATTESTOR_ROLE, request.from) {
+        if !self.has_role(ATTESTOR_ROLE, Some(request.from)) {
             return Err(RollupAnchorError::AccessControlError(
                 access_control::AccessControlError::MissingRole,
             ));
@@ -60,14 +53,9 @@ where
     }
 }
 
-impl<T> Internal for T
-where
-    T: rollup_anchor::MessageHandler,
-    T: kv_store::Internal,
-    T: message_queue::Internal,
-    T: access_control::AccessControl,
-{
-    default fn _rollup_cond_eq(
+pub trait InternalImpl : rollup_anchor::MessageHandler + kv_store::Internal + message_queue::Internal + access_control::AccessControl {
+
+    fn _rollup_cond_eq(
         &mut self,
         conditions: Vec<(Key, Option<Value>)>,
         updates: Vec<(Key, Option<Value>)>,
@@ -103,7 +91,7 @@ where
         Ok(true)
     }
 
-    default fn _handle_action(
+    fn _handle_action(
         &mut self,
         input: HandleActionInput,
     ) -> Result<(), RollupAnchorError> {
@@ -116,11 +104,11 @@ where
             }
             ACTION_GRANT_ATTESTOR => self.grant_role(
                 ATTESTOR_ROLE,
-                input.address.ok_or(RollupAnchorError::MissingData)?,
+                Some(input.address.ok_or(RollupAnchorError::MissingData)?),
             )?,
             ACTION_REVOKE_ATTESTOR => self.revoke_role(
                 ATTESTOR_ROLE,
-                input.address.ok_or(RollupAnchorError::MissingData)?,
+                Some(input.address.ok_or(RollupAnchorError::MissingData)?),
             )?,
             _ => return Err(RollupAnchorError::UnsupportedAction),
         }

@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
-#![feature(min_specialization)]
 
+#[openbrush::implementation(Ownable, AccessControl, KvStore, MetaTxReceiver, RollupAnchor)]
 #[openbrush::contract]
 pub mod test_oracle {
     use ink::codegen::{EmitEvent, Env};
@@ -116,12 +116,6 @@ pub mod test_oracle {
         meta_transaction: meta_transaction::Data,
         trading_pairs: Mapping<TradingPairId, TradingPair>,
     }
-
-    impl Ownable for TestOracle {}
-    impl AccessControl for TestOracle {}
-    impl KVStore for TestOracle {}
-    impl MetaTxReceiver for TestOracle {}
-    impl RollupAnchor for TestOracle {}
 
     impl TestOracle {
         #[ink(constructor)]

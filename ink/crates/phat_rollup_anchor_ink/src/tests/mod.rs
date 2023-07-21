@@ -1,3 +1,8 @@
+#![cfg_attr(not(feature = "std"), no_std, no_main)]
+#![allow(clippy::inline_fn_without_body)]
+
+
+#[openbrush::implementation(Ownable, AccessControl, KvStore, MetaTxReceiver, RollupAnchor)]
 #[openbrush::contract]
 pub mod test_contract {
 
@@ -23,12 +28,6 @@ pub mod test_contract {
         meta_transaction: meta_transaction::Data,
     }
 
-    impl Ownable for MyContract {}
-    impl AccessControl for MyContract {}
-    impl KVStore for MyContract {}
-    impl MetaTxReceiver for MyContract {}
-    impl RollupAnchor for MyContract {}
-
     impl MyContract {
         #[ink(constructor)]
         pub fn new(phat_attestor: AccountId) -> Self {
@@ -49,6 +48,14 @@ pub mod test_contract {
             instance
         }
     }
+
+    #[default_impl(MetaTxReceiver)]
+    #[openbrush::modifiers(access_control::only_role(MANAGER_ROLE))]
+    fn register_ecdsa_public_key(){}
+
+    #[default_impl(RollupAnchor)]
+    #[openbrush::modifiers(access_control::only_role(ATTESTOR_ROLE))]
+    fn rollup_cond_eq(){}
 
     impl rollup_anchor::MessageHandler for MyContract {
         fn on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
