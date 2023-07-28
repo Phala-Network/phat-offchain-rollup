@@ -4,14 +4,14 @@
 #[openbrush::contract]
 pub mod test_contract {
 
-    use crate::traits::kv_store::{self, *};
-    use crate::traits::message_queue::{self, *};
-    use crate::traits::meta_transaction::{self, *};
-    use crate::traits::rollup_anchor::{self, *};
     use ink::env::debug_println;
     use openbrush::contracts::access_control::*;
     use openbrush::contracts::ownable::*;
     use openbrush::traits::Storage;
+    use phat_rollup_anchor_ink::traits::kv_store::{self, *};
+    use phat_rollup_anchor_ink::traits::message_queue::{self, *};
+    use phat_rollup_anchor_ink::traits::meta_transaction::{self, *};
+    use phat_rollup_anchor_ink::traits::rollup_anchor::{self, *};
 
     #[ink(storage)]
     #[derive(Default, Storage)]
