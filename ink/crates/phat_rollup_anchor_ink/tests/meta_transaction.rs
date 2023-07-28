@@ -90,7 +90,7 @@ fn test_verify() {
         data: data.clone(),
     };
     assert_eq!(
-        Err(MetaTxError::PublicKeyNotRegistered),
+        Err(MetaTransactionError::PublicKeyNotRegistered),
         contract.verify(&request, &signature)
     );
 
@@ -101,7 +101,7 @@ fn test_verify() {
         data: data.clone(),
     };
     assert_eq!(
-        Err(MetaTxError::PublicKeyNotMatch),
+        Err(MetaTransactionError::PublicKeyNotMatch),
         contract.verify(&request, &signature)
     );
 
@@ -112,7 +112,7 @@ fn test_verify() {
         data: u8::encode(&55),
     };
     assert_eq!(
-        Err(MetaTxError::PublicKeyNotMatch),
+        Err(MetaTransactionError::PublicKeyNotMatch),
         contract.verify(&request, &signature)
     );
 
@@ -129,7 +129,7 @@ fn test_verify() {
         data: data.clone(),
     };
     assert_eq!(
-        Err(MetaTxError::PublicKeyNotMatch),
+        Err(MetaTransactionError::PublicKeyNotMatch),
         contract.verify(&request, &signature)
     );
 }
@@ -173,7 +173,7 @@ fn test_use_meta_tx() {
     // test we cannot reuse the same call
     // the verification must fail
     assert_eq!(
-        Err(MetaTxError::NonceTooLow),
+        Err(MetaTransactionError::NonceTooLow),
         contract.use_meta_tx(&request, &signature)
     );
 }
@@ -218,7 +218,7 @@ fn test_meta_tx_rollup_cond_eq() {
 
     // do it again => it must failed
     assert_eq!(
-        Err(MetaTxError::NonceTooLow),
+        Err(MetaTransactionError::NonceTooLow),
         contract.meta_tx_rollup_cond_eq(request.clone(), signature)
     );
 }
@@ -254,7 +254,7 @@ fn test_meta_tx_rollup_cond_eq_missing_role() {
 
     // missing role
     assert_eq!(
-        Err(MetaTxError::RollupAnchorError(
+        Err(MetaTransactionError::RollupAnchorError(
             RollupAnchorError::AccessControlError(AccessControlError::MissingRole)
         )),
         contract.meta_tx_rollup_cond_eq(request.clone(), signature)

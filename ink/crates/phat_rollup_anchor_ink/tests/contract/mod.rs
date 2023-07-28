@@ -48,7 +48,7 @@ pub mod test_contract {
     impl KvStore for MyContract {}
     impl MessageQueue for MyContract {}
     impl RollupAnchor for MyContract {}
-    impl MetaTxReceiver for MyContract {}
+    impl MetaTransaction for MyContract {}
 
     impl rollup_anchor::MessageHandler for MyContract {
         fn on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {

@@ -13,7 +13,7 @@ pub const MANAGER_ROLE: RoleType = ink::selector_id!("MANAGER_ROLE");
 
 #[derive(Debug, Eq, PartialEq, scale::Encode, scale::Decode)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-pub enum MetaTxError {
+pub enum MetaTransactionError {
     NonceTooLow,
     IncorrectSignature,
     PublicKeyNotMatch,
@@ -23,16 +23,16 @@ pub enum MetaTxError {
 }
 
 /// convertor from AccessControlError to MetaTxError
-impl From<AccessControlError> for MetaTxError {
+impl From<AccessControlError> for MetaTransactionError {
     fn from(error: AccessControlError) -> Self {
-        MetaTxError::AccessControlError(error)
+        MetaTransactionError::AccessControlError(error)
     }
 }
 
 /// convertor from RollupAnchorError to MetaTxError
-impl From<RollupAnchorError> for MetaTxError {
+impl From<RollupAnchorError> for MetaTransactionError {
     fn from(error: RollupAnchorError) -> Self {
-        MetaTxError::RollupAnchorError(error)
+        MetaTransactionError::RollupAnchorError(error)
     }
 }
 
@@ -52,7 +52,7 @@ pub struct Data {
 }
 
 #[openbrush::trait_definition]
-pub trait MetaTxReceiver:
+pub trait MetaTransaction:
     Storage<Data> + EventBroadcaster + access_control::Internal + RollupAnchor
 {
     #[ink(message)]
@@ -70,7 +70,7 @@ pub trait MetaTxReceiver:
         &mut self,
         from: AccountId,
         ecdsa_public_key: [u8; 33],
-    ) -> Result<(), MetaTxError> {
+    ) -> Result<(), MetaTransactionError> {
         self.data::<Data>()
             .ecdsa_public_keys
             .insert(&from, &ecdsa_public_key.into());
@@ -82,7 +82,7 @@ pub trait MetaTxReceiver:
         &self,
         from: AccountId,
         data: Vec<u8>,
-    ) -> Result<(ForwardRequest, Hash), MetaTxError> {
+    ) -> Result<(ForwardRequest, Hash), MetaTransactionError> {
         let nonce = self.get_nonce(from);
 
         let request = ForwardRequest { from, nonce, data };
@@ -96,19 +96,19 @@ pub trait MetaTxReceiver:
         self.data::<Data>().nonces.get(&from).unwrap_or(0)
     }
 
-    fn verify(&self, request: &ForwardRequest, signature: &[u8; 65]) -> Result<(), MetaTxError> {
+    fn verify(&self, request: &ForwardRequest, signature: &[u8; 65]) -> Result<(), MetaTransactionError> {
         let ecdsa_public_key : [u8; 33]  = self
             .data::<Data>()
             .ecdsa_public_keys
             .get(&request.from)
-            .ok_or(MetaTxError::PublicKeyNotRegistered)?
+            .ok_or(MetaTransactionError::PublicKeyNotRegistered)?
             .try_into()
-            .map_err(|_| MetaTxError::PublicKeyNotRegistered)?;
+            .map_err(|_| MetaTransactionError::PublicKeyNotRegistered)?;
 
         let nonce_from = self.get_nonce(request.from);
 
         if request.nonce < nonce_from {
-            return Err(MetaTxError::NonceTooLow);
+            return Err(MetaTransactionError::NonceTooLow);
         }
 
         let mut hash = <Blake2x256 as HashOutput>::Type::default();
@@ -117,10 +117,10 @@ pub trait MetaTxReceiver:
         // at the moment we can only verify ecdsa signatures
         let mut public_key = [0u8; 33];
         ink::env::ecdsa_recover(signature, &hash, &mut public_key)
-            .map_err(|_| MetaTxError::IncorrectSignature)?;
+            .map_err(|_| MetaTransactionError::IncorrectSignature)?;
 
         if public_key != ecdsa_public_key {
-            return Err(MetaTxError::PublicKeyNotMatch);
+            return Err(MetaTransactionError::PublicKeyNotMatch);
         }
         Ok(())
     }
@@ -129,7 +129,7 @@ pub trait MetaTxReceiver:
         &mut self,
         request: &ForwardRequest,
         signature: &[u8; 65],
-    ) -> Result<(), MetaTxError> {
+    ) -> Result<(), MetaTransactionError> {
         // verify the signature
         self.verify(request, signature)?;
         // update the nonce
@@ -143,7 +143,7 @@ pub trait MetaTxReceiver:
         &mut self,
         request: ForwardRequest,
         signature: [u8; 65],
-    ) -> Result<bool, MetaTxError> {
+    ) -> Result<bool, MetaTransactionError> {
         // check the signature
         self.use_meta_tx(&request, &signature)?;
 
@@ -166,11 +166,4 @@ pub trait MetaTxReceiver:
 
 pub trait EventBroadcaster {
     fn emit_event_meta_tx_decoded(&self);
-}
-
-#[macro_export]
-macro_rules! use_meta_tx {
-    ($metaTxReceiver:ident, $request:ident, $signature:ident) => {{
-        $metaTxReceiver._use_meta_tx(&$request, &$signature)?
-    }};
 }
