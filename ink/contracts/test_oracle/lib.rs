@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 
-#[openbrush::implementation(Ownable, AccessControl, KvStore, MetaTxReceiver, RollupAnchor)]
+#[openbrush::implementation(Ownable, AccessControl)]
 #[openbrush::contract]
 pub mod test_oracle {
     use ink::codegen::{EmitEvent, Env};
@@ -12,9 +12,9 @@ pub mod test_oracle {
     use openbrush::traits::Storage;
     use scale::{Decode, Encode};
 
-    use phat_rollup_anchor_ink::impls::{
-        kv_store, kv_store::*, message_queue, message_queue::*,
-        meta_transaction, meta_transaction::*, rollup_anchor, rollup_anchor::*,
+    use phat_rollup_anchor_ink::traits::{
+        kv_store, kv_store::*, message_queue, message_queue::*, meta_transaction,
+        meta_transaction::*, rollup_anchor, rollup_anchor::*,
     };
 
     pub type TradingPairId = u32;
@@ -123,13 +123,12 @@ pub mod test_oracle {
             let mut instance = Self::default();
             let caller = instance.env().caller();
             // set the owner of this contract
-            instance._init_with_owner(caller);
+            ownable::Internal::_init_with_owner(&mut instance, caller);
             // set the admin of this contract
-            instance._init_with_admin(caller);
-            // grant the role manager to teh given address
-            instance
-                .grant_role(MANAGER_ROLE, caller)
-                .expect("Should grant the role manager");
+            access_control::Internal::_init_with_admin(&mut instance, Some(caller));
+            // grant the role manager
+            AccessControl::grant_role(&mut instance, MANAGER_ROLE, Some(caller))
+                .expect("Should grant the role MANAGER_ROLE");
             instance
         }
 
@@ -186,7 +185,7 @@ pub mod test_oracle {
             account_id: AccountId,
             ecdsa_public_key: [u8; 33],
         ) -> Result<(), RollupAnchorError> {
-            self.grant_role(ATTESTOR_ROLE, account_id)?;
+            AccessControl::grant_role(self, ATTESTOR_ROLE, Some(account_id))?;
             self.register_ecdsa_public_key(account_id, ecdsa_public_key)?;
             Ok(())
         }
@@ -201,6 +200,11 @@ pub mod test_oracle {
             MANAGER_ROLE
         }
     }
+
+    impl KvStore for TestOracle {}
+    impl MessageQueue for TestOracle {}
+    impl MetaTxReceiver for TestOracle {}
+    impl RollupAnchor for TestOracle {}
 
     impl rollup_anchor::MessageHandler for TestOracle {
         fn on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
@@ -281,7 +285,7 @@ pub mod test_oracle {
         use openbrush::contracts::access_control::accesscontrol_external::AccessControl;
 
         use ink_e2e::{build_message, PolkadotConfig};
-        use phat_rollup_anchor_ink::impls::{
+        use phat_rollup_anchor_ink::traits::{
             meta_transaction::metatxreceiver_external::MetaTxReceiver,
             rollup_anchor::rollupanchor_external::RollupAnchor,
         };
@@ -329,7 +333,7 @@ pub mod test_oracle {
             let bob_address =
                 ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
-                .call(|oracle| oracle.grant_role(MANAGER_ROLE, bob_address));
+                .call(|oracle| oracle.grant_role(MANAGER_ROLE, Some(bob_address)));
             client
                 .call(&ink_e2e::alice(), grant_role, 0, None)
                 .await
@@ -397,7 +401,7 @@ pub mod test_oracle {
             let bob_address =
                 ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
-                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, bob_address));
+                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, Some(bob_address)));
             client
                 .call(&ink_e2e::alice(), grant_role, 0, None)
                 .await
@@ -471,7 +475,7 @@ pub mod test_oracle {
             let bob_address =
                 ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
-                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, bob_address));
+                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, Some(bob_address)));
             client
                 .call(&ink_e2e::alice(), grant_role, 0, None)
                 .await
@@ -611,7 +615,7 @@ pub mod test_oracle {
             let bob_address =
                 ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
-                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, bob_address));
+                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, Some(bob_address)));
             client
                 .call(&ink_e2e::alice(), grant_role, 0, None)
                 .await
@@ -685,7 +689,7 @@ pub mod test_oracle {
             let bob_address =
                 ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
-                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, bob_address));
+                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, Some(bob_address)));
             client
                 .call(&ink_e2e::alice(), grant_role, 0, None)
                 .await
@@ -734,7 +738,7 @@ pub mod test_oracle {
             let bob_address =
                 ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
-                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, bob_address));
+                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, Some(bob_address)));
             client
                 .call(&ink_e2e::alice(), grant_role, 0, None)
                 .await
@@ -771,7 +775,7 @@ pub mod test_oracle {
             let bob_address =
                 ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
-                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, bob_address));
+                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, Some(bob_address)));
             client
                 .call(&ink_e2e::alice(), grant_role, 0, None)
                 .await
@@ -896,7 +900,7 @@ pub mod test_oracle {
 
             // add the role => it should be succeed
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
-                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, from));
+                .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, Some(from)));
             client
                 .call(&ink_e2e::charlie(), grant_role, 0, None)
                 .await
