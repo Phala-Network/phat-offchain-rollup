@@ -39,6 +39,7 @@ pub mod test_oracle {
     pub enum ContractError {
         AccessControlError(AccessControlError),
         MessageQueueError(MessageQueueError),
+        MetaTransactionError(MetaTransactionError),
         MissingTradingPair,
     }
     /// convertor from MessageQueueError to ContractError
@@ -51,6 +52,12 @@ pub mod test_oracle {
     impl From<AccessControlError> for ContractError {
         fn from(error: AccessControlError) -> Self {
             ContractError::AccessControlError(error)
+        }
+    }
+    /// convertor from MetaTxError to ContractError
+    impl From<MetaTransactionError> for ContractError {
+        fn from(error: MetaTransactionError) -> Self {
+            ContractError::MetaTransactionError(error)
         }
     }
 
@@ -184,7 +191,7 @@ pub mod test_oracle {
             &mut self,
             account_id: AccountId,
             ecdsa_public_key: [u8; 33],
-        ) -> Result<(), RollupAnchorError> {
+        ) -> Result<(), ContractError> {
             AccessControl::grant_role(self, ATTESTOR_ROLE, Some(account_id))?;
             self.register_ecdsa_public_key(account_id, ecdsa_public_key)?;
             Ok(())
@@ -203,7 +210,7 @@ pub mod test_oracle {
 
     impl KvStore for TestOracle {}
     impl MessageQueue for TestOracle {}
-    impl MetaTxReceiver for TestOracle {}
+    impl MetaTransaction for TestOracle {}
     impl RollupAnchor for TestOracle {}
 
     impl rollup_anchor::MessageHandler for TestOracle {
