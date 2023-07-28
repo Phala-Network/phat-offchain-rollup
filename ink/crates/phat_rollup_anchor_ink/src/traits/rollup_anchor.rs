@@ -16,10 +16,6 @@ pub trait MessageHandler {
     fn on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError>;
 }
 
-pub trait EventBroadcaster {
-    fn emit_event_meta_tx_decoded(&self);
-}
-
 #[derive(scale::Encode, scale::Decode, Debug, Eq, PartialEq, Clone)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct HandleActionInput {
@@ -62,11 +58,9 @@ pub type RolupCondEqMethodParams = (
 
 #[openbrush::trait_definition]
 pub trait RollupAnchor:
-    EventBroadcaster
-    + MessageHandler
+    MessageHandler
     + kv_store::KvStore
     + message_queue::MessageQueue
-    //+ meta_transaction::MetaTxReceiver
     + access_control::AccessControl
     + access_control::Internal
 {

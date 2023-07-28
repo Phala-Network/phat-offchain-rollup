@@ -6,7 +6,6 @@ use openbrush::storage::Mapping;
 use openbrush::traits::{AccountId, Hash, Storage};
 
 pub type Nonce = u128;
-type NonceAndEcdsaPk = (Nonce, Vec<u8>);
 pub type PrepareResult = (ForwardRequest, Hash);
 pub type MetatTxRolupCondEqMethodParams = (ForwardRequest, [u8; 65]);
 
@@ -48,17 +47,21 @@ pub struct ForwardRequest {
 #[derive(Default, Debug)]
 #[openbrush::storage_item]
 pub struct Data {
-    nonces_and_ecdsa_public_key: Mapping<AccountId, NonceAndEcdsaPk>,
+    nonces: Mapping<AccountId, Nonce>,
+    ecdsa_public_keys: Mapping<AccountId, Vec<u8>>,
 }
 
 #[openbrush::trait_definition]
-pub trait MetaTxReceiver: Storage<Data> + access_control::Internal + RollupAnchor {
+pub trait MetaTxReceiver:
+    Storage<Data> + EventBroadcaster + access_control::Internal + RollupAnchor
+{
     #[ink(message)]
     fn get_ecdsa_public_key(&self, from: AccountId) -> [u8; 33] {
-        match self.data::<Data>().nonces_and_ecdsa_public_key.get(&from) {
-            None => [0; 33],
-            Some((_, p)) => p.try_into().unwrap_or([0; 33]),
-        }
+        self.data::<Data>()
+            .ecdsa_public_keys
+            .get(&from)
+            .map(|k| k.try_into().unwrap_or([0; 33]))
+            .unwrap_or([0; 33])
     }
 
     #[ink(message)]
@@ -68,16 +71,9 @@ pub trait MetaTxReceiver: Storage<Data> + access_control::Internal + RollupAncho
         from: AccountId,
         ecdsa_public_key: [u8; 33],
     ) -> Result<(), MetaTxError> {
-        match self.data::<Data>().nonces_and_ecdsa_public_key.get(&from) {
-            None => self
-                .data::<Data>()
-                .nonces_and_ecdsa_public_key
-                .insert(&from, &(0, ecdsa_public_key.into())),
-            Some((n, _)) => self
-                .data::<Data>()
-                .nonces_and_ecdsa_public_key
-                .insert(&from, &(n, ecdsa_public_key.into())),
-        }
+        self.data::<Data>()
+            .ecdsa_public_keys
+            .insert(&from, &ecdsa_public_key.into());
         Ok(())
     }
 
@@ -97,25 +93,19 @@ pub trait MetaTxReceiver: Storage<Data> + access_control::Internal + RollupAncho
     }
 
     fn get_nonce(&self, from: AccountId) -> Nonce {
-        self.data::<Data>()
-            .nonces_and_ecdsa_public_key
-            .get(&from)
-            .map(|(n, _)| n)
-            .unwrap_or(0)
+        self.data::<Data>().nonces.get(&from).unwrap_or(0)
     }
 
     fn verify(&self, request: &ForwardRequest, signature: &[u8; 65]) -> Result<(), MetaTxError> {
-        let (nonce_from, ecdsa_public_key) = match self
+        let ecdsa_public_key : [u8; 33]  = self
             .data::<Data>()
-            .nonces_and_ecdsa_public_key
+            .ecdsa_public_keys
             .get(&request.from)
-        {
-            Some((n, p)) => (n, p),
-            _ => return Err(MetaTxError::PublicKeyNotRegistered),
-        };
-        let ecdsa_public_key: [u8; 33] = ecdsa_public_key
+            .ok_or(MetaTxError::PublicKeyNotRegistered)?
             .try_into()
             .map_err(|_| MetaTxError::PublicKeyNotRegistered)?;
+
+        let nonce_from = self.get_nonce(request.from);
 
         if request.nonce < nonce_from {
             return Err(MetaTxError::NonceTooLow);
@@ -143,17 +133,8 @@ pub trait MetaTxReceiver: Storage<Data> + access_control::Internal + RollupAncho
         // verify the signature
         self.verify(request, signature)?;
         // update the nonce
-        match self
-            .data::<Data>()
-            .nonces_and_ecdsa_public_key
-            .get(&request.from)
-        {
-            Some((_, p)) => self
-                .data::<Data>()
-                .nonces_and_ecdsa_public_key
-                .insert(&request.from, &(request.nonce + 1, p)),
-            None => return Err(MetaTxError::PublicKeyNotRegistered),
-        }
+        let nonce = request.nonce + 1;
+        self.data::<Data>().nonces.insert(&request.from, &nonce);
         Ok(())
     }
 
@@ -181,6 +162,10 @@ pub trait MetaTxReceiver: Storage<Data> + access_control::Internal + RollupAncho
 
         Ok(result)
     }
+}
+
+pub trait EventBroadcaster {
+    fn emit_event_meta_tx_decoded(&self);
 }
 
 #[macro_export]

@@ -3,11 +3,11 @@
 Library for Ink! smart contract to help you build [Phat Rollup Anchor ](https://github.com/Phala-Network/phat-offchain-rollup/
 )deployed on the Substrate pallet Contracts.
 This library uses the [OpenBrush](https://learn.brushfam.io/docs/OpenBrush) library with teh features `ownable` and `access_control`
-It provides the following traits and the default implementations for:
+It provides the following traits for:
  - kv_store: key-value store that allows offchain Phat Contracts to perform read/write operations.
- - message_queue: Message Queue, enabling a request-response programming model for the smart-contract while ensuring that each request received exactly one response. The default implementation of `message_queue` requires the implementation of the `kv_strore` trait. 
- - meta_transactions : Allow the offchain Phat Contract to do transactions without paying the gas fee. The fee will be paid by a third party (the relayer).
- - rollup_anchor: Use the kv-store and the message queue to allow offchain's rollup transactions. The default implementation of `rollup_anchor` requires the implementation of the traits `kv_strore`, `message_queue`, `meta_transactions` and `access_control::AccessControl`.
+ - message_queue: Message Queue, enabling a request-response programming model for the smart-contract while ensuring that each request received exactly one response. It uses the KV Store to save the messages. 
+ - rollup_anchor: Use the kv-store and the message queue to allow offchain's rollup transactions.
+ - meta_transaction : Allow the offchain Phat Contract to do transactions without paying the gas fee. The fee will be paid by a third party (the relayer).
 
 
 ## Build the crate
@@ -17,9 +17,9 @@ To build the crate:
 ```bash
 cargo build
 ```
-## Run the unit tests
+## Run the integration tests
 
-To run the unit tests:
+To run the integration tests:
 
 ```bash
 cargo test

@@ -246,16 +246,6 @@ pub mod test_oracle {
         }
     }
 
-    impl rollup_anchor::EventBroadcaster for TestOracle {
-        fn emit_event_meta_tx_decoded(&self) {
-            self.env().emit_event(MetaTxDecoded {});
-        }
-    }
-
-    /// Events emitted when a meta transaction is decoded
-    #[ink(event)]
-    pub struct MetaTxDecoded {}
-
     /// Events emitted when a message is pushed in the queue
     #[ink(event)]
     pub struct MessageQueued {
@@ -278,6 +268,16 @@ pub mod test_oracle {
             self.env().emit_event(MessageProcessedTo { id });
         }
     }
+
+    impl meta_transaction::EventBroadcaster for TestOracle {
+        fn emit_event_meta_tx_decoded(&self) {
+            self.env().emit_event(MetaTxDecoded {});
+        }
+    }
+
+    /// Events emitted when a meta transaction is decoded
+    #[ink(event)]
+    pub struct MetaTxDecoded {}
 
     #[cfg(all(test, feature = "e2e-tests"))]
     mod e2e_tests {
