@@ -336,7 +336,7 @@ impl<'a> SubmittableRollupTx<'a> {
 
         let result = contract
             .dry_run_and_send_transaction(
-                ink::selector_bytes!("RollupAnchor::meta_tx_rollup_cond_eq"),
+                ink::selector_bytes!("MetaTransaction::meta_tx_rollup_cond_eq"),
                 Some(&params),
                 0,
                 relay_key,
