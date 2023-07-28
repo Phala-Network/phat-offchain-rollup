@@ -1,15 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
-#![allow(clippy::inline_fn_without_body)]
 
-
-#[openbrush::implementation(Ownable, AccessControl, KvStore, MetaTxReceiver, RollupAnchor)]
+#[openbrush::implementation(Ownable, AccessControl)]
 #[openbrush::contract]
 pub mod test_contract {
 
-    use crate::impls::kv_store::{self, *};
-    use crate::impls::message_queue::{self, *};
-    use crate::impls::meta_transaction::{self, *};
-    use crate::impls::rollup_anchor::{self, *};
+    use crate::traits::kv_store::{self, *};
+    use crate::traits::message_queue::{self, *};
+    use crate::traits::meta_transaction::{self, *};
+    use crate::traits::rollup_anchor::{self, *};
     use ink::env::debug_println;
     use openbrush::contracts::access_control::*;
     use openbrush::contracts::ownable::*;
@@ -34,28 +32,23 @@ pub mod test_contract {
             let mut instance = Self::default();
             let caller = instance.env().caller();
             // set the owner of this contract
-            instance._init_with_owner(caller);
+            ownable::Internal::_init_with_owner(&mut instance, caller);
             // set the admin of this contract
-            instance._init_with_admin(caller);
+            access_control::Internal::_init_with_admin(&mut instance, Some(caller));
             // grant the role manager
-            instance
-                .grant_role(MANAGER_ROLE, caller)
+            AccessControl::grant_role(&mut instance, MANAGER_ROLE, Some(caller))
                 .expect("Should grant the role MANAGER_ROLE");
             // grant the role attestor to the given address
-            instance
-                .grant_role(ATTESTOR_ROLE, phat_attestor)
+            AccessControl::grant_role(&mut instance, ATTESTOR_ROLE, Some(phat_attestor))
                 .expect("Should grant the role ATTESTOR_ROLE");
             instance
         }
     }
 
-    #[default_impl(MetaTxReceiver)]
-    #[openbrush::modifiers(access_control::only_role(MANAGER_ROLE))]
-    fn register_ecdsa_public_key(){}
-
-    #[default_impl(RollupAnchor)]
-    #[openbrush::modifiers(access_control::only_role(ATTESTOR_ROLE))]
-    fn rollup_cond_eq(){}
+    impl KvStore for MyContract {}
+    impl MessageQueue for MyContract {}
+    impl MetaTxReceiver for MyContract {}
+    impl RollupAnchor for MyContract {}
 
     impl rollup_anchor::MessageHandler for MyContract {
         fn on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
