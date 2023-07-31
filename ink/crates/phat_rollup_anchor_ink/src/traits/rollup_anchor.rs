@@ -75,11 +75,7 @@ pub trait RollupAnchor:
         self.inner_rollup_cond_eq(conditions, updates, actions)
     }
 
-    fn check_attestor_role(
-        &self,
-        attestor: AccountId,
-    ) -> Result<(), RollupAnchorError> {
-
+    fn check_attestor_role(&self, attestor: AccountId) -> Result<(), RollupAnchorError> {
         if !self.has_role(ATTESTOR_ROLE, Some(attestor)) {
             return Err(RollupAnchorError::AccessControlError(
                 access_control::AccessControlError::MissingRole,

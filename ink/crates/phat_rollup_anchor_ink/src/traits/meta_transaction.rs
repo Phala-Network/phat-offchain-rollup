@@ -96,8 +96,12 @@ pub trait MetaTransaction:
         self.data::<Data>().nonces.get(&from).unwrap_or(0)
     }
 
-    fn verify(&self, request: &ForwardRequest, signature: &[u8; 65]) -> Result<(), MetaTransactionError> {
-        let ecdsa_public_key : [u8; 33]  = self
+    fn verify(
+        &self,
+        request: &ForwardRequest,
+        signature: &[u8; 65],
+    ) -> Result<(), MetaTransactionError> {
+        let ecdsa_public_key: [u8; 33] = self
             .data::<Data>()
             .ecdsa_public_keys
             .get(&request.from)
