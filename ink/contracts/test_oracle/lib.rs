@@ -210,8 +210,8 @@ pub mod test_oracle {
 
     impl KvStore for TestOracle {}
     impl MessageQueue for TestOracle {}
-    impl MetaTransaction for TestOracle {}
     impl RollupAnchor for TestOracle {}
+    impl MetaTransaction for TestOracle {}
 
     impl rollup_anchor::MessageHandler for TestOracle {
         fn on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
@@ -293,7 +293,7 @@ pub mod test_oracle {
 
         use ink_e2e::{build_message, PolkadotConfig};
         use phat_rollup_anchor_ink::traits::{
-            meta_transaction::metatxreceiver_external::MetaTxReceiver,
+            meta_transaction::metatransaction_external::MetaTransaction,
             rollup_anchor::rollupanchor_external::RollupAnchor,
         };
 
