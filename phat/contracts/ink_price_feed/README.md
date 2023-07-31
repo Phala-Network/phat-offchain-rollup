@@ -32,6 +32,11 @@ cargo contract build
 And use Contracts-UI or Polkadot.js to deploy your contract and interact with it.
 You will have to configure `alice` as attestor.
 
+### Add trading pairs and push some requests
+
+Use Contracts-UI or Polkadot.js to interact with your smart contract deployed on local node or Shibuya.
+You can create a new trading pair and request a price feed by the Phat Contract.
+
 ### Run the integration tests
 And finally execute the following command to start integration tests execution.
 
@@ -39,23 +44,13 @@ And finally execute the following command to start integration tests execution.
 cargo test  -- --ignored --test-threads=1
 ```
 
-### Parallel in Intgration Tests
+### Parallel in Integration Tests
 
 The flag `--test-threads=1` is necessary because by default [Rust unit tests run in parallel](https://doc.rust-lang.org/book/ch11-02-running-tests.html).
-There may have a few tests trying to sending out transactions at the same time, resulting
+There may have a few tests trying to send out transactions at the same time, resulting
 conflicting nonce values.
 The solution is to add `--test-threads=1`. So the unit test framework knows that you don't want
 parallel execution.
-
-### Push More Requests
-
-After running `deploy-test.ts`, it will push only one oracle request to the rollup queue.
-After a successful `answer_price_request` test run, the queue will become empty. To push a new
-request, run:
-
-```bash
-TODO
-```
 
 ### Enable Meta-Tx
 
