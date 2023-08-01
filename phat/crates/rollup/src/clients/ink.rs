@@ -60,7 +60,7 @@ impl<'a> KvSnapshot for InkSnapshot<'a> {
         let value: QueryResult = contract
             .query_at(
                 *self.contract_id,
-                ink::selector_bytes!("KVStore::get_value"),
+                ink::selector_bytes!("KvStore::get_value"),
                 Some(&key),
                 0,
                 Some(self.at),
@@ -305,7 +305,7 @@ impl<'a> SubmittableRollupTx<'a> {
         let result: PrepareResult = contract
             .query(
                 origin,
-                ink::selector_bytes!("MetaTxReceiver::prepare"),
+                ink::selector_bytes!("MetaTransaction::prepare"),
                 Some(&meta_params),
                 0,
             )
@@ -336,7 +336,7 @@ impl<'a> SubmittableRollupTx<'a> {
 
         let result = contract
             .dry_run_and_send_transaction(
-                ink::selector_bytes!("RollupAnchor::meta_tx_rollup_cond_eq"),
+                ink::selector_bytes!("MetaTransaction::meta_tx_rollup_cond_eq"),
                 Some(&params),
                 0,
                 relay_key,

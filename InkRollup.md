@@ -94,10 +94,10 @@ the contract by sending a `config()` transaction with the arguments below:
 
 Call the method `get_attest_address` and `get_ecdsa_public_key` to get the public keys used by the phat contract.
 
-In the Ink! smart contract side, use the Contracts-UI or Polkadtot.js to grant the phat contract as  attestor
+In the Ink! smart contract side, use the Contracts-UI or Polkadot.js to grant the phat contract as  attestor
 - Use the method `registerAttestor` to set the attest_address and the ecdsa_public_key
 - Use the method `accessControl::grantRole` to set only the attest_address
-- Use the method `metaTxReiver::registerEcdsaPublicKey` to set only the ecdsa_public_key
+- Use the method `metaTransaction::registerEcdsaPublicKey` to set only the ecdsa_public_key
 
 Once configured, you can call the following query methods in ink! smart contract:
 - `createTradingPair`: Create a trading to get the price between two tokens

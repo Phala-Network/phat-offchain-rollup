@@ -216,7 +216,7 @@ To deploy the Ink rollup anchor, follow these steps:
 
 1. Deploy the Phat Contract with a pre-generated ECDSA key pair (called submission key)
     - Sample code: [InkPriceFeed](./phat/contracts/ink_price_feed/lib.rs)
-2. Deploy the contract: [PhatRollupAnchor](./ink/crates/phat_rollup_anchor_ink/src/traits/rollup_anchor.rs)
+2. Deploy the contract: [PhatRollupAnchor](./ink/crates/phat_rollup_anchor_ink/README.md)
     - register the phat contract as attestor
 
 The Substrate pallet anchor deployment docs are currently under development (TODO).

@@ -1,11 +1,2 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-#![feature(min_specialization)]
-#![allow(clippy::inline_fn_without_body)]
-
-extern crate core;
-
-pub mod impls;
+#![cfg_attr(not(feature = "std"), no_std, no_main)]
 pub mod traits;
-
-#[cfg(test)]
-pub mod tests;

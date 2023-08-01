@@ -3,11 +3,11 @@
 Library for Ink! smart contract to help you build [Phat Rollup Anchor ](https://github.com/Phala-Network/phat-offchain-rollup/
 )deployed on the Substrate pallet Contracts.
 This library uses the [OpenBrush](https://learn.brushfam.io/docs/OpenBrush) library with teh features `ownable` and `access_control`
-It provides the following traits and the default implementations for:
+It provides the following traits for:
  - kv_store: key-value store that allows offchain Phat Contracts to perform read/write operations.
- - message_queue: Message Queue, enabling a request-response programming model for the smart-contract while ensuring that each request received exactly one response. The default implementation of `message_queue` requires the implementation of the `kv_strore` trait. 
- - meta_transactions : Allow the offchain Phat Contract to do transactions without paying the gas fee. The fee will be paid by a third party (the relayer).
- - rollup_anchor: Use the kv-store and the message queue to allow offchain's rollup transactions. The default implementation of `rollup_anchor` requires the implementation of the traits `kv_strore`, `message_queue`, `meta_transactions` and `access_control::AccessControl`.
+ - message_queue: Message Queue, enabling a request-response programming model for the smart-contract while ensuring that each request received exactly one response. It uses the KV Store to save the messages. 
+ - rollup_anchor: Use the kv-store and the message queue to allow offchain's rollup transactions.
+ - meta_transaction : Allow the offchain Phat Contract to do transactions without paying the gas fee. The fee will be paid by a third party (the relayer).
 
 
 ## Build the crate
@@ -17,9 +17,9 @@ To build the crate:
 ```bash
 cargo build
 ```
-## Run the unit tests
+## Run the integration tests
 
-To run the unit tests:
+To run the integration tests:
 
 ```bash
 cargo test
@@ -39,7 +39,7 @@ scale = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 
 # OpenBrush dependency
-openbrush = { git = "https://github.com/727-Ventures/openbrush-contracts", version = "3.1.1", features = ["ownable", "access_control"], default-features = false }
+openbrush = { git = "https://github.com/727-Ventures/openbrush-contracts", version = "4.0.0-beta", features = ["ownable", "access_control"], default-features = false }
 
 # Phat Rollup Anchor dependency
 phat_rollup_anchor_ink = { path = "phat-rollup-anchor-ink", default-features = false}
@@ -55,14 +55,15 @@ std = [
 ]
 ```
 
-### Add imports and enable unstable feature
+### Add imports
 
-Use `openbrush::contract` macro instead of `ink::contract`. Import everything from `openbrush::contracts::access_control`, `openbrush::contracts::ownable`, `phat_rollup_anchor_ink::impls::kv_store`, `phat_rollup_anchor_ink::impls::message_queue`, `phat_rollup_anchor_ink::impls::meta_transaction`, `phat_rollup_anchor_ink::impls::rollup_anchor`.
+Use `openbrush::contract` macro instead of `ink::contract`. 
+Import everything from `openbrush::contracts::access_control`, `openbrush::contracts::ownable`, `phat_rollup_anchor_ink::traits::kv_store`, `phat_rollup_anchor_ink::traits::message_queue`, `phat_rollup_anchor_ink::traits::meta_transaction`, `phat_rollup_anchor_ink::traits::rollup_anchor`.
 
 ```rust
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
-#![feature(min_specialization)]
 
+#[openbrush::implementation(Ownable, AccessControl)]
 #[openbrush::contract]
 pub mod test_oracle {
     
@@ -71,7 +72,7 @@ pub mod test_oracle {
     use openbrush::traits::Storage;
     use scale::{Decode, Encode};
 
-    use phat_rollup_anchor_ink::impls::{
+    use phat_rollup_anchor_ink::traits::{
         kv_store, kv_store::*,
         message_queue, message_queue::*,
         meta_transaction, meta_transaction::*,
@@ -104,12 +105,10 @@ pub struct TestOracle {
 Inherit implementation of the traits. You can customize (override) methods in this `impl` block.
 
 ```rust
-impl Ownable for TestOracle {}
-impl AccessControl for TestOracle {}
 impl KVStore for TestOracle {}
 impl MessageQueue for TestOracle {}
-impl MetaTxReceiver for TestOracle {}
 impl RollupAnchor for TestOracle {}
+impl MetaTxReceiver for TestOracle {}
 ```
 
 ### Define constructor
@@ -120,19 +119,19 @@ impl TestOracle {
         let mut instance = Self::default();
         let caller = instance.env().caller();
         // set the owner of this contract
-        instance._init_with_owner(caller);
+        ownable::Internal::_init_with_owner(&mut instance, caller);
         // set the admin of this contract
-        instance._init_with_admin(caller);
+        access_control::Internal::_init_with_admin(&mut instance, Some(caller));
         instance
     }
 }
 ```
 
-### Internal Traits
+### Traits to implement
 
-### Internal trait for the message queue
-Implement the `message_queue::Internal` trait to emit the events when a message is pushed in the queue and when a message is proceed. 
-If you don't want to emit the events, you can put an empty block in the methods `_emit_event_message_queued` and `_emit_event_message_processed_to`.
+### Trait for the message queue
+Implement the `message_queue::EventBroadcaster` trait to emit the events when a message is pushed in the queue and when a message is proceeded. 
+If you don't want to emit the events, you can put an empty block in the methods `emit_event_message_queued` and `emit_event_message_processed_to`.
 
 ```rust
 /// Events emitted when a message is pushed in the queue
@@ -148,25 +147,25 @@ pub struct MessageProcessedTo {
     pub id: u32,
 }
 
-impl message_queue::Internal for TestOracle {
+impl message_queue::EventBroadcaster for TestOracle {
 
-    fn _emit_event_message_queued(&self, id: u32, data: Vec<u8>){
+    fn emit_event_message_queued(&self, id: u32, data: Vec<u8>){
         self.env().emit_event(MessageQueued { id, data });
     }
 
-    fn _emit_event_message_processed_to(&self, id: u32){
+    fn emit_event_message_processed_to(&self, id: u32){
         self.env().emit_event(MessageProcessedTo { id });
     }
 
 }
 ```
-### Internal trait for the rollup anchor
-Implement the `rollup_anchor::Internal` trait to put your business logic when a message is received.
+### Traits for the rollup anchor
+Implement the `rollup_anchor::MessageHandler` trait to put your business logic when a message is received.
 Here an example when the Oracle receives a message with the price feed. 
 
 ```rust
-impl rollup_anchor::Internal for TestOracle {
-    fn _on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
+impl rollup_anchor::MessageHandler for TestOracle {
+    fn on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
 
         // parse the response
         let message: PriceResponseMessage = Decode::decode(&mut &action[..])
@@ -203,16 +202,22 @@ impl rollup_anchor::Internal for TestOracle {
 
         Ok(())
     }
-
-    fn _emit_event_meta_tx_decoded(&self) {
-        self.env().emit_event(MetaTxDecoded {});
-    }
 }
+```
+### Trait for the meta transaction
+Implement the `meta_transaction::EventBroadcaster` trait to emit the events when a meta transaction is decoded.
+If you don't want to emit the event, you can put an empty block in the methods `emit_event_meta_tx_decoded`.
 
-/// Events emitted when a meta transaction is decoded
-#[ink(event)]
-pub struct MetaTxDecoded {}
+```rust
+    impl meta_transaction::EventBroadcaster for TestOracle {
+        fn emit_event_meta_tx_decoded(&self) {
+            self.env().emit_event(MetaTxDecoded {});
+        }
+    }
 
+    /// Events emitted when a meta transaction is decoded
+    #[ink(event)]
+    pub struct MetaTxDecoded {}    
 ```
 
 ### Final code 
@@ -220,8 +225,8 @@ Here the final code of the Price Oracle.
 
 ```rust
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
-#![feature(min_specialization)]
 
+#[openbrush::implementation(Ownable, AccessControl)]
 #[openbrush::contract]
 pub mod test_oracle {
     use ink::codegen::{EmitEvent, Env};
@@ -233,7 +238,7 @@ pub mod test_oracle {
     use openbrush::traits::Storage;
     use scale::{Decode, Encode};
 
-    use phat_rollup_anchor_ink::impls::{
+    use phat_rollup_anchor_ink::traits::{
         kv_store, kv_store::*, message_queue, message_queue::*, meta_transaction,
         meta_transaction::*, rollup_anchor, rollup_anchor::*,
     };
@@ -260,18 +265,28 @@ pub mod test_oracle {
     pub enum ContractError {
         AccessControlError(AccessControlError),
         MessageQueueError(MessageQueueError),
+        MetaTransactionError(MetaTransactionError),
         MissingTradingPair,
     }
+
     /// convertor from MessageQueueError to ContractError
     impl From<MessageQueueError> for ContractError {
         fn from(error: MessageQueueError) -> Self {
             ContractError::MessageQueueError(error)
         }
     }
+
     /// convertor from MessageQueueError to ContractError
     impl From<AccessControlError> for ContractError {
         fn from(error: AccessControlError) -> Self {
             ContractError::AccessControlError(error)
+        }
+    }
+
+    /// convertor from MetaTxError to ContractError
+    impl From<MetaTransactionError> for ContractError {
+        fn from(error: MetaTransactionError) -> Self {
+            ContractError::MetaTransactionError(error)
         }
     }
 
@@ -286,6 +301,7 @@ pub mod test_oracle {
         token0: String,
         token1: String,
     }
+
     /// Message sent to provide the price of the trading pair
     /// response pushed in the queue by the offchain rollup and read by this contract
     #[derive(Encode, Decode)]
@@ -338,26 +354,18 @@ pub mod test_oracle {
         trading_pairs: Mapping<TradingPairId, TradingPair>,
     }
 
-    impl Ownable for TestOracle {}
-    impl AccessControl for TestOracle {}
-    impl KVStore for TestOracle {}
-    impl MessageQueue for TestOracle {}
-    impl MetaTxReceiver for TestOracle {}
-    impl RollupAnchor for TestOracle {}
-
     impl TestOracle {
         #[ink(constructor)]
         pub fn new() -> Self {
             let mut instance = Self::default();
             let caller = instance.env().caller();
             // set the owner of this contract
-            instance._init_with_owner(caller);
+            ownable::Internal::_init_with_owner(&mut instance, caller);
             // set the admin of this contract
-            instance._init_with_admin(caller);
-            // grant the role manager to teh given address
-            instance
-                .grant_role(MANAGER_ROLE, caller)
-                .expect("Should grant the role manager");
+            access_control::Internal::_init_with_admin(&mut instance, Some(caller));
+            // grant the role manager
+            AccessControl::grant_role(&mut instance, MANAGER_ROLE, Some(caller))
+                .expect("Should grant the role MANAGER_ROLE");
             instance
         }
 
@@ -395,7 +403,7 @@ pub mod test_oracle {
                         token0: t.token0,
                         token1: t.token1,
                     };
-                    self._push_message(&message)?
+                    self.push_message(&message)?
                 }
                 _ => return Err(ContractError::MissingTradingPair),
             };
@@ -413,8 +421,8 @@ pub mod test_oracle {
             &mut self,
             account_id: AccountId,
             ecdsa_public_key: [u8; 33],
-        ) -> Result<(), RollupAnchorError> {
-            self.grant_role(ATTESTOR_ROLE, account_id)?;
+        ) -> Result<(), ContractError> {
+            AccessControl::grant_role(self, ATTESTOR_ROLE, Some(account_id))?;
             self.register_ecdsa_public_key(account_id, ecdsa_public_key)?;
             Ok(())
         }
@@ -430,8 +438,16 @@ pub mod test_oracle {
         }
     }
 
-    impl rollup_anchor::Internal for TestOracle {
-        fn _on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
+    impl KvStore for TestOracle {}
+
+    impl MessageQueue for TestOracle {}
+
+    impl RollupAnchor for TestOracle {}
+
+    impl MetaTransaction for TestOracle {}
+
+    impl rollup_anchor::MessageHandler for TestOracle {
+        fn on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
             // parse the response
             let message: PriceResponseMessage =
                 Decode::decode(&mut &action[..]).or(Err(RollupAnchorError::FailedToDecode))?;
@@ -468,15 +484,7 @@ pub mod test_oracle {
 
             Ok(())
         }
-
-        fn _emit_event_meta_tx_decoded(&self) {
-            self.env().emit_event(MetaTxDecoded {});
-        }
     }
-
-    /// Events emitted when a meta transaction is decoded
-    #[ink(event)]
-    pub struct MetaTxDecoded {}
 
     /// Events emitted when a message is pushed in the queue
     #[ink(event)]
@@ -491,14 +499,25 @@ pub mod test_oracle {
         pub id: u32,
     }
 
-    impl message_queue::Internal for TestOracle {
-        fn _emit_event_message_queued(&self, id: u32, data: Vec<u8>) {
+    impl message_queue::EventBroadcaster for TestOracle {
+        fn emit_event_message_queued(&self, id: u32, data: Vec<u8>) {
             self.env().emit_event(MessageQueued { id, data });
         }
 
-        fn _emit_event_message_processed_to(&self, id: u32) {
+        fn emit_event_message_processed_to(&self, id: u32) {
             self.env().emit_event(MessageProcessedTo { id });
         }
     }
+
+    impl meta_transaction::EventBroadcaster for TestOracle {
+        fn emit_event_meta_tx_decoded(&self) {
+            self.env().emit_event(MetaTxDecoded {});
+        }
+    }
+
+    /// Events emitted when a meta transaction is decoded
+    #[ink(event)]
+    pub struct MetaTxDecoded {}
+    
 }
 ```

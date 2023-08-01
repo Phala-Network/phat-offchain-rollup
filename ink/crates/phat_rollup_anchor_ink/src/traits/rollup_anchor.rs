@@ -1,8 +1,8 @@
-pub use crate::traits::message_queue::MessageQueueError;
-use crate::traits::meta_transaction::{ForwardRequest, MetaTxError};
+use crate::traits::kv_store;
+use crate::traits::message_queue::{self, MessageQueueError};
 use ink::prelude::vec::Vec;
-pub use kv_session::traits::{Key, QueueIndex, Value};
-use openbrush::contracts::access_control::{AccessControlError, RoleType};
+use kv_session::traits::{Key, QueueIndex, Value};
+use openbrush::contracts::access_control::{self, AccessControlError, RoleType};
 use openbrush::traits::AccountId;
 
 pub const ATTESTOR_ROLE: RoleType = ink::selector_id!("ATTESTOR_ROLE");
@@ -11,6 +11,10 @@ pub const ACTION_REPLY: u8 = 0;
 pub const ACTION_SET_QUEUE_HEAD: u8 = 1;
 pub const ACTION_GRANT_ATTESTOR: u8 = 10;
 pub const ACTION_REVOKE_ATTESTOR: u8 = 11;
+
+pub trait MessageHandler {
+    fn on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError>;
+}
 
 #[derive(scale::Encode, scale::Decode, Debug, Eq, PartialEq, Clone)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
@@ -30,7 +34,6 @@ pub enum RollupAnchorError {
     MissingData,
     MessageQueueError(MessageQueueError),
     AccessControlError(AccessControlError),
-    MetaTxError(MetaTxError),
 }
 
 /// convertor from AccessControlError to RollupAnchorError
@@ -47,46 +50,96 @@ impl From<MessageQueueError> for RollupAnchorError {
     }
 }
 
-/// convertor from MetaTxError to RollupAnchorError
-impl From<MetaTxError> for RollupAnchorError {
-    fn from(error: MetaTxError) -> Self {
-        RollupAnchorError::MetaTxError(error)
-    }
-}
+pub type RolupCondEqMethodParams = (
+    Vec<(Key, Option<Value>)>,
+    Vec<(Key, Option<Value>)>,
+    Vec<HandleActionInput>,
+);
 
 #[openbrush::trait_definition]
-pub trait RollupAnchor {
+pub trait RollupAnchor:
+    MessageHandler
+    + kv_store::KvStore
+    + message_queue::MessageQueue
+    + access_control::AccessControl
+    + access_control::Internal
+{
     #[ink(message)]
+    #[openbrush::modifiers(access_control::only_role(ATTESTOR_ROLE))]
     fn rollup_cond_eq(
         &mut self,
         conditions: Vec<(Key, Option<Value>)>,
         updates: Vec<(Key, Option<Value>)>,
         actions: Vec<HandleActionInput>,
-    ) -> Result<bool, RollupAnchorError>;
+    ) -> Result<bool, RollupAnchorError> {
+        self.inner_rollup_cond_eq(conditions, updates, actions)
+    }
 
-    #[ink(message)]
-    fn meta_tx_rollup_cond_eq(
-        &mut self,
-        request: ForwardRequest,
-        signature: [u8; 65],
-    ) -> Result<bool, RollupAnchorError>;
-}
+    fn check_attestor_role(&self, attestor: AccountId) -> Result<(), RollupAnchorError> {
+        if !self.has_role(ATTESTOR_ROLE, Some(attestor)) {
+            return Err(RollupAnchorError::AccessControlError(
+                access_control::AccessControlError::MissingRole,
+            ));
+        }
 
-pub(crate) trait Internal {
-    fn _rollup_cond_eq(
+        Ok(())
+    }
+
+    fn inner_rollup_cond_eq(
         &mut self,
         conditions: Vec<(Key, Option<Value>)>,
         updates: Vec<(Key, Option<Value>)>,
         actions: Vec<HandleActionInput>,
-    ) -> Result<bool, RollupAnchorError>;
+    ) -> Result<bool, RollupAnchorError> {
+        // check the conditions
+        for cond in conditions {
+            let key = cond.0;
+            let current_value = self.inner_get_value(&key);
+            let expected_value = cond.1;
+            match (current_value, expected_value) {
+                (None, None) => {}
+                (Some(v1), Some(v2)) => {
+                    if v1.ne(&v2) {
+                        // condition is not met
+                        return Err(RollupAnchorError::ConditionNotMet);
+                    }
+                }
+                (_, _) => return Err(RollupAnchorError::ConditionNotMet),
+            }
+        }
 
-    fn _handle_action(&mut self, input: HandleActionInput) -> Result<(), RollupAnchorError>;
-}
+        // apply the updates
+        for update in updates {
+            self.set_value(&update.0, update.1.as_ref());
+        }
 
-pub trait MessageHandler {
-    fn on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError>;
-}
+        // apply the actions
+        for action in actions {
+            self.handle_action(action)?;
+        }
 
-pub trait EventBroadcaster {
-    fn emit_event_meta_tx_decoded(&self);
+        Ok(true)
+    }
+
+    fn handle_action(&mut self, input: HandleActionInput) -> Result<(), RollupAnchorError> {
+        match input.action_type {
+            ACTION_REPLY => {
+                self.on_message_received(input.action.ok_or(RollupAnchorError::MissingData)?)?
+            }
+            ACTION_SET_QUEUE_HEAD => {
+                self.pop_to(input.id.ok_or(RollupAnchorError::MissingData)?)?
+            }
+            ACTION_GRANT_ATTESTOR => self.grant_role(
+                ATTESTOR_ROLE,
+                Some(input.address.ok_or(RollupAnchorError::MissingData)?),
+            )?,
+            ACTION_REVOKE_ATTESTOR => self.revoke_role(
+                ATTESTOR_ROLE,
+                Some(input.address.ok_or(RollupAnchorError::MissingData)?),
+            )?,
+            _ => return Err(RollupAnchorError::UnsupportedAction),
+        }
+
+        Ok(())
+    }
 }
