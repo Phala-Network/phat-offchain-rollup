@@ -8,8 +8,9 @@ It supports:
  - handle the messages to feed the trading pair. Only an address granted as `ATTESTOR` can do it.
  - display the trading pair with this id.
  - allow meta transactions to separate the attestor and the payer.
+ - managed the roles and grant an address as `ADMIN`, `MANAGER` or `ATTESTOR`. Only the admin can do it.
 
-By default, the contract owner is granted as `MANAGER` but it is not granted as `ATTESTOR`.
+By default, the contract owner is granted as `ADMIN` and `MANAGER` but it is not granted as `ATTESTOR`.
 
 ## Build
 

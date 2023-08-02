@@ -2,12 +2,12 @@
 
 Library for Ink! smart contract to help you build [Phat Rollup Anchor ](https://github.com/Phala-Network/phat-offchain-rollup/
 )deployed on the Substrate pallet Contracts.
-This library uses the [OpenBrush](https://learn.brushfam.io/docs/OpenBrush) library with teh features `ownable` and `access_control`
+This library uses the [OpenBrush](https://learn.brushfam.io/docs/OpenBrush) library with the features `ownable` and `access_control`
 It provides the following traits for:
- - kv_store: key-value store that allows offchain Phat Contracts to perform read/write operations.
- - message_queue: Message Queue, enabling a request-response programming model for the smart-contract while ensuring that each request received exactly one response. It uses the KV Store to save the messages. 
- - rollup_anchor: Use the kv-store and the message queue to allow offchain's rollup transactions.
- - meta_transaction : Allow the offchain Phat Contract to do transactions without paying the gas fee. The fee will be paid by a third party (the relayer).
+ - `KvStore`: key-value store that allows offchain Phat Contracts to perform read/write operations.
+ - `MessageQueue`: Message Queue, enabling a request-response programming model for the smart-contract while ensuring that each request received exactly one response. It uses the KV Store to save the messages. 
+ - `RollupAnchor`: Use the kv-store and the message queue to allow offchain's rollup transactions.
+ - `MetaTransaction`: Allow the offchain Phat Contract to do transactions without paying the gas fee. The fee will be paid by a third party (the relayer).
 
 
 ## Build the crate
@@ -105,10 +105,10 @@ pub struct TestOracle {
 Inherit implementation of the traits. You can customize (override) methods in this `impl` block.
 
 ```rust
-impl KVStore for TestOracle {}
+impl KvStore for TestOracle {}
 impl MessageQueue for TestOracle {}
 impl RollupAnchor for TestOracle {}
-impl MetaTxReceiver for TestOracle {}
+impl MetaTransaction for TestOracle {}
 ```
 
 ### Define constructor
@@ -221,7 +221,7 @@ If you don't want to emit the event, you can put an empty block in the methods `
 ```
 
 ### Final code 
-Here the final code of the Price Oracle.
+Here the final code of the Feed Price Oracle.
 
 ```rust
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
