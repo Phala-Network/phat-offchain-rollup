@@ -549,7 +549,7 @@ mod ink_price_feed {
 
             let _token0 = "pha".to_string();
             let _token1 = "usd".to_string();
-            let trading_pair_id: TradingPairId = 11;
+            let trading_pair_id: TradingPairId = 13;
             let value: u128 = 1_500_000_000_000_000_000;
 
             price_feed
@@ -581,7 +581,7 @@ mod ink_price_feed {
 
             let token0 = "polkadot".to_string();
             let token1 = "usd".to_string();
-            let trading_pair_id: TradingPairId = 10;
+            let trading_pair_id: TradingPairId = 11;
 
             price_feed
                 .feed_price_from_coingecko(trading_pair_id, token0, token1)
