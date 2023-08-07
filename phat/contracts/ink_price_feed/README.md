@@ -48,6 +48,10 @@ cargo contract call --contract a4MAezQGvh8czvrBih66JyxbvvmM45SStDg4BoVauGvMPYm -
 ```
 
 ### Run the integration tests
+
+Copy `.env_localhost` or `.env_shibuya` as `.env` if you haven't done it before. 
+It tells the Phat Contract how to connect to ink! smart contract you just created.
+
 And finally execute the following command to start integration tests execution.
 
 ```bash
