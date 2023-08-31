@@ -1123,6 +1123,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "http_test"
+version = "0.1.0"
+dependencies = [
+ "dotenvy",
+ "env_logger",
+ "hex",
+ "hex-literal 0.3.4",
+ "ink",
+ "ink_env",
+ "parity-scale-codec",
+ "pink-extension",
+ "pink-extension-runtime",
+ "scale-info",
+]
+
+[[package]]
 name = "httparse"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

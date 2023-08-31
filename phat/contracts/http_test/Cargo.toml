@@ -1,0 +1,46 @@
+[package]
+name = "http_test"
+version = "0.1.0"
+authors = ["[your_name] <[your_email]>"]
+edition = "2021"
+
+# Necessary due to the cargo bug bug: https://github.com/rust-lang/cargo/issues/10118
+[profile.release]
+overflow-checks = false
+
+[dependencies]
+ink_env = { version = "4.0.1", default-features = false }
+ink = { version = "4.0.1", default-features = false }
+
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
+
+pink-extension = { version = "0.4.1", default-features = false }
+
+hex = { version = "0.4", default-features = false }
+
+[dev-dependencies]
+dotenvy = "0.15"
+env_logger = "0.10.0"
+pink-extension-runtime = { version = "0.4.0", default-features = false }
+hex-literal = "0.3"
+
+[lib]
+name = "http_test"
+path = "lib.rs"
+# crate-type = [
+# 	# Used for normal contract Wasm blobs.
+# 	"cdylib",
+#     "lib",
+# ]
+
+[features]
+default = ["std"]
+std = [
+    "ink_env/std",
+    "ink/std",
+    "scale/std",
+    "scale-info/std",
+    "pink-extension/std",
+]
+ink-as-dependency = []

@@ -8,6 +8,7 @@ members = [
     "contracts/evm_price_feed",
     "contracts/ink_price_feed",
     "contracts/momoka_publication",
+    "contracts/http_test",
 ]
 
 # Sneak peek of the new test engine!
