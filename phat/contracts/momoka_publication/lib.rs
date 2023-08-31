@@ -29,9 +29,6 @@ mod momoka_publication {
 
     const ANCHOR_ABI: &[u8] = include_bytes!("./res/anchor.abi.json");
 
-    const MAINNET_FREE_COLLECT_MODULE: &str = "0x23b9467334bEb345aAa6fd1545538F3d54436e96";
-    const TESTNET_FREE_COLLECT_MODULE: &str = "0x0BE6bD7092ee83D44a6eC1D949626FeE48caB30c";
-
     #[ink(storage)]
     pub struct MomokaPublication {
         owner: AccountId,
@@ -47,16 +44,6 @@ mod momoka_publication {
         rpc: String,
         /// The client smart contract address on the target blockchain
         client_addr: [u8; 20],
-    }
-
-    #[derive(PartialEq, Debug)]
-    pub struct PublicationResponse {
-        profile_id: u64,
-        pub_id: u64,
-        root_profile_id: u64,
-        root_pub_id: u64,
-        root_collect_module: [u8; 20],
-        root_content_uri: String,
     }
 
     #[derive(Encode, Decode, PartialEq, Debug)]
@@ -155,47 +142,10 @@ mod momoka_publication {
             &self,
             publication_id: String,
             mainnet: bool,
-            override_collect_module: bool,
         ) -> Result<Vec<u8>> {
             let client = self.ensure_client_configured()?;
-
-            // Check and extract DA id
-            let da_id_hex = publication_id.split("-DA-").nth(1)
-                .ok_or(Error::BadPublicationId)?;
-            let da_id: U256 = u32::from_str_radix(&da_id_hex, 16)
-                .or(Err(Error::BadDaId))?
-                .into();
-
-            let mut pub_resp = Self::fetch_lens_publication(publication_id, mainnet)?;
-
-            if override_collect_module {
-                let addr = if mainnet {
-                    MAINNET_FREE_COLLECT_MODULE
-                } else {
-                    TESTNET_FREE_COLLECT_MODULE
-                };
-                pub_resp.root_collect_module = Self::decode_hex(addr).unwrap().try_into().unwrap()
-            }
-
-            let orig_pub_id: U256 = pub_resp.pub_id.into();
-            let orig_root_pub_id: U256 = pub_resp.root_pub_id.into();
-            let pub_id = orig_pub_id | (da_id << 128);
-            let root_pub_id = orig_root_pub_id | (da_id << 128);
-
-            let hub_data = ethabi::encode(&[
-                Token::FixedBytes(vec![0u8, 0, 0, 0]),
-                Token::Uint(pub_resp.profile_id.into()),
-                Token::Uint(pub_id),
-                Token::Uint(pub_resp.root_profile_id.into()),
-                Token::Uint(root_pub_id),
-                Token::Address(pub_resp.root_collect_module.into()),
-                Token::String(pub_resp.root_content_uri)
-            ]);
-            let module_data = [0u8; 0];
-            let data = ethabi::encode(&[
-                Token::Bytes(hub_data),
-                Token::Bytes(module_data.into()),
-            ]);
+            let act_oracle_resp = Self::fetch_lens_publication(publication_id, mainnet)?;
+            let data = ethabi::encode(&[act_oracle_resp]);
 
             let attest_key = KeyPair::from(self.attest_key);
             let (forward_request, sig) = sign_meta_tx(
@@ -213,7 +163,7 @@ mod momoka_publication {
         fn fetch_lens_publication(
             publication_id: String,
             mainnet: bool,
-        ) -> Result<PublicationResponse> {
+        ) -> Result<Token> {
             use alloc::string::ToString;
             let lens_api = if mainnet {
                 "https://api.lens.dev/"
@@ -278,83 +228,78 @@ mod momoka_publication {
                 .or(Err(Error::FailedToParseJson))?;
 
             let pub_info = parsed.data.publication.ok_or(Error::PublicationNotExists)?;
-            let pub_resp = match pub_info.__typename {
+            let publication = match pub_info.__typename {
                 "Post" => {
                     let id = pub_info.id.ok_or(Error::PublicationNotExists)?;
                     let (profile_id, pub_id) = Self::extract_ids(String::from(id))?;
                     let content_uri = pub_info.on_chain_content_uri.expect("no post content uri");
-
-                    let collect_module = pub_info
-                        .collect_module
-                        .ok_or(Error::MissingCollectModule)?
-                        .contract_address;
-                    let collect_module: [u8; 20] = Self::decode_hex(collect_module)?
-                        .try_into()
-                        .or(Err(Error::FailedToParseAddress))?;
-
-                    PublicationResponse {
+                    evm_publication(
+                        U256::from(0),
+                        U256::from(0),
+                        content_uri.to_string(),
+                        PublicationType::Post,
                         profile_id,
                         pub_id,
-                        root_profile_id: profile_id,
-                        root_pub_id: pub_id,
-                        root_collect_module: collect_module,
-                        root_content_uri: content_uri.to_string(),
-                    }
+                    )
                 }
                 "Mirror" => {
-                    let id = pub_info.id.ok_or(Error::PublicationNotExists)?;
-                    let (profile_id, pub_id) = Self::extract_ids(String::from(id))?;
-
+                    // let id = pub_info.id.ok_or(Error::PublicationNotExists)?;
+                    // let (profile_id, pub_id) = Self::extract_ids(String::from(id))?;
                     let mirror_of = pub_info.mirror_of.ok_or(Error::MissingMirrorField)?;
                     let root_id = mirror_of.id;
                     let (root_profile_id, root_pub_id) = Self::extract_ids(String::from(root_id))?;
-
-                    let root_collect_module = mirror_of.collect_module.contract_address;
-                    let root_collect_module: [u8; 20] = Self::decode_hex(root_collect_module)?
-                        .try_into()
-                        .or(Err(Error::FailedToParseAddress))?;
-
-                    PublicationResponse {
-                        profile_id,
-                        pub_id,
+                    // let root_collect_module = mirror_of.collect_module.contract_address;
+                    // let root_collect_module: [u8; 20] = Self::decode_hex(root_collect_module)?
+                    //     .try_into()
+                    //     .or(Err(Error::FailedToParseAddress))?;
+                    evm_publication(
                         root_profile_id,
                         root_pub_id,
-                        root_collect_module,
-                        root_content_uri: mirror_of.on_chain_content_uri.to_string(),
-                    }
+                        mirror_of.on_chain_content_uri.to_string(),
+                        PublicationType::Mirror,
+                        root_profile_id,
+                        root_pub_id,
+                    )
                 }
                 "Comment" => Err(Error::NoProofForComment)?,
                 _ => Err(Error::UnknownPublicationType)?,
             };
-            Ok(pub_resp)
+
+            let (profile_id, pub_id) = Self::extract_ids(publication_id)?;
+            // free collect action
+            let collect_act = H160::from(match mainnet {
+                true => hex_literal::hex!("f4054E308f7804E34713c114A0c9e48E786A9a4C"),
+                false => hex_literal::hex!("f4054E308f7804E34713c114A0c9e48E786A9a4C"),
+            });
+            Ok(evm_act_oracle_response_with_collect_act(
+                profile_id,
+                pub_id,
+                publication,
+                collect_act,
+            ))
         }
 
-        fn extract_ids(publication_id: String) -> Result<(u64, u64)> {
+        fn extract_ids(publication_id: String) -> Result<(U256, U256)> {
             // e.g. "0x814a-0x01-DA-0e18b370"
-            let to_u64 = |s: String| -> Result<u64> {
-                u64::from_str_radix(s.trim_start_matches("0x"), 16)
-                    .map_err(|_| Error::FailedToParseId)
-            };
-            let tokens = publication_id
-                .split('-')
-                .take(2)
-                .map(String::from)
-                .map(to_u64)
-                .collect::<Result<Vec<u64>>>()?;
-            if tokens.len() != 2 {
+            fn to_u32(s: &str) -> Result<u32> {
+                u32::from_str_radix(s.trim_start_matches("0x"), 16)
+                    .or(Err(Error::FailedToParseId))
+            }
+            let tokens: Vec<&str> = publication_id.split('-').collect();
+            if tokens.len() != 4 {
                 return Err(Error::FailedToParseId);
             }
 
-            Ok((tokens[0], tokens[1]))
+            let profile_id = U256::from(to_u32(tokens[0])?);
+            let pub_ref_id = to_u32(tokens[1])?;
+            let da_id = to_u32(tokens[3])?;
+            let pub_id = U256::from(pub_ref_id) | (U256::from(da_id) << 128);
+            Ok((profile_id, pub_id))
         }
 
         pub fn decode_hex(s: &str) -> Result<Vec<u8>> {
-            (2..s.len())
-                .step_by(2)
-                .map(|i| {
-                    u8::from_str_radix(&s[i..i + 2], 16).map_err(|_| Error::FailedToParseAddress)
-                })
-                .collect()
+            let stripped = s.strip_prefix("0x").unwrap_or(s);
+            hex::decode(stripped).or(Err(Error::FailedToParseAddress))
         }
 
         /// Returns BadOrigin error if the caller is not the owner
@@ -370,6 +315,68 @@ mod momoka_publication {
         fn ensure_client_configured(&self) -> Result<&Client> {
             self.client.as_ref().ok_or(Error::ClientNotConfigured)
         }
+    }
+
+    #[repr(u8)]
+    pub enum PublicationType {
+        Nonexistent,
+        Post,
+        Comment,
+        Mirror,
+        Quote,
+    }
+
+    pub fn evm_publication(
+        pointed_profile_id: U256,
+        pointed_pub_id: U256,
+        content_uri: String,
+        pub_type: PublicationType,
+        root_profile_id: U256,
+        root_pub_id: U256,
+    ) -> Token {
+        Token::Tuple(vec![
+            Token::Uint(pointed_profile_id),
+            Token::Uint(pointed_pub_id),
+            Token::String(content_uri),
+            // reference_module
+            Token::Address(H160::default()),
+            // deprecated collect_module
+            Token::Address(H160::default()),
+            // deprecated collect_nft
+            Token::Address(H160::default()),
+            Token::Uint(U256::from(pub_type as u8)),
+            Token::Uint(root_profile_id),
+            Token::Uint(root_pub_id),
+            // enabled_action_modules_bitmap
+            Token::Uint(U256::default())
+        ])
+    }
+
+    pub fn evm_act_oracle_response_with_collect_act(
+        profile_id: U256,
+        pub_id: U256,
+        publication: Token,
+        collect_act: H160,
+    ) -> Token {
+        Token::Tuple(vec![
+            Token::Uint(profile_id),
+            Token::Uint(pub_id),
+            publication,
+            // referrer_pub_types
+            Token::Array(vec![]),
+            // action_modules
+            Token::Array(vec![
+                Token::Address(collect_act),
+            ]),
+            // action_modules_init_data
+            Token::Array(vec![
+                Token::Bytes(vec![])
+            ]),
+            // referrer_profile_ids
+            Token::Array(vec![]),
+            // referrer_pub_ids
+            Token::Array(vec![])
+        ])
     }
 
     /// Signes a meta tx with the help of the MetaTx contract
@@ -487,7 +494,8 @@ mod momoka_publication {
         }
 
         #[ink::test]
-        fn fixed_parse() {
+        fn can_parse_lens_publication() {
+            use std::str::FromStr;
             let _ = env_logger::try_init();
             pink_extension_runtime::mock_ext::mock_all_ext();
 
@@ -496,13 +504,29 @@ mod momoka_publication {
                 false,
             )
             .unwrap();
-            assert_eq!(pub_resp.profile_id, 0x814a);
-            assert_eq!(pub_resp.pub_id, 0x01);
-            assert_eq!(pub_resp.root_profile_id, 0x814a);
-            assert_eq!(pub_resp.root_pub_id, 0x01);
             assert_eq!(
-                hex::encode(pub_resp.root_collect_module),
-                "5E70fFD2C6D04d65C3abeBa64E93082cfA348dF8".to_lowercase()
+                pub_resp,
+                Token::Tuple(vec![
+                    Token::Uint(U256::from_str("0x814a").unwrap()),
+                    Token::Uint(U256::from_str("0xe18b37000000000000000000000000000000001").unwrap()),
+                    Token::Tuple(vec![
+                        Token::Uint(U256::from(0)),
+                        Token::Uint(U256::from(0)),
+                        Token::String("ar://YhErKXFGi8pe4vR4w7vUc__KSmShdJ5_hLQJ7M9BTRU".to_string()),
+                        Token::Address(H160::default()),
+                        Token::Address(H160::default()),
+                        Token::Address(H160::default()),
+                        Token::Uint(U256::from(1)),
+                        Token::Uint(U256::from_str("0x814a").unwrap()),
+                        Token::Uint(U256::from_str("0xe18b37000000000000000000000000000000001").unwrap()),
+                        Token::Uint(U256::from(0))
+                    ]),
+                    Token::Array(vec![]),
+                    Token::Array(vec![Token::Address(H160::from(hex_literal::hex!("f4054e308f7804e34713c114a0c9e48e786a9a4c")))]),
+                    Token::Array(vec![Token::Bytes(vec![])]),
+                    Token::Array(vec![]),
+                    Token::Array(vec![]),
+                ])
             );
 
             let pub_resp = MomokaPublication::fetch_lens_publication(
@@ -510,18 +534,36 @@ mod momoka_publication {
                 true,
             )
             .unwrap();
-            assert_eq!(pub_resp.profile_id, 0x9d72);
-            assert_eq!(pub_resp.pub_id, 0x0457);
-            assert_eq!(pub_resp.root_profile_id, 0x05);
-            assert_eq!(pub_resp.root_pub_id, 0x1e8a);
             assert_eq!(
-                hex::encode(pub_resp.root_collect_module),
-                "a31FF85E840ED117E172BC9Ad89E55128A999205".to_lowercase()
+                pub_resp,
+                Token::Tuple(vec![
+                    Token::Uint(U256::from_str("0x9d72").unwrap()),
+                    Token::Uint(U256::from_str("0x64abf0b000000000000000000000000000000457").unwrap()),
+                    Token::Tuple(vec![
+                        Token::Uint(U256::from_str("0x5").unwrap()),
+                        Token::Uint(U256::from_str("0x6d1b60c900000000000000000000000000001e8a").unwrap()),
+                        Token::String("ar://s7-KUGt9F0TuJ4xTP01kbybqz0QLsk7NKp4zy4day1M".to_string()),
+                        Token::Address(H160::default()),
+                        Token::Address(H160::default()),
+                        Token::Address(H160::default()),
+                        Token::Uint(U256::from(3)),
+                        Token::Uint(U256::from_str("0x5").unwrap()),
+                        Token::Uint(U256::from_str("0x6d1b60c900000000000000000000000000001e8a").unwrap()),
+                        Token::Uint(U256::from(0))
+                    ]),
+                    Token::Array(vec![]),
+                    Token::Array(vec![Token::Address(H160::from(hex_literal::hex!("f4054e308f7804e34713c114a0c9e48e786a9a4c")))]),
+                    Token::Array(vec![Token::Bytes(vec![])]),
+                    Token::Array(vec![]),
+                    Token::Array(vec![]),
+                ])
             );
-            assert_eq!(
-                pub_resp.root_content_uri,
-                "ar://s7-KUGt9F0TuJ4xTP01kbybqz0QLsk7NKp4zy4day1M".to_string()
-            );
+        }
+
+        #[ink::test]
+        fn fetch_lens_publicatino_negatives() {
+            let _ = env_logger::try_init();
+            pink_extension_runtime::mock_ext::mock_all_ext();
 
             let res = MomokaPublication::fetch_lens_publication(
                 String::from("0x73b1-0x2b05-DA-ebdf984e"),
