@@ -189,6 +189,7 @@ mod momoka_publication {
                 Token::Uint(pub_resp.root_profile_id.into()),
                 Token::Uint(root_pub_id),
                 Token::Address(pub_resp.root_collect_module.into()),
+                Token::String(pub_resp.root_content_uri)
             ]);
             let module_data = [0u8; 0];
             let data = ethabi::encode(&[
@@ -213,6 +214,7 @@ mod momoka_publication {
             publication_id: String,
             mainnet: bool,
         ) -> Result<PublicationResponse> {
+            use alloc::string::ToString;
             let lens_api = if mainnet {
                 "https://api.lens.dev/"
             } else {
