@@ -165,10 +165,7 @@ mod ink_price_feed {
         /// Gets the config
         #[ink(message)]
         pub fn get_target_contract(&self) -> Option<(String, u8, u8, ContractId)> {
-            match self.config.as_ref() {
-                Some(c) => Some((c.rpc.clone(), c.pallet_id, c.call_id, c.contract_id)),
-                _ => None,
-            }
+            self.config.as_ref().map(|c| (c.rpc.clone(), c.pallet_id, c.call_id, c.contract_id))
         }
 
         /// Configures the rollup target (admin only)
