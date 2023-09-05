@@ -8,7 +8,7 @@ name = "phat_offchain_rollup"
 path = "src/lib.rs"
 
 [dependencies]
-ink = { version = "4.0.1", default-features = false }
+ink = { version = "4.3.0", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
@@ -27,7 +27,7 @@ ethabi = { version = "18.0.0", default-features = false, features = [
 
 # for Substrate and ink! rollup
 #subrpc = { package = "pink-subrpc", version = "0.4.2", default-features = false, optional = true }
-subrpc = { git = "https://github.com/GuiGou12358/phala-blockchain/", package = "pink-subrpc", default-features = false, optional = true }
+subrpc = { git = "https://github.com/Phala-Network/phala-blockchain/", package = "pink-subrpc", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = "0.4.1"
