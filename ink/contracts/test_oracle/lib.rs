@@ -291,7 +291,9 @@ pub mod test_oracle {
         use super::*;
         use openbrush::contracts::access_control::accesscontrol_external::AccessControl;
 
+        use ink_e2e::subxt::tx::Signer;
         use ink_e2e::{build_message, PolkadotConfig};
+
         use phat_rollup_anchor_ink::traits::{
             meta_transaction::metatransaction_external::MetaTransaction,
             rollup_anchor::rollupanchor_external::RollupAnchor,
@@ -337,8 +339,9 @@ pub mod test_oracle {
             );
 
             // bob is granted as manager
-            let bob_address =
-                ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
+            let bob_address = ink::primitives::AccountId::from(
+                Signer::<PolkadotConfig>::account_id(&ink_e2e::bob()).0,
+            );
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.grant_role(MANAGER_ROLE, Some(bob_address)));
             client
@@ -405,8 +408,9 @@ pub mod test_oracle {
                 .expect("create trading pair failed");
 
             // bob is granted as attestor
-            let bob_address =
-                ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
+            let bob_address = ink::primitives::AccountId::from(
+                Signer::<PolkadotConfig>::account_id(&ink_e2e::bob()).0,
+            );
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, Some(bob_address)));
             client
@@ -479,8 +483,9 @@ pub mod test_oracle {
                 .expect("create trading pair failed");
 
             // bob is granted as attestor
-            let bob_address =
-                ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
+            let bob_address = ink::primitives::AccountId::from(
+                Signer::<PolkadotConfig>::account_id(&ink_e2e::bob()).0,
+            );
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, Some(bob_address)));
             client
@@ -619,8 +624,9 @@ pub mod test_oracle {
                 .expect("create trading pair failed");
 
             // bob is granted as attestor
-            let bob_address =
-                ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
+            let bob_address = ink::primitives::AccountId::from(
+                Signer::<PolkadotConfig>::account_id(&ink_e2e::bob()).0,
+            );
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, Some(bob_address)));
             client
@@ -693,8 +699,9 @@ pub mod test_oracle {
             );
 
             // bob is granted as attestor
-            let bob_address =
-                ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
+            let bob_address = ink::primitives::AccountId::from(
+                Signer::<PolkadotConfig>::account_id(&ink_e2e::bob()).0,
+            );
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, Some(bob_address)));
             client
@@ -742,8 +749,9 @@ pub mod test_oracle {
                 .expect("create trading pair failed");
 
             // bob is granted as attestor
-            let bob_address =
-                ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
+            let bob_address = ink::primitives::AccountId::from(
+                Signer::<PolkadotConfig>::account_id(&ink_e2e::bob()).0,
+            );
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, Some(bob_address)));
             client
@@ -779,8 +787,9 @@ pub mod test_oracle {
                 .account_id;
 
             // bob is granted as attestor
-            let bob_address =
-                ink::primitives::AccountId::from(ink_e2e::bob::<PolkadotConfig>().account_id().0);
+            let bob_address = ink::primitives::AccountId::from(
+                Signer::<PolkadotConfig>::account_id(&ink_e2e::bob()).0,
+            );
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.grant_role(ATTESTOR_ROLE, Some(bob_address)));
             client
@@ -837,8 +846,9 @@ pub mod test_oracle {
 
             // register the ecda public key because I am not able to retrieve if from the account id
             // Alice
-            let from =
-                ink::primitives::AccountId::from(ink_e2e::alice::<PolkadotConfig>().account_id().0);
+            let from = ink::primitives::AccountId::from(
+                Signer::<PolkadotConfig>::account_id(&ink_e2e::alice()).0,
+            );
             let ecdsa_public_key: [u8; 33] = hex_literal::hex!(
                 "037051bed73458951b45ca6376f4096c85bf1a370da94d5336d04867cfaaad019e"
             );
@@ -892,8 +902,9 @@ pub mod test_oracle {
 
             // register the ecda public key because I am not able to retrieve if from the account id
             // Alice is the attestor
-            let from =
-                ink::primitives::AccountId::from(ink_e2e::alice::<PolkadotConfig>().account_id().0);
+            let from = ink::primitives::AccountId::from(
+                Signer::<PolkadotConfig>::account_id(&ink_e2e::alice()).0,
+            );
             let ecdsa_public_key: [u8; 33] = hex_literal::hex!(
                 "037051bed73458951b45ca6376f4096c85bf1a370da94d5336d04867cfaaad019e"
             );
