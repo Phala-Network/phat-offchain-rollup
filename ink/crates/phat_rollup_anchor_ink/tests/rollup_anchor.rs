@@ -15,25 +15,19 @@ fn test_conditions() {
     let mut contract = MyContract::new(accounts.alice);
 
     // no condition, no update, no action => it should work
-    assert_eq!(contract.rollup_cond_eq(vec![], vec![], vec![]), Ok(true));
+    assert_eq!(contract.rollup_cond_eq(vec![], vec![], vec![]), Ok(()));
 
     // test with correct condition
     let conditions = vec![(123u8.encode(), None)];
-    assert_eq!(
-        contract.rollup_cond_eq(conditions, vec![], vec![]),
-        Ok(true)
-    );
+    assert_eq!(contract.rollup_cond_eq(conditions, vec![], vec![]), Ok(()));
 
     // update a value
     let updates = vec![(123u8.encode(), Some(456u128.encode()))];
-    assert_eq!(contract.rollup_cond_eq(vec![], updates, vec![]), Ok(true));
+    assert_eq!(contract.rollup_cond_eq(vec![], updates, vec![]), Ok(()));
 
     // test with the correct condition
     let conditions = vec![(123u8.encode(), Some(456u128.encode()))];
-    assert_eq!(
-        contract.rollup_cond_eq(conditions, vec![], vec![]),
-        Ok(true)
-    );
+    assert_eq!(contract.rollup_cond_eq(conditions, vec![], vec![]), Ok(()));
 
     // test with incorrect condition (incorrect value)
     let conditions = vec![(123u8.encode(), Some(789u128.encode()))];
@@ -61,46 +55,13 @@ fn test_conditions() {
 }
 
 #[ink::test]
-fn test_actions_missing_data() {
-    let accounts = accounts();
-    let mut contract = MyContract::new(accounts.alice);
-
-    let actions = vec![HandleActionInput {
-        action_type: ACTION_SET_QUEUE_HEAD,
-        id: None, // missing data
-        action: None,
-        address: None,
-    }];
-    assert_eq!(
-        contract.rollup_cond_eq(vec![], vec![], actions),
-        Err(RollupAnchorError::MissingData)
-    );
-
-    let actions = vec![HandleActionInput {
-        action_type: ACTION_REPLY,
-        id: None,
-        action: None, // missing data
-        address: None,
-    }];
-    assert_eq!(
-        contract.rollup_cond_eq(vec![], vec![], actions),
-        Err(RollupAnchorError::MissingData)
-    );
-}
-
-#[ink::test]
 fn test_action_pop_to() {
     let accounts = accounts();
     let mut contract = MyContract::new(accounts.alice);
 
     // no condition, no update, no action
     let mut actions = Vec::new();
-    actions.push(HandleActionInput {
-        action_type: ACTION_SET_QUEUE_HEAD,
-        id: Some(2),
-        action: None,
-        address: None,
-    });
+    actions.push(HandleActionInput::SetQueueHead(2));
 
     assert_eq!(
         contract.rollup_cond_eq(vec![], vec![], actions.clone()),
@@ -113,7 +74,7 @@ fn test_action_pop_to() {
     contract.push_message(&message).unwrap();
     contract.push_message(&message).unwrap();
 
-    assert_eq!(contract.rollup_cond_eq(vec![], vec![], actions), Ok(true));
+    assert_eq!(contract.rollup_cond_eq(vec![], vec![], actions), Ok(()));
 }
 
 #[ink::test]
@@ -121,14 +82,9 @@ fn test_action_reply() {
     let accounts = accounts();
     let mut contract = MyContract::new(accounts.alice);
 
-    let actions = vec![HandleActionInput {
-        action_type: ACTION_REPLY,
-        id: Some(2),
-        action: Some(012u8.encode()),
-        address: None,
-    }];
+    let actions = vec![HandleActionInput::Reply(012u8.encode())];
 
-    assert_eq!(contract.rollup_cond_eq(vec![], vec![], actions), Ok(true));
+    assert_eq!(contract.rollup_cond_eq(vec![], vec![], actions), Ok(()));
 }
 
 #[ink::test]
@@ -171,5 +127,5 @@ fn test_rollup_cond_eq_role_attestor() {
         .expect("Error when grant the role Attestor");
 
     change_caller(accounts.bob);
-    assert_eq!(Ok(true), contract.rollup_cond_eq(vec![], vec![], vec![]));
+    assert_eq!(Ok(()), contract.rollup_cond_eq(vec![], vec![], vec![]));
 }

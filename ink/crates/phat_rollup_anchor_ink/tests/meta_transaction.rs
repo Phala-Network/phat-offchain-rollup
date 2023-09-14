@@ -212,7 +212,7 @@ fn test_meta_tx_rollup_cond_eq() {
         .grant_role(ATTESTOR_ROLE, Some(request.from))
         .expect("Error when grant the role Attestor");
     assert_eq!(
-        Ok(true),
+        Ok(()),
         contract.meta_tx_rollup_cond_eq(request.clone(), signature)
     );
 
