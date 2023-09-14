@@ -59,7 +59,7 @@ pub trait MessageQueue: EventBroadcaster + kv_store::KvStore {
         self.set_value(&key, Some(&encoded_value));
 
         self.set_queue_tail(id + 1);
-        self.emit_event_message_queued(id, data.encode());
+        self.emit_event_message_queued(id, encoded_value);
 
         Ok(id)
     }
