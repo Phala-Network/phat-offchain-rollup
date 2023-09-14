@@ -214,10 +214,19 @@ Find a reference script [here](./evm/scripts/deploy-test.ts).
 
 To deploy the Ink rollup anchor, follow these steps:
 
-1. Deploy the Phat Contract with a pre-generated ECDSA key pair (called submission key)
+1. Deploy the Phat Contract
     - Sample code: [InkPriceFeed](./phat/contracts/ink_price_feed/lib.rs)
-2. Deploy the contract: [PhatRollupAnchor](./ink/crates/phat_rollup_anchor_ink/README.md)
-    - register the phat contract as attestor
+    - During the instantiation, a sr2519 key pair is generated (called attestor key). This key is used to sign the messages sent to Ink! smart contract
+2. Deploy the Ink! smart contract:
+    - Sample code: [TestOracle](./ink/contracts/test_oracle/lib.rs)
+    - register the phat contract as `attestor`
+3. Configure the Phat Contract by sending a `config()` transaction with the arguments below:
+    - `rpc`: The Substrate RPC for Phat Contract to send transaction. It must be a http endpoint.
+    - `pallet_id`: The pallet id for Phat Contract to send transaction.
+    - `call_id`: The call id for Phat Contract to send transaction. 6 in many cases.
+    - `contract id`: The anchor Ink! contract you deployed on substrate node, with "0x".
+    - `sender_key`: The sr25519 private key you used to pay the transaction fees,  with "0x".
+Find a more detailed documentation [here](./InkRollup.md).
 
 The Substrate pallet anchor deployment docs are currently under development (TODO).
 
