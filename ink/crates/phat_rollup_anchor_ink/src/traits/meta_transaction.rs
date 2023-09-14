@@ -147,7 +147,7 @@ pub trait MetaTransaction:
         &mut self,
         request: ForwardRequest,
         signature: [u8; 65],
-    ) -> Result<bool, MetaTransactionError> {
+    ) -> Result<(), MetaTransactionError> {
         // check the signature
         self.use_meta_tx(&request, &signature)?;
 
@@ -162,9 +162,9 @@ pub trait MetaTransaction:
         self.emit_event_meta_tx_decoded();
 
         // call the rollup
-        let result = self.inner_rollup_cond_eq(data.0, data.1, data.2)?;
+        self.inner_rollup_cond_eq(data.0, data.1, data.2)?;
 
-        Ok(result)
+        Ok(())
     }
 }
 

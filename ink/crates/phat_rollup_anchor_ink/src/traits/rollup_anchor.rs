@@ -71,7 +71,7 @@ pub trait RollupAnchor:
         conditions: Vec<(Key, Option<Value>)>,
         updates: Vec<(Key, Option<Value>)>,
         actions: Vec<HandleActionInput>,
-    ) -> Result<bool, RollupAnchorError> {
+    ) -> Result<(), RollupAnchorError> {
         self.inner_rollup_cond_eq(conditions, updates, actions)
     }
 
@@ -90,7 +90,7 @@ pub trait RollupAnchor:
         conditions: Vec<(Key, Option<Value>)>,
         updates: Vec<(Key, Option<Value>)>,
         actions: Vec<HandleActionInput>,
-    ) -> Result<bool, RollupAnchorError> {
+    ) -> Result<(), RollupAnchorError> {
         // check the conditions
         for cond in conditions {
             let key = cond.0;
@@ -118,7 +118,7 @@ pub trait RollupAnchor:
             self.handle_action(action)?;
         }
 
-        Ok(true)
+        Ok(())
     }
 
     fn handle_action(&mut self, input: HandleActionInput) -> Result<(), RollupAnchorError> {
