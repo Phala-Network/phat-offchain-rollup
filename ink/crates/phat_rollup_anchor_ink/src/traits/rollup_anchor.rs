@@ -7,22 +7,17 @@ use openbrush::traits::AccountId;
 
 pub const ATTESTOR_ROLE: RoleType = ink::selector_id!("ATTESTOR_ROLE");
 
-pub const ACTION_REPLY: u8 = 0;
-pub const ACTION_SET_QUEUE_HEAD: u8 = 1;
-pub const ACTION_GRANT_ATTESTOR: u8 = 10;
-pub const ACTION_REVOKE_ATTESTOR: u8 = 11;
-
 pub trait MessageHandler {
     fn on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError>;
 }
 
 #[derive(scale::Encode, scale::Decode, Debug, Eq, PartialEq, Clone)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-pub struct HandleActionInput {
-    pub action_type: u8,
-    pub action: Option<Vec<u8>>,
-    pub address: Option<AccountId>,
-    pub id: Option<QueueIndex>,
+pub enum HandleActionInput {
+    Reply(Vec<u8>),
+    SetQueueHead(QueueIndex),
+    GrantAttestor(AccountId),
+    RevokeAttestor(AccountId),
 }
 
 #[derive(Debug, Eq, PartialEq, scale::Encode, scale::Decode)]
@@ -122,22 +117,15 @@ pub trait RollupAnchor:
     }
 
     fn handle_action(&mut self, input: HandleActionInput) -> Result<(), RollupAnchorError> {
-        match input.action_type {
-            ACTION_REPLY => {
-                self.on_message_received(input.action.ok_or(RollupAnchorError::MissingData)?)?
+        match input {
+            HandleActionInput::Reply(action) => self.on_message_received(action)?,
+            HandleActionInput::SetQueueHead(id) => self.pop_to(id)?,
+            HandleActionInput::GrantAttestor(address) => {
+                self.grant_role(ATTESTOR_ROLE, Some(address))?
             }
-            ACTION_SET_QUEUE_HEAD => {
-                self.pop_to(input.id.ok_or(RollupAnchorError::MissingData)?)?
+            HandleActionInput::RevokeAttestor(address) => {
+                self.revoke_role(ATTESTOR_ROLE, Some(address))?
             }
-            ACTION_GRANT_ATTESTOR => self.grant_role(
-                ATTESTOR_ROLE,
-                Some(input.address.ok_or(RollupAnchorError::MissingData)?),
-            )?,
-            ACTION_REVOKE_ATTESTOR => self.revoke_role(
-                ATTESTOR_ROLE,
-                Some(input.address.ok_or(RollupAnchorError::MissingData)?),
-            )?,
-            _ => return Err(RollupAnchorError::UnsupportedAction),
         }
 
         Ok(())

@@ -426,12 +426,7 @@ pub mod test_oracle {
                 price: Some(value),
                 err_no: None,
             };
-            let actions = vec![HandleActionInput {
-                action_type: ACTION_REPLY,
-                id: None,
-                action: Some(payload.encode()),
-                address: None,
-            }];
+            let actions = vec![HandleActionInput::Reply(payload.encode())];
             let rollup_cond_eq = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.rollup_cond_eq(vec![], vec![], actions.clone()));
             let result = client
@@ -514,18 +509,8 @@ pub mod test_oracle {
                 err_no: None,
             };
             let actions = vec![
-                HandleActionInput {
-                    action_type: ACTION_REPLY,
-                    id: None,
-                    action: Some(payload.encode()),
-                    address: None,
-                },
-                HandleActionInput {
-                    action_type: ACTION_SET_QUEUE_HEAD,
-                    id: Some(request_id + 1),
-                    action: None,
-                    address: None,
-                },
+                HandleActionInput::Reply(payload.encode()),
+                HandleActionInput::SetQueueHead(request_id + 1),
             ];
             let rollup_cond_eq = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.rollup_cond_eq(vec![], vec![], actions.clone()));
@@ -550,18 +535,8 @@ pub mod test_oracle {
 
             // reply in the future should fail
             let actions = vec![
-                HandleActionInput {
-                    action_type: ACTION_REPLY,
-                    id: None,
-                    action: Some(payload.encode()),
-                    address: None,
-                },
-                HandleActionInput {
-                    action_type: ACTION_SET_QUEUE_HEAD,
-                    id: Some(request_id + 2),
-                    action: None,
-                    address: None,
-                },
+                HandleActionInput::Reply(payload.encode()),
+                HandleActionInput::SetQueueHead(request_id + 2),
             ];
             let rollup_cond_eq = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.rollup_cond_eq(vec![], vec![], actions.clone()));
@@ -573,18 +548,8 @@ pub mod test_oracle {
 
             // reply in the past should fail
             let actions = vec![
-                HandleActionInput {
-                    action_type: ACTION_REPLY,
-                    id: None,
-                    action: Some(payload.encode()),
-                    address: None,
-                },
-                HandleActionInput {
-                    action_type: ACTION_SET_QUEUE_HEAD,
-                    id: Some(request_id),
-                    action: None,
-                    address: None,
-                },
+                HandleActionInput::Reply(payload.encode()),
+                HandleActionInput::SetQueueHead(request_id),
             ];
             let rollup_cond_eq = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.rollup_cond_eq(vec![], vec![], actions.clone()));
@@ -654,18 +619,8 @@ pub mod test_oracle {
                 err_no: Some(12356),
             };
             let actions = vec![
-                HandleActionInput {
-                    action_type: ACTION_REPLY,
-                    id: None,
-                    action: Some(payload.encode()),
-                    address: None,
-                },
-                HandleActionInput {
-                    action_type: ACTION_SET_QUEUE_HEAD,
-                    id: Some(request_id + 1),
-                    action: None,
-                    address: None,
-                },
+                HandleActionInput::Reply(payload.encode()),
+                HandleActionInput::SetQueueHead(request_id + 1),
             ];
             let rollup_cond_eq = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.rollup_cond_eq(vec![], vec![], actions.clone()));
@@ -759,12 +714,7 @@ pub mod test_oracle {
                 .await
                 .expect("grant bob as attestor failed");
 
-            let actions = vec![HandleActionInput {
-                action_type: ACTION_REPLY,
-                id: None,
-                action: Some(58u128.encode()),
-                address: None,
-            }];
+            let actions = vec![HandleActionInput::Reply(58u128.encode())];
             let rollup_cond_eq = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.rollup_cond_eq(vec![], vec![], actions.clone()));
             let result = client.call(&ink_e2e::bob(), rollup_cond_eq, 0, None).await;

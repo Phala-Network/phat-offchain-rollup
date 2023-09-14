@@ -37,14 +37,14 @@ You will have to configure `alice` as attestor.
 Use Contracts-UI or Polkadot.js to interact with your smart contract deployed on local node or Shibuya.
 You can create a new trading pair and request a price feed by the Phat Contract.
 
-In Shibuya, there are already 3 trading pairs defined in the contracts `a4MAezQGvh8czvrBih66JyxbvvmM45SStDg4BoVauGvMPYm`.
+In Shibuya, there are already 3 trading pairs defined in the contracts `aBpMEeqjE1Rz8hBBJC46MHCVpW13YG1UqedAqxtgRarQbQX`.
  - id 11 for the pair `polkadot`/`usd`
  - id 12 for `astar`/`usd`
  - id 13 for `pha`/`usd`
 
 If you want to create another request for the trading pair with the id 12 
 ```bash
-cargo contract call --contract a4MAezQGvh8czvrBih66JyxbvvmM45SStDg4BoVauGvMPYm --message request_price --args 12 --url wss://rpc.shibuya.astar.network --suri "bottom drive obey lake curtain smoke basket hold race lonely fit walk"  ../../../ink/artifacts/test_oracle/test_oracle.wasm
+cargo contract call --contract aBpMEeqjE1Rz8hBBJC46MHCVpW13YG1UqedAqxtgRarQbQX --message request_price --args 12 --url wss://rpc.shibuya.astar.network --suri "bottom drive obey lake curtain smoke basket hold race lonely fit walk"  ../../../ink/artifacts/test_oracle/test_oracle.wasm
 ```
 
 ### Run the integration tests

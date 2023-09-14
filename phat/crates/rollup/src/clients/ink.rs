@@ -130,32 +130,20 @@ pub struct InkRollupTx {
     actions: Vec<Action>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
-pub struct HandleActionInput {
-    pub action_type: u8,
-    pub action: Option<Vec<u8>>,
-    pub address: Option<ContractId>,
-    pub id: Option<QueueIndex>,
+#[derive(Debug, PartialEq, Eq, Encode, Decode, Clone)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+pub enum HandleActionInput {
+    Reply(Vec<u8>),
+    SetQueueHead(QueueIndex),
+    GrantAttestor(ContractId),
+    RevokeAttestor(ContractId),
 }
-
-const ACTION_REPLY: u8 = 0;
-const ACTION_SET_QUEUE_HEAD: u8 = 1;
 
 impl Action {
     fn encode_into_ink(self) -> HandleActionInput {
         match self {
-            Action::Reply(data) => HandleActionInput {
-                action_type: ACTION_REPLY,
-                action: Some(data),
-                address: None,
-                id: None,
-            },
-            Action::ProcessedTo(n) => HandleActionInput {
-                action_type: ACTION_SET_QUEUE_HEAD,
-                action: None,
-                address: None,
-                id: Some(n),
-            },
+            Action::Reply(data) => HandleActionInput::Reply(data),
+            Action::ProcessedTo(n) => HandleActionInput::SetQueueHead(n),
         }
     }
 }
