@@ -120,7 +120,6 @@ pub struct SubmittableRollupTx<'a> {
     call_id: u8,
     contract_id: &'a ContractId,
     tx: InkRollupTx,
-    _at: H256,
 }
 
 #[derive(Debug, Default, PartialEq, Eq, Encode, Decode)]
@@ -247,7 +246,6 @@ impl<'a> InkRollupClient<'a> {
             call_id: self.call_id,
             contract_id: self.contract_id,
             tx,
-            _at: kvdb.at,
         }))
     }
 
