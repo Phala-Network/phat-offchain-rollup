@@ -88,7 +88,7 @@ the contract by sending a `config()` transaction with the arguments below:
 - `pallet_id`: The pallet id for Phat Contract to send transaction. 70 for Shibuya, 7 for swanky node.
 - `call_id`: The call id for Phat Contract to send transaction. 6 in many cases.
 - `contract id`: The anchor Ink! contract you deployed on substrate node, with "0x".
-- `sender_key`: The secp256k1 private key you used to pay the transaction fees,  with "0x".
+- `sender_key`: The sr25519 private key you used to pay the transaction fees,  with "0x".
 
 >Next you will have to authorise the phat contract to send the messages to ink! smart contract
 

@@ -82,7 +82,7 @@ pub mod test_oracle {
         trading_pair_id: TradingPairId,
         /// price of the trading pair
         price: Option<u128>,
-        /// when the price is read
+        /// error when the price is read
         err_no: Option<u128>,
     }
 
