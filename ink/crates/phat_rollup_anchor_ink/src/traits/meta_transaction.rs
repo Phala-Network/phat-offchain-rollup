@@ -18,6 +18,7 @@ pub enum MetaTransactionError {
     IncorrectSignature,
     PublicKeyNotMatch,
     PublicKeyNotRegistered,
+    PublicKeyIncorrect,
     AccessControlError(AccessControlError),
     RollupAnchorError(RollupAnchorError),
 }
@@ -56,12 +57,19 @@ pub trait MetaTransaction:
     Storage<Data> + EventBroadcaster + access_control::Internal + RollupAnchor
 {
     #[ink(message)]
-    fn get_ecdsa_public_key(&self, from: AccountId) -> [u8; 33] {
-        self.data::<Data>()
-            .ecdsa_public_keys
-            .get(&from)
-            .map(|k| k.try_into().unwrap_or([0; 33]))
-            .unwrap_or([0; 33])
+    fn get_ecdsa_public_key(
+        &self,
+        from: AccountId,
+    ) -> Result<Option<[u8; 33]>, MetaTransactionError> {
+        match self.data::<Data>().ecdsa_public_keys.get(&from) {
+            Some(key) => {
+                let key: [u8; 33] = key
+                    .try_into()
+                    .map_err(|_| MetaTransactionError::PublicKeyIncorrect)?;
+                Ok(Some(key))
+            }
+            _ => Ok(None),
+        }
     }
 
     #[ink(message)]
@@ -107,7 +115,7 @@ pub trait MetaTransaction:
             .get(&request.from)
             .ok_or(MetaTransactionError::PublicKeyNotRegistered)?
             .try_into()
-            .map_err(|_| MetaTransactionError::PublicKeyNotRegistered)?;
+            .map_err(|_| MetaTransactionError::PublicKeyIncorrect)?;
 
         let nonce_from = self.get_nonce(request.from);
 
