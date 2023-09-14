@@ -1,4 +1,4 @@
-use crate::traits::rollup_anchor::{RollupAnchor, RollupAnchorError, RolupCondEqMethodParams};
+use crate::traits::rollup_anchor::{RollupAnchor, RollupAnchorError, RollupCondEqMethodParams};
 use ink::env::hash::{Blake2x256, HashOutput};
 use ink::prelude::vec::Vec;
 use openbrush::contracts::access_control::{self, AccessControlError, RoleType};
@@ -7,7 +7,7 @@ use openbrush::traits::{AccountId, Hash, Storage};
 
 pub type Nonce = u128;
 pub type PrepareResult = (ForwardRequest, Hash);
-pub type MetatTxRolupCondEqMethodParams = (ForwardRequest, [u8; 65]);
+pub type MetatTxRollupCondEqMethodParams = (ForwardRequest, [u8; 65]);
 
 pub const MANAGER_ROLE: RoleType = ink::selector_id!("MANAGER_ROLE");
 
@@ -155,7 +155,7 @@ pub trait MetaTransaction:
         self.check_attestor_role(request.from)?;
 
         // decode the data
-        let data: RolupCondEqMethodParams = scale::Decode::decode(&mut request.data.as_slice())
+        let data: RollupCondEqMethodParams = scale::Decode::decode(&mut request.data.as_slice())
             .map_err(|_| RollupAnchorError::FailedToDecode)?;
 
         // emit the event

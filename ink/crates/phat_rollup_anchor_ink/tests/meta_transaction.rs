@@ -189,7 +189,7 @@ fn test_meta_tx_rollup_cond_eq() {
     ));
     let ecdsa_public_key: [u8; 33] =
         hex_literal::hex!("037051bed73458951b45ca6376f4096c85bf1a370da94d5336d04867cfaaad019e");
-    let data = RolupCondEqMethodParams::encode(&(vec![], vec![], vec![]));
+    let data = RollupCondEqMethodParams::encode(&(vec![], vec![], vec![]));
 
     // register the ecdsa public key
     contract
@@ -234,7 +234,7 @@ fn test_meta_tx_rollup_cond_eq_missing_role() {
     ));
     let ecdsa_public_key: [u8; 33] =
         hex_literal::hex!("037051bed73458951b45ca6376f4096c85bf1a370da94d5336d04867cfaaad019e");
-    let data = RolupCondEqMethodParams::encode(&(vec![], vec![], vec![]));
+    let data = RollupCondEqMethodParams::encode(&(vec![], vec![], vec![]));
 
     // register the ecdsa public key
     contract

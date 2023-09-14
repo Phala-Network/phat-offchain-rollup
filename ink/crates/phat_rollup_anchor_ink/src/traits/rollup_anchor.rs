@@ -50,7 +50,7 @@ impl From<MessageQueueError> for RollupAnchorError {
     }
 }
 
-pub type RolupCondEqMethodParams = (
+pub type RollupCondEqMethodParams = (
     Vec<(Key, Option<Value>)>,
     Vec<(Key, Option<Value>)>,
     Vec<HandleActionInput>,

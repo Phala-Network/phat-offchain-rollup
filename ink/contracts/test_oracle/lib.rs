@@ -925,7 +925,7 @@ pub mod test_oracle {
                 .expect("grant the attestor failed");
 
             // prepare the meta transaction
-            let data = RolupCondEqMethodParams::encode(&(vec![], vec![], vec![]));
+            let data = RollupCondEqMethodParams::encode(&(vec![], vec![], vec![]));
             let prepare_meta_tx = build_message::<TestOracleRef>(contract_acc_id.clone())
                 .call(|oracle| oracle.prepare(from, data.clone()));
             let result = client
