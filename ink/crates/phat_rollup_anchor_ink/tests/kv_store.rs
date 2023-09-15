@@ -53,27 +53,36 @@ fn test_update_same_key() {
     // update the value
     let some_value = "0x456".encode();
     contract.set_value(&key, Some(&some_value));
-    match contract.inner_get_value(&key) {
-        Some(v) => assert_eq!(some_value, v),
-        _ => panic!("We should find a value for the key {:?}", key),
-    }
+
+    assert_eq!(
+        contract.inner_get_value(&key),
+        Some(some_value),
+        "We should find a value for the key {key:?}"
+    );
+
     // update the value
     let another_value = "0x457".encode();
     contract.set_value(&key, Some(&another_value));
-    match contract.inner_get_value(&key) {
-        Some(v) => assert_eq!(another_value, v),
-        _ => panic!("We should find a value for the key {:?}", key),
-    }
+    assert_eq!(
+        contract.inner_get_value(&key),
+        Some(another_value),
+        "We should find a value for the key {key:?}"
+    );
+
     // remove the value
     contract.set_value(&key, None);
-    if let Some(_) = contract.inner_get_value(&key) {
-        panic!("We should not find a value for the key {:?}", key);
-    }
+    assert_eq!(
+        contract.inner_get_value(&key),
+        None,
+        "We should not find a value for the key {key:?}"
+    );
+
     // update the value
     let another_value = "0x458".encode();
     contract.set_value(&key, Some(&another_value));
-    match contract.inner_get_value(&key) {
-        Some(v) => assert_eq!(another_value, v),
-        _ => panic!("We should find a value for the key {:?}", key),
-    }
+    assert_eq!(
+        contract.inner_get_value(&key),
+        Some(another_value),
+        "We should find a value for the key {key:?}"
+    );
 }
