@@ -165,7 +165,9 @@ mod ink_price_feed {
         /// Gets the config
         #[ink(message)]
         pub fn get_target_contract(&self) -> Option<(String, u8, u8, ContractId)> {
-            self.config.as_ref().map(|c| (c.rpc.clone(), c.pallet_id, c.call_id, c.contract_id))
+            self.config
+                .as_ref()
+                .map(|c| (c.rpc.clone(), c.pallet_id, c.call_id, c.contract_id))
         }
 
         /// Configures the rollup target (admin only)
@@ -319,7 +321,7 @@ mod ink_price_feed {
                 sender_key: match sender_key {
                     Some(key) => Some(key.try_into().or(Err(Error::InvalidKeyLength))?),
                     None => None,
-                }
+                },
             };
 
             let mut client = connect(config)?;
@@ -387,21 +389,14 @@ mod ink_price_feed {
     }
 
     fn connect(config: &Config) -> Result<InkRollupClient> {
-        let result = InkRollupClient::new(
+        InkRollupClient::new(
             &config.rpc,
             config.pallet_id,
             config.call_id,
             &config.contract_id,
         )
-        .log_err("failed to create rollup client");
-
-        match result {
-            Ok(client) => Ok(client),
-            Err(e) => {
-                error!("Error : {:?}", e);
-                Err(Error::FailedToCreateClient)
-            }
-        }
+        .log_err("failed to create rollup client")
+        .or(Err(Error::FailedToCreateClient))
     }
 
     fn maybe_submit_tx(
@@ -472,9 +467,12 @@ mod ink_price_feed {
         fn config() -> EnvVars {
             dotenvy::dotenv().ok();
             let rpc = get_env("RPC");
-            let pallet_id : u8 = get_env("PALLET_ID").parse().expect("u8 expected");
-            let call_id : u8 = get_env("CALL_ID").parse().expect("u8 expected");
-            let contract_id: ContractId = hex::decode(get_env("CONTRACT_ID")).expect("hex decode failed").try_into().expect("incorrect length");
+            let pallet_id: u8 = get_env("PALLET_ID").parse().expect("u8 expected");
+            let call_id: u8 = get_env("CALL_ID").parse().expect("u8 expected");
+            let contract_id: ContractId = hex::decode(get_env("CONTRACT_ID"))
+                .expect("hex decode failed")
+                .try_into()
+                .expect("incorrect length");
             let attest_key = hex::decode(get_env("ATTEST_KEY")).expect("hex decode failed");
             let sender_key = std::env::var("SENDER_KEY")
                 .map(|s| hex::decode(s).expect("hex decode failed"))
@@ -553,7 +551,6 @@ mod ink_price_feed {
                 .feed_custom_price(trading_pair_id, value)
                 .unwrap();
         }
-
 
         #[ink::test]
         fn fetch_coingecko_price() {
