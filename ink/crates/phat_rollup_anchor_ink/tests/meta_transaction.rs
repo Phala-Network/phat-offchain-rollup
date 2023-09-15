@@ -135,7 +135,7 @@ fn test_verify() {
 }
 
 #[ink::test]
-fn test_use_meta_tx() {
+fn test_ensure_meta_tx_valid() {
     let accounts = accounts();
     let mut contract = MyContract::new(accounts.bob);
 
@@ -164,7 +164,7 @@ fn test_use_meta_tx() {
 
     // the verification must succeed
     contract
-        .use_meta_tx(&request, &signature)
+        .ensure_meta_tx_valid(&request, &signature)
         .expect("Error when using meta tx");
 
     // check if the nonce has been updated
@@ -174,7 +174,7 @@ fn test_use_meta_tx() {
     // the verification must fail
     assert_eq!(
         Err(MetaTransactionError::NonceTooLow),
-        contract.use_meta_tx(&request, &signature)
+        contract.ensure_meta_tx_valid(&request, &signature)
     );
 }
 
