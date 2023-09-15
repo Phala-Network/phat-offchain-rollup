@@ -137,7 +137,7 @@ pub trait MetaTransaction:
         Ok(())
     }
 
-    fn use_meta_tx(
+    fn ensure_meta_tx_valid(
         &mut self,
         request: &ForwardRequest,
         signature: &[u8; 65],
@@ -157,7 +157,7 @@ pub trait MetaTransaction:
         signature: [u8; 65],
     ) -> Result<(), MetaTransactionError> {
         // check the signature
-        self.use_meta_tx(&request, &signature)?;
+        self.ensure_meta_tx_valid(&request, &signature)?;
 
         // check the attestor role
         self.check_attestor_role(request.from)?;
