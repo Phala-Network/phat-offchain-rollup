@@ -119,7 +119,7 @@ pub trait MetaTransaction:
 
         let nonce_from = self.get_nonce(request.from);
 
-        if request.nonce < nonce_from {
+        if request.nonce != nonce_from {
             return Err(MetaTransactionError::NonceTooLow);
         }
 

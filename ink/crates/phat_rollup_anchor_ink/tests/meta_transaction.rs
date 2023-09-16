@@ -101,7 +101,7 @@ fn test_verify() {
         data: data.clone(),
     };
     assert_eq!(
-        Err(MetaTransactionError::PublicKeyNotMatch),
+        Err(MetaTransactionError::NonceTooLow),
         contract.verify(&request, &signature)
     );
 
