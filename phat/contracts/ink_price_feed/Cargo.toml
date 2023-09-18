@@ -22,8 +22,7 @@ pink-web3 = { version = "0.20.2", default-features = false, features = ["pink", 
 
 phat_offchain_rollup = { path = "../../crates/rollup", default-features = false, features = ["ink"] }
 
-#subrpc = { package = "pink-subrpc", version = "0.4.2", default-features = false }
-subrpc = { git = "https://github.com/Phala-Network/phala-blockchain/", package = "pink-subrpc", default-features = false, optional = true }
+subrpc = { package = "pink-subrpc", version = "0.4.3", default-features = false }
 
 hex = { version = "0.4", default-features = false }
 
