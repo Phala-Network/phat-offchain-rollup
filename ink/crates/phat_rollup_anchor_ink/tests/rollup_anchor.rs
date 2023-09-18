@@ -2,7 +2,6 @@ use ink::prelude::vec::Vec;
 use openbrush::contracts::access_control;
 use openbrush::contracts::access_control::AccessControl;
 use openbrush::test_utils::{accounts, change_caller};
-use phat_rollup_anchor_ink::traits::message_queue::*;
 use phat_rollup_anchor_ink::traits::rollup_anchor::*;
 use scale::Encode;
 
@@ -65,9 +64,7 @@ fn test_action_pop_to() {
 
     assert_eq!(
         contract.rollup_cond_eq(vec![], vec![], actions.clone()),
-        Err(RollupAnchorError::MessageQueueError(
-            MessageQueueError::InvalidPopTarget
-        ))
+        Err(RollupAnchorError::InvalidPopTarget)
     );
 
     let message = 4589u16;

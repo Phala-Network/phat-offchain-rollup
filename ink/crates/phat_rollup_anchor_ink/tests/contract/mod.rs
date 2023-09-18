@@ -8,8 +8,6 @@ pub mod test_contract {
     use openbrush::contracts::access_control::*;
     use openbrush::contracts::ownable::*;
     use openbrush::traits::Storage;
-    use phat_rollup_anchor_ink::traits::kv_store::{self, *};
-    use phat_rollup_anchor_ink::traits::message_queue::{self, *};
     use phat_rollup_anchor_ink::traits::meta_transaction::{self, *};
     use phat_rollup_anchor_ink::traits::rollup_anchor::{self, *};
 
@@ -21,7 +19,7 @@ pub mod test_contract {
         #[storage_field]
         access: access_control::Data,
         #[storage_field]
-        kv_store: kv_store::Data,
+        rollup_anchor: rollup_anchor::Data,
         #[storage_field]
         meta_transaction: meta_transaction::Data,
     }
@@ -45,8 +43,6 @@ pub mod test_contract {
         }
     }
 
-    impl KvStore for MyContract {}
-    impl MessageQueue for MyContract {}
     impl RollupAnchor for MyContract {}
     impl MetaTransaction for MyContract {}
 
@@ -57,7 +53,7 @@ pub mod test_contract {
         }
     }
 
-    impl message_queue::EventBroadcaster for MyContract {
+    impl rollup_anchor::EventBroadcaster for MyContract {
         fn emit_event_message_queued(&self, id: u32, data: Vec<u8>) {
             debug_println!(
                 "Emit event 'message queued {{ id: {:?}, data: {:2x?} }}",

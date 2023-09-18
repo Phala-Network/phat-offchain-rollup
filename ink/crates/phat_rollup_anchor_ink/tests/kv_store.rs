@@ -1,6 +1,6 @@
 use openbrush::test_utils::accounts;
-use phat_rollup_anchor_ink::traits::kv_store::KvStore;
 use scale::Encode;
+use phat_rollup_anchor_ink::traits::rollup_anchor::*;
 
 mod contract;
 use contract::test_contract::MyContract;

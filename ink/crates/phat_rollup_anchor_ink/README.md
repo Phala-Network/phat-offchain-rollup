@@ -3,7 +3,7 @@
 Library for Ink! smart contract to help you build [Phat Rollup Anchor ](https://github.com/Phala-Network/phat-offchain-rollup/
 )deployed on the Substrate pallet Contracts.
 This library uses the [OpenBrush](https://learn.brushfam.io/docs/OpenBrush) library with the features `ownable` and `access_control`
-It provides the following traits for:
+It provides the following features for:
  - `KvStore`: key-value store that allows offchain Phat Contracts to perform read/write operations.
  - `MessageQueue`: Message Queue, enabling a request-response programming model for the smart-contract while ensuring that each request received exactly one response. It uses the KV Store to save the messages. 
  - `RollupAnchor`: Use the kv-store and the message queue to allow offchain's rollup transactions.
@@ -58,7 +58,7 @@ std = [
 ### Add imports
 
 Use `openbrush::contract` macro instead of `ink::contract`. 
-Import everything from `openbrush::contracts::access_control`, `openbrush::contracts::ownable`, `phat_rollup_anchor_ink::traits::kv_store`, `phat_rollup_anchor_ink::traits::message_queue`, `phat_rollup_anchor_ink::traits::meta_transaction`, `phat_rollup_anchor_ink::traits::rollup_anchor`.
+Import everything from `openbrush::contracts::access_control`, `openbrush::contracts::ownable`, `phat_rollup_anchor_ink::traits::meta_transaction`, `phat_rollup_anchor_ink::traits::rollup_anchor`.
 
 ```rust
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
@@ -73,8 +73,6 @@ pub mod test_oracle {
     use scale::{Decode, Encode};
 
     use phat_rollup_anchor_ink::traits::{
-        kv_store, kv_store::*,
-        message_queue, message_queue::*,
         meta_transaction, meta_transaction::*,
         rollup_anchor, rollup_anchor::*
     };
@@ -94,7 +92,7 @@ pub struct TestOracle {
     #[storage_field]
     access: access_control::Data,
     #[storage_field]
-    kv_store: kv_store::Data,
+    rollup_anchor: rollup_anchor::Data,
     #[storage_field]
     meta_transaction: meta_transaction::Data,
     ...
@@ -105,8 +103,6 @@ pub struct TestOracle {
 Inherit implementation of the traits. You can customize (override) methods in this `impl` block.
 
 ```rust
-impl KvStore for TestOracle {}
-impl MessageQueue for TestOracle {}
 impl RollupAnchor for TestOracle {}
 impl MetaTransaction for TestOracle {}
 ```
@@ -129,8 +125,8 @@ impl TestOracle {
 
 ### Traits to implement
 
-### Trait for the message queue
-Implement the `message_queue::EventBroadcaster` trait to emit the events when a message is pushed in the queue and when a message is proceeded. 
+### Trait for the rollup anchor
+Implement the `rollup_anchor::EventBroadcaster` trait to emit the events when a message is pushed in the queue and when a message is proceeded. 
 If you don't want to emit the events, you can put an empty block in the methods `emit_event_message_queued` and `emit_event_message_processed_to`.
 
 ```rust
@@ -147,7 +143,7 @@ pub struct MessageProcessedTo {
     pub id: u32,
 }
 
-impl message_queue::EventBroadcaster for TestOracle {
+impl rollup_anchor::EventBroadcaster for TestOracle {
 
     fn emit_event_message_queued(&self, id: u32, data: Vec<u8>){
         self.env().emit_event(MessageQueued { id, data });
@@ -159,7 +155,7 @@ impl message_queue::EventBroadcaster for TestOracle {
 
 }
 ```
-### Traits for the rollup anchor
+
 Implement the `rollup_anchor::MessageHandler` trait to put your business logic when a message is received.
 Here an example when the Oracle receives a message with the price feed. 
 
@@ -239,8 +235,7 @@ pub mod test_oracle {
     use scale::{Decode, Encode};
 
     use phat_rollup_anchor_ink::traits::{
-        kv_store, kv_store::*, message_queue, message_queue::*, meta_transaction,
-        meta_transaction::*, rollup_anchor, rollup_anchor::*,
+        meta_transaction, meta_transaction::*, rollup_anchor, rollup_anchor::*,
     };
 
     pub type TradingPairId = u32;
@@ -264,22 +259,22 @@ pub mod test_oracle {
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum ContractError {
         AccessControlError(AccessControlError),
-        MessageQueueError(MessageQueueError),
+        RollupAnchorError(RollupAnchorError),
         MetaTransactionError(MetaTransactionError),
         MissingTradingPair,
-    }
-
-    /// convertor from MessageQueueError to ContractError
-    impl From<MessageQueueError> for ContractError {
-        fn from(error: MessageQueueError) -> Self {
-            ContractError::MessageQueueError(error)
-        }
     }
 
     /// convertor from MessageQueueError to ContractError
     impl From<AccessControlError> for ContractError {
         fn from(error: AccessControlError) -> Self {
             ContractError::AccessControlError(error)
+        }
+    }
+
+    /// convertor from RollupAnchorError to ContractError
+    impl From<RollupAnchorError> for ContractError {
+        fn from(error: RollupAnchorError) -> Self {
+            ContractError::RollupAnchorError(error)
         }
     }
 
@@ -312,7 +307,7 @@ pub mod test_oracle {
         trading_pair_id: TradingPairId,
         /// price of the trading pair
         price: Option<u128>,
-        /// when the price is read
+        /// error when the price is read
         err_no: Option<u128>,
     }
 
@@ -348,7 +343,7 @@ pub mod test_oracle {
         #[storage_field]
         access: access_control::Data,
         #[storage_field]
-        kv_store: kv_store::Data,
+        rollup_anchor: rollup_anchor::Data,
         #[storage_field]
         meta_transaction: meta_transaction::Data,
         trading_pairs: Mapping<TradingPairId, TradingPair>,
@@ -438,10 +433,6 @@ pub mod test_oracle {
         }
     }
 
-    impl KvStore for TestOracle {}
-
-    impl MessageQueue for TestOracle {}
-
     impl RollupAnchor for TestOracle {}
 
     impl MetaTransaction for TestOracle {}
@@ -499,7 +490,7 @@ pub mod test_oracle {
         pub id: u32,
     }
 
-    impl message_queue::EventBroadcaster for TestOracle {
+    impl rollup_anchor::EventBroadcaster for TestOracle {
         fn emit_event_message_queued(&self, id: u32, data: Vec<u8>) {
             self.env().emit_event(MessageQueued { id, data });
         }

@@ -1,5 +1,5 @@
 use openbrush::test_utils::accounts;
-use phat_rollup_anchor_ink::traits::message_queue::{MessageQueue, MessageQueueError};
+use phat_rollup_anchor_ink::traits::rollup_anchor::*;
 
 mod contract;
 use contract::test_contract::MyContract;
@@ -52,7 +52,7 @@ fn test_pop_messages() {
     let mut contract = MyContract::new(accounts.alice);
 
     // pop to the future => error
-    assert_eq!(Err(MessageQueueError::InvalidPopTarget), contract.pop_to(2));
+    assert_eq!(Err(RollupAnchorError::InvalidPopTarget), contract.pop_to(2));
 
     let message = 4589u16;
     contract.push_message(&message).unwrap();
@@ -76,7 +76,7 @@ fn test_pop_messages() {
     assert_eq!(5, contract.get_queue_tail().unwrap());
 
     // pop to the past => error
-    assert_eq!(Err(MessageQueueError::InvalidPopTarget), contract.pop_to(1));
+    assert_eq!(Err(RollupAnchorError::InvalidPopTarget), contract.pop_to(1));
 
     // we do nothing
     assert_eq!(Ok(()), contract.pop_to(5));
