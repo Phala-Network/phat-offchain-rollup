@@ -60,7 +60,7 @@ impl<'a> KvSnapshot for InkSnapshot<'a> {
         let value: QueryResult = contract
             .query_at(
                 *self.contract_id,
-                ink::selector_bytes!("KvStore::get_value"),
+                ink::selector_bytes!("RollupAnchor::get_value"),
                 Some(&key),
                 0,
                 Some(self.at),
