@@ -18,6 +18,8 @@ pub mod test_oracle {
 
     pub type TradingPairId = u32;
 
+    pub const MANAGER_ROLE: RoleType = ink::selector_id!("MANAGER_ROLE");
+
     /// Events emitted when a price is received
     #[ink(event)]
     pub struct PriceReceived {
@@ -186,13 +188,8 @@ pub mod test_oracle {
         }
 
         #[ink(message)]
-        pub fn register_attestor(
-            &mut self,
-            account_id: AccountId,
-            ecdsa_public_key: [u8; 33],
-        ) -> Result<(), ContractError> {
+        pub fn register_attestor(&mut self, account_id: AccountId) -> Result<(), ContractError> {
             AccessControl::grant_role(self, ATTESTOR_ROLE, Some(account_id))?;
-            self.register_ecdsa_public_key(account_id, ecdsa_public_key)?;
             Ok(())
         }
 
@@ -791,21 +788,11 @@ pub mod test_oracle {
                 .expect("instantiate failed")
                 .account_id;
 
-            // register the ecda public key because I am not able to retrieve if from the account id
-            // Alice
+            // Alice is the attestor
+            // use the ecsda account because we are not able to verify the sr25519 signature
             let from = ink::primitives::AccountId::from(
-                Signer::<PolkadotConfig>::account_id(&ink_e2e::alice()).0,
+                Signer::<PolkadotConfig>::account_id(&subxt_signer::ecdsa::dev::alice()).0,
             );
-            let ecdsa_public_key: [u8; 33] = hex_literal::hex!(
-                "037051bed73458951b45ca6376f4096c85bf1a370da94d5336d04867cfaaad019e"
-            );
-
-            let register_ecdsa_public_key = build_message::<TestOracleRef>(contract_acc_id.clone())
-                .call(|oracle| oracle.register_ecdsa_public_key(from, ecdsa_public_key));
-            client
-                .call(&ink_e2e::bob(), register_ecdsa_public_key, 0, None)
-                .await
-                .expect("We should be able to register the ecdsa public key");
 
             // prepare the meta transaction
             let data = u8::encode(&5);
@@ -816,18 +803,14 @@ pub mod test_oracle {
                 .await
                 .expect("We should be able to prepare the meta tx");
 
-            let (request, hash) = result
+            let (request, _hash) = result
                 .return_value()
                 .expect("Expected value when preparing meta tx");
 
             assert_eq!(0, request.nonce);
             assert_eq!(from, request.from);
+            assert_eq!(contract_acc_id, request.to);
             assert_eq!(&data, &request.data);
-
-            let expected_hash = hex_literal::hex!(
-                "17cb4f6eae2f95ba0fbaee9e0e51dc790fe752e7386b72dcd93b9669450c2ccf"
-            );
-            assert_eq!(&expected_hash, &hash.as_ref());
 
             Ok(())
         }
@@ -847,21 +830,11 @@ pub mod test_oracle {
                 .expect("instantiate failed")
                 .account_id;
 
-            // register the ecda public key because I am not able to retrieve if from the account id
             // Alice is the attestor
+            // use the ecsda account because we are not able to verify the sr25519 signature
             let from = ink::primitives::AccountId::from(
-                Signer::<PolkadotConfig>::account_id(&ink_e2e::alice()).0,
+                Signer::<PolkadotConfig>::account_id(&subxt_signer::ecdsa::dev::alice()).0,
             );
-            let ecdsa_public_key: [u8; 33] = hex_literal::hex!(
-                "037051bed73458951b45ca6376f4096c85bf1a370da94d5336d04867cfaaad019e"
-            );
-
-            let register_ecdsa_public_key = build_message::<TestOracleRef>(contract_acc_id.clone())
-                .call(|oracle| oracle.register_ecdsa_public_key(from, ecdsa_public_key));
-            client
-                .call(&ink_e2e::charlie(), register_ecdsa_public_key, 0, None)
-                .await
-                .expect("We should be able to register the ecdsa public key");
 
             // add the role => it should be succeed
             let grant_role = build_message::<TestOracleRef>(contract_acc_id.clone())
@@ -880,21 +853,18 @@ pub mod test_oracle {
                 .await
                 .expect("We should be able to prepare the meta tx");
 
-            let (request, hash) = result
+            let (request, _hash) = result
                 .return_value()
                 .expect("Expected value when preparing meta tx");
 
             assert_eq!(0, request.nonce);
             assert_eq!(from, request.from);
+            assert_eq!(contract_acc_id, request.to);
             assert_eq!(&data, &request.data);
 
-            let expected_hash = hex_literal::hex!(
-                "c91f57305dc05a66f1327352d55290a250eb61bba8e3cf8560a4b8e7d172bb54"
-            );
-            assert_eq!(&expected_hash, &hash.as_ref());
-
-            // signature by Alice of previous hash
-            let signature : [u8; 65] = hex_literal::hex!("c9a899bc8daa98fd1e819486c57f9ee889d035e8d0e55c04c475ca32bb59389b284d18d785a9db1bdd72ce74baefe6a54c0aa2418b14f7bc96232fa4bf42946600");
+            // Alice signs the message
+            let keypair = subxt_signer::ecdsa::dev::alice();
+            let signature = keypair.sign(&scale::Encode::encode(&request)).0;
 
             // do the meta tx
             let meta_tx_rollup_cond_eq = build_message::<TestOracleRef>(contract_acc_id.clone())

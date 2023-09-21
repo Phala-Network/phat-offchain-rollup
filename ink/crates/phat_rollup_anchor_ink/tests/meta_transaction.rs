@@ -1,4 +1,5 @@
-use ink::env::debug_println;
+use ink::env::test::set_callee;
+use ink::env::{debug_println, DefaultEnvironment};
 use openbrush::contracts::access_control::{AccessControl, AccessControlError};
 use openbrush::test_utils::accounts;
 use openbrush::traits::AccountId;
@@ -8,6 +9,8 @@ use scale::Encode;
 
 mod contract;
 use contract::test_contract::MyContract;
+use ink_e2e::subxt::tx::Signer;
+use ink_e2e::PolkadotConfig;
 
 #[ink::test]
 fn test_get_nonce() {
@@ -20,22 +23,18 @@ fn test_get_nonce() {
 
 #[ink::test]
 fn test_prepare() {
-    let accounts = accounts();
-    let mut contract = MyContract::new(accounts.bob);
+    let contract_address = AccountId::from([0xFF as u8; 32]);
+    set_callee::<DefaultEnvironment>(contract_address);
 
-    // Alice
-    let from = AccountId::from(hex_literal::hex!(
-        "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
-    ));
-    let ecdsa_public_key: [u8; 33] =
-        hex_literal::hex!("037051bed73458951b45ca6376f4096c85bf1a370da94d5336d04867cfaaad019e");
+    let accounts = accounts();
+    let contract = MyContract::new(accounts.bob);
+
+    // ecdsa public key d'Alice
+    let from = ink::primitives::AccountId::from(
+        Signer::<PolkadotConfig>::account_id(&subxt_signer::ecdsa::dev::alice()).0,
+    );
 
     let data = u8::encode(&5);
-
-    // register the ecda public key because I am not able to retrieve if from the account id
-    contract
-        .register_ecdsa_public_key(from, ecdsa_public_key)
-        .expect("Error when registering ecdsa public key");
 
     // prepare the meta transaction
     let (request, hash) = contract
@@ -44,41 +43,43 @@ fn test_prepare() {
 
     assert_eq!(0, request.nonce);
     assert_eq!(from, request.from);
+    assert_eq!(contract_address, request.to);
     assert_eq!(&data, &request.data);
+
+    debug_println!("message: {:02x?}", &scale::Encode::encode(&request));
 
     debug_println!("code hash: {:02x?}", hash);
     let expected_hash =
-        hex_literal::hex!("17cb4f6eae2f95ba0fbaee9e0e51dc790fe752e7386b72dcd93b9669450c2ccf");
+        hex_literal::hex!("9eb948928cf669f05801b791e5770419f1184637cf2ff3e8124c92e44d45e76f");
     assert_eq!(&expected_hash, &hash.as_ref());
 }
 
 #[ink::test]
 fn test_verify() {
+    let contract_address = AccountId::from([0xFF as u8; 32]);
+    set_callee::<DefaultEnvironment>(contract_address);
+
     let accounts = accounts();
-    let mut contract = MyContract::new(accounts.bob);
+    let contract = MyContract::new(accounts.bob);
 
-    // Alice
-    let from = AccountId::from(hex_literal::hex!(
-        "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
-    ));
-    let ecdsa_public_key: [u8; 33] =
-        hex_literal::hex!("037051bed73458951b45ca6376f4096c85bf1a370da94d5336d04867cfaaad019e");
-
-    // register the ecda public key because I am not able to retrieve if from the account id
-    contract
-        .register_ecdsa_public_key(from, ecdsa_public_key)
-        .expect("Error when registering ecdsa public key");
+    // ecdsa public key d'Alice
+    let keypair = subxt_signer::ecdsa::dev::alice();
+    let from = AccountId::from(Signer::<PolkadotConfig>::account_id(&keypair).0);
 
     let nonce: Nonce = 0;
     let data = u8::encode(&5);
     let request = ForwardRequest {
         from,
+        to: contract_address,
         nonce,
         data: data.clone(),
     };
 
-    // signature by Alice of hash : 17cb4f6eae2f95ba0fbaee9e0e51dc790fe752e7386b72dcd93b9669450c2ccf
-    let signature = hex_literal::hex!("ce68d0383bd8f521a2243415add58ed0aed58c246229f15672ed6f99ba6c6c823a6d5fe7503703423e46206196c499d132533a151e2e7d9754b497a9d3014d9301");
+    let message = scale::Encode::encode(&request);
+    debug_println!("message: {:02x?}", &message);
+    // Alice signs the message
+    let signature = keypair.sign(&message).0;
+    debug_println!("signature: {:02x?}", &signature);
 
     // the verification must succeed
     assert_eq!(Ok(()), contract.verify(&request, &signature));
@@ -86,17 +87,31 @@ fn test_verify() {
     // incorrect 'from' => the verification must fail
     let request = ForwardRequest {
         from: accounts.bob,
+        to: contract_address,
         nonce,
         data: data.clone(),
     };
     assert_eq!(
-        Err(MetaTransactionError::PublicKeyNotRegistered),
+        Err(MetaTransactionError::PublicKeyNotMatch),
+        contract.verify(&request, &signature)
+    );
+
+    // incorrect 'to' => the verification must fail
+    let request = ForwardRequest {
+        from,
+        to: accounts.bob,
+        nonce,
+        data: data.clone(),
+    };
+    assert_eq!(
+        Err(MetaTransactionError::InvalidDestination),
         contract.verify(&request, &signature)
     );
 
     // incorrect nonce => the verification must fail
     let request = ForwardRequest {
         from,
+        to: contract_address,
         nonce: 1,
         data: data.clone(),
     };
@@ -108,25 +123,9 @@ fn test_verify() {
     // incorrect data => the verification must fail
     let request = ForwardRequest {
         from,
+        to: contract_address,
         nonce,
         data: u8::encode(&55),
-    };
-    assert_eq!(
-        Err(MetaTransactionError::PublicKeyNotMatch),
-        contract.verify(&request, &signature)
-    );
-
-    // register another ecda public key
-    let ecdsa_public_key =
-        hex_literal::hex!("037051bed73458951b45ca6376f4096c85bf1a370da94d5336d04867cfaaad019f");
-    contract
-        .register_ecdsa_public_key(from, ecdsa_public_key)
-        .expect("Error when registering ecdsa public key");
-    // incorrect ecdsa public key => the verification must fail
-    let request = ForwardRequest {
-        from,
-        nonce,
-        data: data.clone(),
     };
     assert_eq!(
         Err(MetaTransactionError::PublicKeyNotMatch),
@@ -136,31 +135,28 @@ fn test_verify() {
 
 #[ink::test]
 fn test_ensure_meta_tx_valid() {
+    let contract_address = AccountId::from([0xFF as u8; 32]);
+    set_callee::<DefaultEnvironment>(contract_address);
+
     let accounts = accounts();
     let mut contract = MyContract::new(accounts.bob);
 
-    // Alice
-    let from = AccountId::from(hex_literal::hex!(
-        "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
-    ));
-    let ecdsa_public_key: [u8; 33] =
-        hex_literal::hex!("037051bed73458951b45ca6376f4096c85bf1a370da94d5336d04867cfaaad019e");
-
-    // register the ecda public key
-    contract
-        .register_ecdsa_public_key(from, ecdsa_public_key)
-        .expect("Error when registering ecdsa public key");
+    // ecdsa public key d'Alice
+    let keypair = subxt_signer::ecdsa::dev::alice();
+    let from = AccountId::from(Signer::<PolkadotConfig>::account_id(&keypair).0);
 
     let nonce: Nonce = 0;
     let data = u8::encode(&5);
     let request = ForwardRequest {
         from,
+        to: contract_address,
         nonce,
         data: data.clone(),
     };
 
-    // signature by Alice
-    let signature = hex_literal::hex!("ce68d0383bd8f521a2243415add58ed0aed58c246229f15672ed6f99ba6c6c823a6d5fe7503703423e46206196c499d132533a151e2e7d9754b497a9d3014d9301");
+    // Alice signs the message
+    let signature = keypair.sign(&scale::Encode::encode(&request)).0;
+    debug_println!("signature: {:02x?}", &signature);
 
     // the verification must succeed
     contract
@@ -180,32 +176,30 @@ fn test_ensure_meta_tx_valid() {
 
 #[ink::test]
 fn test_meta_tx_rollup_cond_eq() {
+    let contract_address = AccountId::from([0xFF as u8; 32]);
+    set_callee::<DefaultEnvironment>(contract_address);
+
     let accounts = accounts();
     let mut contract = MyContract::new(accounts.alice);
 
-    // Alice
-    let from = AccountId::from(hex_literal::hex!(
-        "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
-    ));
-    let ecdsa_public_key: [u8; 33] =
-        hex_literal::hex!("037051bed73458951b45ca6376f4096c85bf1a370da94d5336d04867cfaaad019e");
-    let data = RollupCondEqMethodParams::encode(&(vec![], vec![], vec![]));
+    // ecdsa public key d'Alice
+    let keypair = subxt_signer::ecdsa::dev::alice();
+    let from = AccountId::from(Signer::<PolkadotConfig>::account_id(&keypair).0);
 
-    // register the ecdsa public key
-    contract
-        .register_ecdsa_public_key(from, ecdsa_public_key)
-        .expect("Error when registering ecdsa public key");
+    let data = RollupCondEqMethodParams::encode(&(vec![], vec![], vec![]));
 
     let (request, hash) = contract
         .prepare(from, data)
         .expect("Error when preparing meta tx");
 
+    debug_println!("code hash: {:02x?}", hash);
     let expected_hash =
-        hex_literal::hex!("c91f57305dc05a66f1327352d55290a250eb61bba8e3cf8560a4b8e7d172bb54");
+        hex_literal::hex!("8e00f5d6a0f721acb9f4244a1c28787f7d1cb628176b132b2010c880de153e2e");
     assert_eq!(&expected_hash, &hash.as_ref());
 
-    // signature by Alice of previous hash
-    let signature : [u8; 65] = hex_literal::hex!("c9a899bc8daa98fd1e819486c57f9ee889d035e8d0e55c04c475ca32bb59389b284d18d785a9db1bdd72ce74baefe6a54c0aa2418b14f7bc96232fa4bf42946600");
+    // Alice signs the message
+    let signature = keypair.sign(&scale::Encode::encode(&request)).0;
+    debug_println!("signature: {:02x?}", &signature);
 
     // add the role => it should be succeed
     contract
@@ -225,32 +219,30 @@ fn test_meta_tx_rollup_cond_eq() {
 
 #[ink::test]
 fn test_meta_tx_rollup_cond_eq_missing_role() {
+    let contract_address = AccountId::from([0xFF as u8; 32]);
+    set_callee::<DefaultEnvironment>(contract_address);
+
     let accounts = accounts();
     let mut contract = MyContract::new(accounts.alice);
 
-    // Alice
-    let from = AccountId::from(hex_literal::hex!(
-        "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
-    ));
-    let ecdsa_public_key: [u8; 33] =
-        hex_literal::hex!("037051bed73458951b45ca6376f4096c85bf1a370da94d5336d04867cfaaad019e");
-    let data = RollupCondEqMethodParams::encode(&(vec![], vec![], vec![]));
+    // ecdsa public key d'Alice
+    let keypair = subxt_signer::ecdsa::dev::alice();
+    let from = AccountId::from(Signer::<PolkadotConfig>::account_id(&keypair).0);
 
-    // register the ecdsa public key
-    contract
-        .register_ecdsa_public_key(from, ecdsa_public_key)
-        .expect("Error when registering ecdsa public key");
+    let data = RollupCondEqMethodParams::encode(&(vec![], vec![], vec![]));
 
     let (request, hash) = contract
         .prepare(from, data)
         .expect("Error when preparing meta tx");
 
+    debug_println!("code hash: {:02x?}", hash);
     let expected_hash =
-        hex_literal::hex!("c91f57305dc05a66f1327352d55290a250eb61bba8e3cf8560a4b8e7d172bb54");
+        hex_literal::hex!("8e00f5d6a0f721acb9f4244a1c28787f7d1cb628176b132b2010c880de153e2e");
     assert_eq!(&expected_hash, &hash.as_ref());
 
-    // signature by Alice of previous hash
-    let signature : [u8; 65] = hex_literal::hex!("c9a899bc8daa98fd1e819486c57f9ee889d035e8d0e55c04c475ca32bb59389b284d18d785a9db1bdd72ce74baefe6a54c0aa2418b14f7bc96232fa4bf42946600");
+    // Alice signs the message
+    let signature = keypair.sign(&scale::Encode::encode(&request)).0;
+    debug_println!("signature: {:02x?}", &signature);
 
     // missing role
     assert_eq!(

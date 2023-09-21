@@ -31,6 +31,7 @@ dotenvy = "0.15"
 env_logger = "0.10.0"
 pink-extension-runtime = { version = "0.4.4", default-features = false }
 hex-literal = "0.4.1"
+subxt-signer = { version = "0.31.0" }
 
 [build-dependencies]
 half = { version = "=2.2.1", default-features = false }

@@ -20,7 +20,7 @@ Before you can run the tests, you need to have an ink! smart contract deployed i
 
 #### Use the default ink! smart contract 
 
-You can use the default smart contract deployed on Shibuya (`a4MAezQGvh8czvrBih66JyxbvvmM45SStDg4BoVauGvMPYm`).
+You can use the default smart contract deployed on Shibuya (`YV332vU7tXvdX8GoqhGky8RypeCk89rZVtGwtwVAAwYmfLX`).
 
 #### Or deploy your own ink! smart contract
 
@@ -37,14 +37,14 @@ You will have to configure `alice` as attestor.
 Use Contracts-UI or Polkadot.js to interact with your smart contract deployed on local node or Shibuya.
 You can create a new trading pair and request a price feed by the Phat Contract.
 
-In Shibuya, there are already 3 trading pairs defined in the contracts `aBpMEeqjE1Rz8hBBJC46MHCVpW13YG1UqedAqxtgRarQbQX`.
+In Shibuya, there are already 3 trading pairs defined in the contracts `YV332vU7tXvdX8GoqhGky8RypeCk89rZVtGwtwVAAwYmfLX`.
  - id 11 for the pair `polkadot`/`usd`
  - id 12 for `astar`/`usd`
  - id 13 for `pha`/`usd`
 
 If you want to create another request for the trading pair with the id 12 
 ```bash
-cargo contract call --contract aBpMEeqjE1Rz8hBBJC46MHCVpW13YG1UqedAqxtgRarQbQX --message request_price --args 12 --url wss://rpc.shibuya.astar.network --suri "bottom drive obey lake curtain smoke basket hold race lonely fit walk"  ../../../ink/artifacts/test_oracle/test_oracle.wasm
+cargo contract call --contract YV332vU7tXvdX8GoqhGky8RypeCk89rZVtGwtwVAAwYmfLX --message request_price --args 12 --url wss://rpc.shibuya.astar.network --suri "bottom drive obey lake curtain smoke basket hold race lonely fit walk"  ../../../ink/artifacts/test_oracle/test_oracle.wasm
 ```
 
 ### Run the integration tests
@@ -71,11 +71,5 @@ parallel execution.
 Meta transaction allows the Phat Contract to submit rollup tx with attest key signature while using
 arbitrary account to pay the gas fee. To enable meta tx in the unit test, change the `.env` file
 and specify `SENDER_KEY`.
-
-The Meta-Tx works fine in these cases
-
-|                                             | Ink! Smart Contract deployed on local node | Ink! Smart Contract deployed on testnet        |
-|---------------------------------------------|--------------------------------------------|------------------------------------------------|
-| Phat contract running on local (cargo test) | Meta-Tx works                              | Meta-Tx doesn't work (signature doesn't match) |
-| Phat contract deployed on testnet           | Never tried                                | Meta-Tx works                                  |
+    
 

@@ -270,9 +270,11 @@ impl<'a> SubmittableRollupTx<'a> {
     pub fn submit_meta_tx(self, attestor_key: &[u8; 32], relay_key: &[u8; 32]) -> Result<Vec<u8>> {
         let params = self.tx.into_params();
 
-        let origin: [u8; 32] = signing::get_public_key(attestor_key, signing::SigType::Sr25519)
+        let public_key: [u8; 33] = signing::get_public_key(attestor_key, signing::SigType::Ecdsa)
             .try_into()
             .map_err(|_| Error::InvalidAddressLength)?;
+
+        let origin: [u8; 32] = pub_key_to_ss58(&public_key);
 
         let meta_params = (origin, params.encode());
 
@@ -337,12 +339,21 @@ impl<'a> SubmittableRollupTx<'a> {
     }
 }
 
+/// Hashing function for bytes
+fn pub_key_to_ss58(input: &[u8]) -> [u8; 32] {
+    use ink::env::hash;
+    let mut output = <hash::Blake2x256 as hash::HashOutput>::Type::default();
+    ink::env::hash_bytes::<hash::Blake2x256>(input, &mut output);
+    output
+}
+
 ///
 /// Struct use in the meta transactions
 ///
 #[derive(Debug, Eq, PartialEq, Clone, Encode, Decode)]
 struct ForwardRequest {
     from: ink::primitives::AccountId,
+    to: ink::primitives::AccountId,
     nonce: u128,
     data: Vec<u8>,
 }

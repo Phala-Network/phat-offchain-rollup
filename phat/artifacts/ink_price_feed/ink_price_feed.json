@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0xdd3eb0f0eb9ce5aa878611c0c784f5852f5604723c4f0b3998b11b1530d410ac",
+    "hash": "0xdbe35b7090829b1bb84d8037bf0456f60177753bbc7dba9a8b9fe2a2954d1363",
     "language": "ink! 4.3.0",
     "compiler": "rustc 1.72.0",
     "build_info": {
@@ -122,24 +122,6 @@
           "type": 8
         },
         "selector": "0xa29595ff"
-      },
-      {
-        "args": [],
-        "default": false,
-        "docs": [
-          " Gets the ecdsa public key for the attestor used by this rollup"
-        ],
-        "label": "get_ecdsa_public_key",
-        "mutates": false,
-        "payable": false,
-        "returnType": {
-          "displayName": [
-            "ink",
-            "MessageResult"
-          ],
-          "type": 8
-        },
-        "selector": "0x0b8a2a1a"
       },
       {
         "args": [

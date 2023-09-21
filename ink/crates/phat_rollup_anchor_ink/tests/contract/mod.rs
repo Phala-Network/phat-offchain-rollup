@@ -33,9 +33,6 @@ pub mod test_contract {
             ownable::Internal::_init_with_owner(&mut instance, caller);
             // set the admin of this contract
             access_control::Internal::_init_with_admin(&mut instance, Some(caller));
-            // grant the role manager
-            AccessControl::grant_role(&mut instance, MANAGER_ROLE, Some(caller))
-                .expect("Should grant the role MANAGER_ROLE");
             // grant the role attestor to the given address
             AccessControl::grant_role(&mut instance, ATTESTOR_ROLE, Some(phat_attestor))
                 .expect("Should grant the role ATTESTOR_ROLE");

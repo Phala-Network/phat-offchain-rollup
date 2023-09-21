@@ -124,13 +124,11 @@ mod ink_price_feed {
         /// Gets the attestor address used by this rollup
         #[ink(message)]
         pub fn get_attest_address(&self) -> Vec<u8> {
-            signing::get_public_key(&self.attest_key, signing::SigType::Sr25519)
-        }
-
-        /// Gets the ecdsa public key for the attestor used by this rollup
-        #[ink(message)]
-        pub fn get_ecdsa_public_key(&self) -> Vec<u8> {
-            signing::get_public_key(&self.attest_key, signing::SigType::Ecdsa)
+            use ink::env::hash;
+            let input = signing::get_public_key(&self.attest_key, signing::SigType::Ecdsa);
+            let mut output = <hash::Blake2x256 as hash::HashOutput>::Type::default();
+            ink::env::hash_bytes::<hash::Blake2x256>(&input, &mut output);
+            output.to_vec()
         }
 
         /// Set attestor key.
@@ -441,8 +439,6 @@ mod ink_price_feed {
     #[cfg(test)]
     mod tests {
         use ink::env::debug_println;
-        use ink::env::hash::{Blake2x256, HashOutput, Keccak256};
-        use ink::primitives::AccountId;
         use pink_extension::chain_extension::SigType;
 
         use super::*;
@@ -486,33 +482,6 @@ mod ink_price_feed {
                 attest_key,
                 sender_key,
             }
-        }
-
-        #[ink::test]
-        fn test_update_attestor_key() {
-            let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
-
-            let mut price_feed = InkPriceFeed::default();
-
-            // Secret key and address of Alice in localhost
-            let sk_alice: [u8; 32] = [0x01; 32];
-            let address_alice = hex_literal::hex!(
-                "189dac29296d31814dc8c56cf3d36a0543372bba7538fa322a4aebfebc39e056"
-            );
-
-            let initial_attestor_address = price_feed.get_attest_address();
-            assert_ne!(address_alice, initial_attestor_address.as_slice());
-
-            price_feed.set_attest_key(Some(sk_alice.into())).unwrap();
-
-            let attestor_address = price_feed.get_attest_address();
-            assert_eq!(address_alice, attestor_address.as_slice());
-
-            price_feed.set_attest_key(None).unwrap();
-
-            let attestor_address = price_feed.get_attest_address();
-            assert_eq!(initial_attestor_address, attestor_address);
         }
 
         fn init_contract() -> InkPriceFeed {
@@ -603,15 +572,28 @@ mod ink_price_feed {
             let private_key = hex_literal::hex!(
                 "e5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a"
             );
+
             let message = hex_literal::hex!(
-                "c91f57305dc05a66f1327352d55290a250eb61bba8e3cf8560a4b8e7d172bb54"
+                "01e552298e47454041ea31273b4b630c64c104e4514aa3643490b8aaca9cf8edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000405"
             );
-            let signature = signing::ecdsa_sign_prehashed(&private_key, message);
-            debug_println!("signature: {:02x?}", signature);
+            debug_println!("message: {:02x?}", message);
+
+            let hash = hex_literal::hex!(
+                "9eb948928cf669f05801b791e5770419f1184637cf2ff3e8124c92e44d45e76f"
+            );
+            debug_println!("hash: {:02x?}", hash);
+
+            let signature1 = signing::ecdsa_sign_prehashed(&private_key, hash);
+            debug_println!("signature1: {:02x?}", signature1);
+
+            let signature2 = signing::sign(&message, &private_key, SigType::Ecdsa);
+            debug_println!("signature2: {:02x?}", signature2);
+
+            assert_eq!(signature1.to_vec(), signature2);
 
             // at the moment we can only verify ecdsa signatures
             let mut public_key = [0u8; 33];
-            ink::env::ecdsa_recover(&signature.try_into().unwrap(), &message, &mut public_key)
+            ink::env::ecdsa_recover(&signature1.try_into().unwrap(), &hash, &mut public_key)
                 .unwrap();
             debug_println!("public_key: {:02x?}", public_key);
 
@@ -620,56 +602,6 @@ mod ink_price_feed {
 
             let ecdsa_public_key: [u8; 33] = ecdsa_public_key.try_into().unwrap();
             assert_eq!(public_key, ecdsa_public_key);
-        }
-
-        #[ink::test]
-        #[ignore = "only for dev"]
-        fn test_convert_addresses() {
-            let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
-
-            // Secret key of test account `//Alice`
-            let private_key = hex_literal::hex!(
-                "052aaad0924b7ebf4858d2649914ffe498f61cc353056177b8e5f35b3f8b7112"
-            );
-
-            let ecdsa_public_key: [u8; 33] = signing::get_public_key(&private_key, SigType::Ecdsa)
-                .try_into()
-                .expect("Public key should be of length 33");
-            debug_println!("public_key   (ecdsa): {:02x?}", ecdsa_public_key);
-            let mut eth_address = [0u8; 20];
-            ink::env::ecdsa_to_eth_address(&ecdsa_public_key, &mut eth_address)
-                .expect("Get address of ecdsa failed");
-            debug_println!("eth address: {:02x?}", eth_address);
-
-            let sr25519_public_key = signing::get_public_key(&private_key, SigType::Sr25519);
-            debug_println!("public_key (sr25519): {:02x?}", sr25519_public_key);
-            let ed25519_public_key = signing::get_public_key(&private_key, SigType::Ed25519);
-            debug_println!("public_key (ed25519): {:02x?}", ed25519_public_key);
-
-            debug_println!("to_substrate_account_id(ecdsa_public_key.into()");
-            let account_id = to_substrate_account_id(ecdsa_public_key.into());
-            debug_println!("account_id: {:02x?}", account_id);
-
-            debug_println!("to_substrate_account_id(sr25519_public_key.into())");
-            let account_id = to_substrate_account_id(sr25519_public_key.clone().into());
-            debug_println!("account_id: {:02x?}", account_id);
-
-            debug_println!("to_eth_address(sr25519_public_key.into())");
-            let account_id = to_eth_address(sr25519_public_key.into());
-            debug_println!("account_id: {:02x?}", account_id);
-        }
-
-        fn to_substrate_account_id(pub_key: Vec<u8>) -> AccountId {
-            let mut output = <Blake2x256 as HashOutput>::Type::default();
-            ink::env::hash_bytes::<Blake2x256>(pub_key.as_ref(), &mut output);
-            output.into()
-        }
-
-        fn to_eth_address(pub_key: Vec<u8>) -> Vec<u8> {
-            let mut output = <Keccak256 as HashOutput>::Type::default();
-            ink::env::hash_bytes::<Keccak256>(pub_key.as_ref(), &mut output);
-            output.into()
         }
     }
 }

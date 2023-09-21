@@ -1,7 +1,6 @@
 use crate::traits::rollup_anchor::{RollupAnchor, RollupAnchorError, RollupCondEqMethodParams};
 use ink::env::hash::{Blake2x256, HashOutput};
 use ink::prelude::vec::Vec;
-use openbrush::contracts::access_control::{self, AccessControlError, RoleType};
 use openbrush::storage::Mapping;
 use openbrush::traits::{AccountId, Hash, Storage};
 
@@ -9,25 +8,15 @@ pub type Nonce = u128;
 pub type PrepareResult = (ForwardRequest, Hash);
 pub type MetatTxRollupCondEqMethodParams = (ForwardRequest, [u8; 65]);
 
-pub const MANAGER_ROLE: RoleType = ink::selector_id!("MANAGER_ROLE");
-
 #[derive(Debug, Eq, PartialEq, scale::Encode, scale::Decode)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub enum MetaTransactionError {
+    InvalidDestination,
     NonceTooLow,
     IncorrectSignature,
     PublicKeyNotMatch,
-    PublicKeyNotRegistered,
     PublicKeyIncorrect,
-    AccessControlError(AccessControlError),
     RollupAnchorError(RollupAnchorError),
-}
-
-/// convertor from AccessControlError to MetaTxError
-impl From<AccessControlError> for MetaTransactionError {
-    fn from(error: AccessControlError) -> Self {
-        MetaTransactionError::AccessControlError(error)
-    }
 }
 
 /// convertor from RollupAnchorError to MetaTxError
@@ -41,6 +30,7 @@ impl From<RollupAnchorError> for MetaTransactionError {
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct ForwardRequest {
     pub from: AccountId,
+    pub to: AccountId,
     pub nonce: Nonce,
     pub data: Vec<u8>,
 }
@@ -49,42 +39,10 @@ pub struct ForwardRequest {
 #[openbrush::storage_item]
 pub struct Data {
     nonces: Mapping<AccountId, Nonce>,
-    ecdsa_public_keys: Mapping<AccountId, Vec<u8>>,
 }
 
 #[openbrush::trait_definition]
-pub trait MetaTransaction:
-    Storage<Data> + EventBroadcaster + access_control::Internal + RollupAnchor
-{
-    #[ink(message)]
-    fn get_ecdsa_public_key(
-        &self,
-        from: AccountId,
-    ) -> Result<Option<[u8; 33]>, MetaTransactionError> {
-        match self.data::<Data>().ecdsa_public_keys.get(&from) {
-            Some(key) => {
-                let key: [u8; 33] = key
-                    .try_into()
-                    .map_err(|_| MetaTransactionError::PublicKeyIncorrect)?;
-                Ok(Some(key))
-            }
-            _ => Ok(None),
-        }
-    }
-
-    #[ink(message)]
-    #[openbrush::modifiers(access_control::only_role(MANAGER_ROLE))]
-    fn register_ecdsa_public_key(
-        &mut self,
-        from: AccountId,
-        ecdsa_public_key: [u8; 33],
-    ) -> Result<(), MetaTransactionError> {
-        self.data::<Data>()
-            .ecdsa_public_keys
-            .insert(&from, &ecdsa_public_key.into());
-        Ok(())
-    }
-
+pub trait MetaTransaction: Storage<Data> + EventBroadcaster + RollupAnchor {
     #[ink(message)]
     fn prepare(
         &self,
@@ -92,8 +50,14 @@ pub trait MetaTransaction:
         data: Vec<u8>,
     ) -> Result<(ForwardRequest, Hash), MetaTransactionError> {
         let nonce = self.get_nonce(from);
+        let to = Self::env().account_id();
 
-        let request = ForwardRequest { from, nonce, data };
+        let request = ForwardRequest {
+            from,
+            to,
+            nonce,
+            data,
+        };
         let mut hash = <Blake2x256 as HashOutput>::Type::default();
         ink::env::hash_encoded::<Blake2x256, _>(&request, &mut hash);
 
@@ -109,29 +73,25 @@ pub trait MetaTransaction:
         request: &ForwardRequest,
         signature: &[u8; 65],
     ) -> Result<(), MetaTransactionError> {
-        let ecdsa_public_key: [u8; 33] = self
-            .data::<Data>()
-            .ecdsa_public_keys
-            .get(&request.from)
-            .ok_or(MetaTransactionError::PublicKeyNotRegistered)?
-            .try_into()
-            .map_err(|_| MetaTransactionError::PublicKeyIncorrect)?;
+        let to = Self::env().account_id();
+        if request.to != to {
+            return Err(MetaTransactionError::InvalidDestination);
+        }
 
         let nonce_from = self.get_nonce(request.from);
-
         if request.nonce != nonce_from {
             return Err(MetaTransactionError::NonceTooLow);
         }
 
+        // at the moment we can only verify ecdsa signatures
         let mut hash = <Blake2x256 as HashOutput>::Type::default();
         ink::env::hash_encoded::<Blake2x256, _>(&request, &mut hash);
 
-        // at the moment we can only verify ecdsa signatures
         let mut public_key = [0u8; 33];
         ink::env::ecdsa_recover(signature, &hash, &mut public_key)
             .map_err(|_| MetaTransactionError::IncorrectSignature)?;
 
-        if public_key != ecdsa_public_key {
+        if request.from != pub_key_to_ss58(&public_key) {
             return Err(MetaTransactionError::PublicKeyNotMatch);
         }
         Ok(())
@@ -178,4 +138,17 @@ pub trait MetaTransaction:
 
 pub trait EventBroadcaster {
     fn emit_event_meta_tx_decoded(&self);
+}
+
+/// Hashing function for bytes
+fn hash_blake2b256(input: &[u8]) -> [u8; 32] {
+    use ink::env::hash;
+    let mut output = <hash::Blake2x256 as hash::HashOutput>::Type::default();
+    ink::env::hash_bytes::<hash::Blake2x256>(input, &mut output);
+    output
+}
+
+/// Converts a compressed public key to SS58 format
+fn pub_key_to_ss58(pub_key: &[u8; 33]) -> AccountId {
+    AccountId::from(hash_blake2b256(pub_key))
 }

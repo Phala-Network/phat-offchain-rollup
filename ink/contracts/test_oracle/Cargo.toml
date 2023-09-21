@@ -17,6 +17,7 @@ phat_rollup_anchor_ink = { path = "../../crates/phat_rollup_anchor_ink", default
 [dev-dependencies]
 ink_e2e = { version = "4.3.0" }
 hex-literal = { version = "0.4.1" }
+subxt-signer = { version = "0.31.0" }
 
 [lib]
 path = "lib.rs"
