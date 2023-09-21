@@ -124,6 +124,12 @@ mod ink_price_feed {
         /// Gets the attestor address used by this rollup
         #[ink(message)]
         pub fn get_attest_address(&self) -> Vec<u8> {
+            signing::get_public_key(&self.attest_key, signing::SigType::Sr25519)
+        }
+
+        /// Gets the attestor address used by this rollup in the meta transaction
+        #[ink(message)]
+        pub fn get_attest_address_meta_tx(&self) -> Vec<u8> {
             use ink::env::hash;
             let input = signing::get_public_key(&self.attest_key, signing::SigType::Ecdsa);
             let mut output = <hash::Blake2x256 as hash::HashOutput>::Type::default();
@@ -501,6 +507,33 @@ mod ink_price_feed {
             price_feed.set_attest_key(Some(attest_key)).unwrap();
 
             price_feed
+        }
+
+        #[ink::test]
+        fn test_update_attestor_key() {
+            let _ = env_logger::try_init();
+            pink_extension_runtime::mock_ext::mock_all_ext();
+
+            let mut price_feed = InkPriceFeed::default();
+
+            // Secret key and address of Alice in localhost
+            let sk_alice: [u8; 32] = [0x01; 32];
+            let address_alice = hex_literal::hex!(
+                "189dac29296d31814dc8c56cf3d36a0543372bba7538fa322a4aebfebc39e056"
+            );
+
+            let initial_attestor_address = price_feed.get_attest_address();
+            assert_ne!(address_alice, initial_attestor_address.as_slice());
+
+            price_feed.set_attest_key(Some(sk_alice.into())).unwrap();
+
+            let attestor_address = price_feed.get_attest_address();
+            assert_eq!(address_alice, attestor_address.as_slice());
+
+            price_feed.set_attest_key(None).unwrap();
+
+            let attestor_address = price_feed.get_attest_address();
+            assert_eq!(initial_attestor_address, attestor_address);
         }
 
         #[ink::test]
