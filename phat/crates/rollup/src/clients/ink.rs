@@ -274,7 +274,7 @@ impl<'a> SubmittableRollupTx<'a> {
             .try_into()
             .map_err(|_| Error::InvalidAddressLength)?;
 
-        let origin: [u8; 32] = pub_key_to_ss58(&public_key);
+        let origin: [u8; 32] = get_ecdsa_account_id(&public_key);
 
         let meta_params = (origin, params.encode());
 
@@ -339,8 +339,8 @@ impl<'a> SubmittableRollupTx<'a> {
     }
 }
 
-/// Hashing function for bytes
-fn pub_key_to_ss58(input: &[u8]) -> [u8; 32] {
+/// Converts a compressed ECDSA public key to AccountId
+fn get_ecdsa_account_id(input: &[u8]) -> [u8; 32] {
     use ink::env::hash;
     let mut output = <hash::Blake2x256 as hash::HashOutput>::Type::default();
     ink::env::hash_bytes::<hash::Blake2x256>(input, &mut output);

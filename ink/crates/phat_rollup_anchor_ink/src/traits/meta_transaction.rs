@@ -91,7 +91,7 @@ pub trait MetaTransaction: Storage<Data> + EventBroadcaster + RollupAnchor {
         ink::env::ecdsa_recover(signature, &hash, &mut public_key)
             .map_err(|_| MetaTransactionError::IncorrectSignature)?;
 
-        if request.from != pub_key_to_ss58(&public_key) {
+        if request.from != get_ecdsa_account_id(&public_key) {
             return Err(MetaTransactionError::PublicKeyNotMatch);
         }
         Ok(())
@@ -148,7 +148,7 @@ fn hash_blake2b256(input: &[u8]) -> [u8; 32] {
     output
 }
 
-/// Converts a compressed public key to SS58 format
-fn pub_key_to_ss58(pub_key: &[u8; 33]) -> AccountId {
+/// Converts a compressed ECDSA public key to AccountId
+fn get_ecdsa_account_id(pub_key: &[u8; 33]) -> AccountId {
     AccountId::from(hash_blake2b256(pub_key))
 }
