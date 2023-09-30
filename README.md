@@ -75,7 +75,7 @@ The `features` attribute allows you to control the rollup target chain activatio
 
 - `evm`: enables the client to connect to the EVM rollup anchor contracts.
 - `substrate`: allows the client to connect to the Substrate rollup anchor pallet.
-- `ink`: (currently a work in progress).
+- `ink`: enables the client to connect to the Ink! rollup anchor contracts.
 
 Additionally, the `logging` feature can be utilized to display internal logs, including internet access, to the logger. This can be helpful for debugging purposes.
 
@@ -178,9 +178,17 @@ Note that the error handling in the sample code above is simplified. In real-wor
 
 Finally, the consumer contract can be configured to receive responses as shown below.
 
+Solidity side:
 ```solidity
 function _onMessageReceived(bytes calldata message) internal override {
     emit MsgReceived(message);
+}
+```
+
+Ink! side
+```rust
+fn _on_message_received(&mut self, action: Vec<u8>) -> Result<(), RollupAnchorError> {
+    // do you business logic
 }
 ```
 
@@ -204,14 +212,30 @@ To deploy the EVM rollup anchor, follow these steps:
 
 Find a reference script [here](./evm/scripts/deploy-test.ts).
 
-The Substrate pallet and ink! anchor deployment docs are currently under development (TODO).
+To deploy the Ink rollup anchor, follow these steps:
+
+1. Deploy the Phat Contract
+    - Sample code: [InkPriceFeed](./phat/contracts/ink_price_feed/lib.rs)
+    - During the instantiation, a sr2519 key pair is generated (called attestor key). This key is used to sign the messages sent to Ink! smart contract
+2. Deploy the Ink! smart contract:
+    - Sample code: [TestOracle](./ink/contracts/test_oracle/lib.rs)
+    - register the phat contract as `attestor`
+3. Configure the Phat Contract by sending a `config()` transaction with the arguments below:
+    - `rpc`: The Substrate RPC for Phat Contract to send transaction. It must be a http endpoint.
+    - `pallet_id`: The pallet id for Phat Contract to send transaction.
+    - `call_id`: The call id for Phat Contract to send transaction. 6 in many cases.
+    - `contract id`: The anchor Ink! contract you deployed on substrate node, with "0x".
+    - `sender_key`: The sr25519 private key you used to pay the transaction fees,  with "0x".
+Find a more detailed documentation [here](./InkRollup.md).
+
+The Substrate pallet anchor deployment docs are currently under development (TODO).
 
 ### Integrate with Your Contract
 
 Detailed instructions for consumer contract integration are coming soon (TODO). In the meantime, please refer to provided examples:
 
 - For EVM: Sample consumer contract [TestOracle](./evm/contracts/TestOracle.sol)
-- For ink! (WIP)
+- For Ink!: Sample consumer contract [TestOracle](./ink/contracts/test_oracle/lib.rs)
 - For Substrate: Sample consumer pallet [phat-oracle-pallet](https://github.com/Phala-Network/phala-blockchain/blob/master/pallets/offchain-rollup/src/oracle.rs)
 
 ### Integration Resources
@@ -219,7 +243,7 @@ Detailed instructions for consumer contract integration are coming soon (TODO). 
 - EVM
     - [Phat-EVM Oracle Sample](./phat/contracts/evm_price_feed/README.md)
     - [pink-web3](https://docs.rs/pink-web3): A web3 client for calling EVM chain JSON-RPC and handling EVM ABI codec
-- ink! (WIP)
+- Ink! [Phat-Ink! Oracle Sample](./phat/contracts/ink_price_feed/README.md)
 - Substrate
     - [Phat-Substrate Oracle Sample](./phat/contracts/sub_price_feed)
     - [pink-subrpc](https://docs.rs/pink-subrpc/): A Substrate JSON-RPC client similar to Subxt, supporting HTTP(s)-only
@@ -235,7 +259,7 @@ For an in-depth explanation of the project's technical aspects, please refer to 
 Explore various examples and use cases of Phat Offchain Rollup in action:
 
 - [Phat-EVM Oracle on Offchain Rollup](./EvmRollup.md)
-- Phat-ink Oracle on Offchain Rollup (WIP)
+- [Phat-Ink Oracle on Offchain Rollup](./InkRollup.md)
 - Phat-Substrate Oracle on Offchain Rollup (Documentation WIP)
 
 ## API Reference
@@ -245,6 +269,8 @@ Find API documentation for key components of the Phat Offchain Rollup SDK below:
 - Phat Offchain Rollup API (WIP)
 - [Pink-KV-Session](https://docs.rs/pink-kv-session/)
 - EVM [PhatRollupAnchor](./evm/contracts/PhatRollupAnchor.sol)
+- Ink! [PhatRollupAnchor](./ink/crates/phat_rollup_anchor_ink/README.md)
+- Example of [Ink! contract](./ink/contracts/test_oracle/README.md) implementing Ink! [PhatRollupAnchor](./ink/crates/phat_rollup_anchor_ink/README.md)
 - ink! Anchor Contract (WIP)
 - Substrate [Offchain Rollup Anchor Pallet](https://github.com/Phala-Network/phala-blockchain/blob/master/pallets/offchain-rollup/src/anchor.rs)
 

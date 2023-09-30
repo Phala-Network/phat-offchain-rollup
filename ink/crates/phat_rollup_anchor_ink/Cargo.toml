@@ -1,0 +1,31 @@
+[package]
+name = "phat_rollup_anchor_ink"
+version = "0.0.1"
+authors = ["GuiGou"]
+edition = "2021"
+
+[dependencies]
+ink = { version = "4.3.0", default-features = false }
+
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2.6", default-features = false, features = ["derive"], optional = true }
+kv-session = { package = "pink-kv-session", version = "0.2" }
+
+openbrush = { git = "https://github.com/Brushfam/openbrush-contracts", version = "4.0.0-beta", features = ["ownable", "access_control"], default-features = false }
+
+[dev-dependencies]
+hex-literal = "0.4.1"
+ink_e2e = { version = "4.3.0" }
+subxt-signer = { version = "0.31.0" }
+
+[lib]
+path = "src/lib.rs"
+
+[features]
+default = ["std"]
+std = [
+    "ink/std",
+    "scale/std",
+    "scale-info/std",
+    "openbrush/std",
+]

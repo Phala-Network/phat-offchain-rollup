@@ -1,0 +1,35 @@
+[package]
+name = "test_oracle"
+version = "0.0.1"
+authors = ["GuiGou"]
+edition = "2021"
+
+[dependencies]
+ink = { version = "4.3.0", default-features = false }
+
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
+
+openbrush = { git = "https://github.com/Brushfam/openbrush-contracts", version = "4.0.0-beta", features = ["ownable", "access_control"], default-features = false }
+
+phat_rollup_anchor_ink = { path = "../../crates/phat_rollup_anchor_ink", default-features = false}
+
+[dev-dependencies]
+ink_e2e = { version = "4.3.0" }
+hex-literal = { version = "0.4.1" }
+subxt-signer = { version = "0.31.0" }
+
+[lib]
+path = "lib.rs"
+
+[features]
+default = ["std"]
+std = [
+    "ink/std",
+    "scale/std",
+    "scale-info/std",
+    "openbrush/std",
+    "phat_rollup_anchor_ink/std",
+]
+ink-as-dependency = []
+e2e-tests = []
