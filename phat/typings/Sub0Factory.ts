@@ -1,88 +1,183 @@
 import type * as PhalaSdk from "@phala/sdk";
 import type * as DevPhase from "@devphase/service";
-import type * as DPT from "@devphase/service/etc/typings";
 import type { ContractCallResult, ContractQuery } from "@polkadot/api-contract/base/types";
 import type { ContractCallOutcome, ContractOptions } from "@polkadot/api-contract/types";
-import type { Codec } from "@polkadot/types/types";
+import type { ContractExecResult } from "@polkadot/types/interfaces/contracts";
+import type * as DPT from "@devphase/service/etc/typings";
+import type * as PT from "@polkadot/types";
+import type * as PTI from "@polkadot/types/interfaces";
+import type * as PTT from "@polkadot/types/types";
+
+
+/** */
+/** Exported types */
+/** */
+
+export namespace InkPrimitives {
+    export interface LangError {
+        couldNotReadInput?: null;
+    }
+
+    export namespace LangError$ {
+        export enum Enum {
+            CouldNotReadInput = "CouldNotReadInput"
+        }
+
+        export type Human = InkPrimitives.LangError$.Enum.CouldNotReadInput;
+        export type Codec = DPT.Enum<InkPrimitives.LangError$.Enum.CouldNotReadInput, never, never, PTT.Codec>;
+    }
+}
 
 export namespace Sub0Factory {
-    type InkPrimitives_Types_AccountId$1 = any;
-    type InkPrimitives_Types_Hash$2 = any;
-    type InkPrimitives_LangError$5 = {
-        CouldNotReadInput? : null
-        };
-    type Result$3 = {
-        Ok? : never[],
-        Err? : InkPrimitives_LangError$5
-        };
-    type Sub0Factory_Sub0Factory_Error$8 = {
-        BadOrigin? : null,
-        NotConfigured? : null,
-        InvalidKeyLength? : null,
-        FailedToDeployContract? : null,
-        FailedToConfigContract? : null,
-        FailedToTransferOwnership? : null
-        };
-    type Result$7 = {
-        Ok? : never[],
-        Err? : Sub0Factory_Sub0Factory_Error$8
-        };
-    type Result$6 = {
-        Ok? : Result$7,
-        Err? : InkPrimitives_LangError$5
-        };
-    type Result$10 = {
-        Ok? : [ number, InkPrimitives_Types_Hash$2 ],
-        Err? : Sub0Factory_Sub0Factory_Error$8
-        };
-    type Result$9 = {
-        Ok? : Result$10,
-        Err? : InkPrimitives_LangError$5
-        };
-    type Result$13 = {
-        Ok? : InkPrimitives_Types_AccountId$1,
-        Err? : Sub0Factory_Sub0Factory_Error$8
-        };
-    type Result$12 = {
-        Ok? : Result$13,
-        Err? : InkPrimitives_LangError$5
-        };
-    type Sub0Factory_Sub0Factory_Deployment$16 = { name: string, owner: InkPrimitives_Types_AccountId$1, contract_id: InkPrimitives_Types_AccountId$1, created_at: number, expired_at: number };
-    type Result$15 = {
-        Ok? : Sub0Factory_Sub0Factory_Deployment$16[],
-        Err? : Sub0Factory_Sub0Factory_Error$8
-        };
-    type Result$14 = {
-        Ok? : Result$15,
-        Err? : InkPrimitives_LangError$5
-        };
-    type Result$17 = {
-        Ok? : InkPrimitives_Types_AccountId$1,
-        Err? : InkPrimitives_LangError$5
-        };
-    type PinkExtension_ChainExtension_PinkExt$18 = {
+    export interface Error {
+        badOrigin?: null;
+        notConfigured?: null;
+        invalidKeyLength?: null;
+        failedToDeployContract?: null;
+        failedToConfigContract?: null;
+        failedToTransferOwnership?: null;
+    }
 
-        };
+    export interface Deployment {
+        name: string;
+        owner: string | number[];
+        contractId: string | number[];
+        createdAt: number;
+        expiredAt: number;
+    }
 
+    export namespace Error$ {
+        export enum Enum {
+            BadOrigin = "BadOrigin",
+            NotConfigured = "NotConfigured",
+            InvalidKeyLength = "InvalidKeyLength",
+            FailedToDeployContract = "FailedToDeployContract",
+            FailedToConfigContract = "FailedToConfigContract",
+            FailedToTransferOwnership = "FailedToTransferOwnership"
+        }
+
+        export type Human = Sub0Factory.Error$.Enum.BadOrigin
+            | Sub0Factory.Error$.Enum.NotConfigured
+            | Sub0Factory.Error$.Enum.InvalidKeyLength
+            | Sub0Factory.Error$.Enum.FailedToDeployContract
+            | Sub0Factory.Error$.Enum.FailedToConfigContract
+            | Sub0Factory.Error$.Enum.FailedToTransferOwnership;
+        export type Codec = DPT.Enum<Sub0Factory.Error$.Enum.BadOrigin, never, never, PTT.Codec>
+            | DPT.Enum<Sub0Factory.Error$.Enum.NotConfigured, never, never, PTT.Codec>
+            | DPT.Enum<Sub0Factory.Error$.Enum.InvalidKeyLength, never, never, PTT.Codec>
+            | DPT.Enum<Sub0Factory.Error$.Enum.FailedToDeployContract, never, never, PTT.Codec>
+            | DPT.Enum<Sub0Factory.Error$.Enum.FailedToConfigContract, never, never, PTT.Codec>
+            | DPT.Enum<Sub0Factory.Error$.Enum.FailedToTransferOwnership, never, never, PTT.Codec>;
+    }
+
+    export namespace Deployment$ {
+        export interface Human {
+            name: string;
+            owner: string;
+            contractId: string;
+            createdAt: number;
+            expiredAt: number;
+        }
+
+        export interface Codec extends DPT.Json<Sub0Factory.Deployment, Sub0Factory.Deployment$.Human> {
+            name: PT.Text;
+            owner: PTI.AccountId;
+            contractId: PTI.AccountId;
+            createdAt: PT.U64;
+            expiredAt: PT.U64;
+        }
+    }
+}
+
+export namespace PinkExtension {
+    export namespace ChainExtension {
+        export type PinkExt = any;
+
+        export namespace PinkExt$ {
+            export type Enum = any;
+            export type Human = any;
+            export type Codec = any;
+        }
+    }
+}
+
+export namespace Sub0Factory {
     /** */
     /** Queries */
     /** */
     namespace ContractQuery {
+        export interface Config extends DPT.ContractQuery {
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+                rpc: string | PT.Text,
+                pallet_id: number | PT.U8,
+                submit_key: number[] | string | PT.Vec<PT.U8>,
+                price_feed_code: string | number[] | PTI.Hash,
+            ): DPT.CallReturn<
+                ContractExecResult
+            >;
+        }
+
         export interface GetConfig extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result$9>>>;
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+            ): DPT.CallReturn<
+                DPT.Result$.Codec<
+                    DPT.Result$.Codec<
+                        PTT.ITuple<[PT.U8, PTI.Hash]>,
+                        Sub0Factory.Error$.Codec
+                    >,
+                    InkPrimitives.LangError$.Codec
+                >
+            >;
+        }
+
+        export interface DeployPriceFeed extends DPT.ContractQuery {
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+                name: string | PT.Text,
+                token0: string | PT.Text,
+                token1: string | PT.Text,
+            ): DPT.CallReturn<
+                ContractExecResult
+            >;
         }
 
         export interface GetDeployments extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result$14>>>;
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+            ): DPT.CallReturn<
+                DPT.Result$.Codec<
+                    DPT.Result$.Codec<
+                        PT.Vec<Sub0Factory.Deployment$.Codec>,
+                        Sub0Factory.Error$.Codec
+                    >,
+                    InkPrimitives.LangError$.Codec
+                >
+            >;
         }
 
         export interface Owner extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result$17>>>;
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+            ): DPT.CallReturn<
+                DPT.Result$.Codec<
+                    PTI.AccountId,
+                    InkPrimitives.LangError$.Codec
+                >
+            >;
         }
     }
 
-    export interface MapMessageQuery extends DPT.MapMessageQuery {
+    interface MapMessageQuery extends DPT.MapMessageQuery {
+        config: ContractQuery.Config;
         getConfig: ContractQuery.GetConfig;
+        deployPriceFeed: ContractQuery.DeployPriceFeed;
         getDeployments: ContractQuery.GetDeployments;
         owner: ContractQuery.Owner;
     }
@@ -92,7 +187,7 @@ export namespace Sub0Factory {
     /** */
     namespace ContractTx {
         export interface Config extends DPT.ContractTx {
-            (options: ContractOptions, rpc: string, pallet_id: number, submit_key: number[] | string, price_feed_code: InkPrimitives_Types_Hash$2): DPT.SubmittableExtrinsic;
+            (options: ContractOptions, rpc: string, pallet_id: number, submit_key: number[] | string, price_feed_code: string | number[]): DPT.SubmittableExtrinsic;
         }
 
         export interface DeployPriceFeed extends DPT.ContractTx {
@@ -100,7 +195,7 @@ export namespace Sub0Factory {
         }
     }
 
-    export interface MapMessageTx extends DPT.MapMessageTx {
+    interface MapMessageTx extends DPT.MapMessageTx {
         config: ContractTx.Config;
         deployPriceFeed: ContractTx.DeployPriceFeed;
     }
@@ -116,7 +211,7 @@ export namespace Sub0Factory {
     /** */
     /** Contract factory */
     /** */
-    export declare class Factory extends DevPhase.ContractFactory {
-        instantiate<T = Contract>(constructor: "default", params: never[], options?: DevPhase.InstantiateOptions): Promise<T>;
+    export declare class Factory extends DevPhase.ContractFactory<Contract> {
+        instantiate(constructor: "default", params: never[], options?: DevPhase.InstantiateOptions): Promise<Contract>;
     }
 }
