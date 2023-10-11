@@ -25,10 +25,6 @@ sub_price_feed = { path = "../sub_price_feed", features = ["ink-as-dependency"] 
 [lib]
 name = "local_scheduler"
 path = "lib.rs"
-crate-type = [
-	# Used for normal contract Wasm blobs.
-	"cdylib",
-]
 
 [features]
 default = ["std"]

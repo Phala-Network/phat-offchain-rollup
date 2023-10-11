@@ -20,10 +20,7 @@ fixed = { version = "1", default-features = false, features = ["serde"] }
 pink-extension = { version = "0.4.1", default-features = false }
 pink-json = { git = "https://github.com/Phala-Network/pink-json.git", branch = "pink", default-features = false, features = ["de-number-as-str"] }
 pink-web3 = { version = "0.20.1", default-features = false, features = ["pink", "signing"] }
-ethabi = { version = "18.0.0", default-features = false, features = [
-    "serde",
-    "rlp",
-] }
+ethabi = { version = "18.0.0", default-features = false, features = ["serde", "rlp"] }
 
 phat_offchain_rollup = { path = "../../crates/rollup", default-features = false, features = ["evm"] }
 pink-kv-session = "0.2"
@@ -40,11 +37,6 @@ hex-literal = "0.3"
 [lib]
 name = "evm_price_feed"
 path = "lib.rs"
-crate-type = [
-	# Used for normal contract Wasm blobs.
-	"cdylib",
-    "lib",
-]
 
 [features]
 default = ["std"]

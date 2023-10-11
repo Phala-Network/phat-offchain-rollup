@@ -35,11 +35,6 @@ hex-literal = "0.3"
 [lib]
 name = "sub_price_feed"
 path = "lib.rs"
-crate-type = [
-	# Used for normal contract Wasm blobs.
-	"cdylib",
-    "lib",
-]
 
 [features]
 default = ["std"]
