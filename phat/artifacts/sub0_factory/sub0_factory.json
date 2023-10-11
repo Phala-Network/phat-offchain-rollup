@@ -1,12 +1,12 @@
 {
   "source": {
-    "hash": "0xc44e0056aa88b893cbb7dfe5d822b6dcd94a2aefced8dcf3bb758a32e34bc3d9",
-    "language": "ink! 4.0.1",
-    "compiler": "rustc 1.69.0-nightly",
+    "hash": "0x21952287ed30f3b0ca74553760ce8124d1c19894975d5ecfe019fb2cd8b136b1",
+    "language": "ink! 4.3.0",
+    "compiler": "rustc 1.73.0",
     "build_info": {
       "build_mode": "Debug",
-      "cargo_contract_version": "2.1.0",
-      "rust_toolchain": "nightly-x86_64-unknown-linux-gnu",
+      "cargo_contract_version": "3.2.0",
+      "rust_toolchain": "stable-x86_64-unknown-linux-gnu",
       "wasm_opt_settings": {
         "keep_debug_symbols": false,
         "optimization_passes": "Z"
@@ -24,6 +24,7 @@
     "constructors": [
       {
         "args": [],
+        "default": false,
         "docs": [],
         "label": "default",
         "payable": false,
@@ -38,6 +39,45 @@
       }
     ],
     "docs": [],
+    "environment": {
+      "accountId": {
+        "displayName": [
+          "AccountId"
+        ],
+        "type": 0
+      },
+      "balance": {
+        "displayName": [
+          "Balance"
+        ],
+        "type": 25
+      },
+      "blockNumber": {
+        "displayName": [
+          "BlockNumber"
+        ],
+        "type": 7
+      },
+      "chainExtension": {
+        "displayName": [
+          "ChainExtension"
+        ],
+        "type": 26
+      },
+      "hash": {
+        "displayName": [
+          "Hash"
+        ],
+        "type": 4
+      },
+      "maxEventTopics": 4,
+      "timestamp": {
+        "displayName": [
+          "Timestamp"
+        ],
+        "type": 23
+      }
+    },
     "events": [],
     "lang_error": {
       "displayName": [
@@ -86,6 +126,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [
           " Configures the contract, only by the contract owner"
         ],
@@ -103,6 +144,7 @@
       },
       {
         "args": [],
+        "default": false,
         "docs": [
           " Returns the current public config"
         ],
@@ -148,6 +190,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [
           " Deploys a SubPriceFeed contract"
         ],
@@ -165,6 +208,7 @@
       },
       {
         "args": [],
+        "default": false,
         "docs": [
           " Returns all the deployments"
         ],
@@ -182,6 +226,7 @@
       },
       {
         "args": [],
+        "default": false,
         "docs": [
           " Gets the owner of the contract"
         ],
@@ -960,6 +1005,27 @@
         ],
         "path": [
           "Result"
+        ]
+      }
+    },
+    {
+      "id": 25,
+      "type": {
+        "def": {
+          "primitive": "u128"
+        }
+      }
+    },
+    {
+      "id": 26,
+      "type": {
+        "def": {
+          "variant": {}
+        },
+        "path": [
+          "pink_extension",
+          "chain_extension",
+          "PinkExt"
         ]
       }
     }
