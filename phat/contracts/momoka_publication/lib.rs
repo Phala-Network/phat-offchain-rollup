@@ -268,14 +268,19 @@ mod momoka_publication {
             let (profile_id, pub_id) = Self::extract_ids(publication_id)?;
             // free collect action
             let collect_act = H160::from(match mainnet {
-                true => hex_literal::hex!("f4054E308f7804E34713c114A0c9e48E786A9a4C"),
-                false => hex_literal::hex!("f4054E308f7804E34713c114A0c9e48E786A9a4C"),
+                true => hex_literal::hex!("027AfbD7628221A0222eD4851EE63dF449d9dAE7"),
+                false => hex_literal::hex!("027AfbD7628221A0222eD4851EE63dF449d9dAE7"),
+            });
+            let free_collect = H160::from(match mainnet {
+                true => hex_literal::hex!("2adb3d8fC5E5BB5552a342A0FB9fC23Ffb5d1Eee"),
+                false => hex_literal::hex!("2adb3d8fC5E5BB5552a342A0FB9fC23Ffb5d1Eee"),
             });
             Ok(evm_act_oracle_response_with_collect_act(
                 profile_id,
                 pub_id,
                 publication,
                 collect_act,
+                free_collect,
             ))
         }
 
@@ -357,6 +362,7 @@ mod momoka_publication {
         pub_id: U256,
         publication: Token,
         collect_act: H160,
+        free_collect_addr: H160
     ) -> Token {
         Token::Tuple(vec![
             Token::Uint(profile_id),
@@ -370,7 +376,10 @@ mod momoka_publication {
             ]),
             // action_modules_init_data
             Token::Array(vec![
-                Token::Bytes(vec![])
+                Token::Bytes(ethabi::encode(&[
+                    Token::Address(free_collect_addr),
+                    Token::Bytes(vec![])
+                ]))
             ]),
             // referrer_profile_ids
             Token::Array(vec![]),
