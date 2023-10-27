@@ -4,6 +4,11 @@ This package contains implementation designed for integration with Solidity base
 
 ## Installation
 
+We have tested with hardhat and Foundry. Truffle should be fine because it can import dependencies from the node_modules folder.
+
+> [!WARNING]
+> We recommend not using `forge install` if you are using Foundry, as it always uses the latest commit from the main branch. This can lead to version control issues and potential conflicts with dependencies. Instead, we suggest using `npm` or `yarn` as examples here.
+
 ### npm
 
 ```shell
@@ -15,6 +20,22 @@ npm install --save-dev @phala/solidity
 ```shell
 yarn add --dev @phala/solidity
 ```
+
+### Setup remapping for Foundry
+
+If you don't have the `remappings.txt`, you need to export remapping.
+
+```shell
+forge remappings > remappings.txt
+```
+
+And then added these two lines.
+
+```txt
+@openzeppelin/=node_modules/@openzeppelin/
+@phala/solidity/=node_modules/@phala/solidity/
+```
+
 
 ## Usage
 
