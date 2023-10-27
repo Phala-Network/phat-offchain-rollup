@@ -1,8 +1,21 @@
 {
-  "name": "phat-rollup-anchor",
-  "version": "1.0.0",
+  "name": "@phala/solidity",
+  "version": "0.0.3",
   "main": "index.js",
   "license": "MIT",
+  "files": [
+    "contracts/MetaTransaction.sol",
+    "contracts/PhatRollupAnchor.sol"
+  ],
+  "keywords": [
+    "solidity",
+    "ethereum",
+    "smart",
+    "contracts",
+    "oracle",
+    "vrf",
+    "rollup"
+  ],
   "devDependencies": {
     "@ethersproject/abi": "^5.4.7",
     "@ethersproject/providers": "^5.4.7",
