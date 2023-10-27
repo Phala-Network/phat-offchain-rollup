@@ -2,7 +2,7 @@
 
 ## Prepare the environment
 
-1. Initialize git submodules, and install yarn v1, node v16, and the dependencies:
+1. Initialize git submodules, and install yarn v1, node v18, and the dependencies:
 
     ```bash
     git submodule update --init
@@ -10,7 +10,14 @@
     (cd setup; yarn)
     ```
 
-2. Try to start the local stack. devphase will download the selected prebuilt binaries from Github at the first time.
+2. Update rust and cargo-contract (>= 3.2.0):
+
+    ```bash
+    rustup update
+    cargo install --force --locked cargo-contract
+    ```
+
+3. Try to start the local stack. devphase will download the selected prebuilt binaries from Github at the first time.
 
     ```bash
     yarn devphase stack

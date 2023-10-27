@@ -2743,8 +2743,7 @@ checksum = "836fa6a3e1e547f9a2c4040802ec865b5d85f4014efe00555d7090a3dcaa1090"
 [[package]]
 name = "serde"
 version = "1.0.188"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf9e0fcba69a370eed61bcf2b728575f726b50b55cba78064753d708ddc7549e"
+source = "git+https://github.com/kvinwang/serde.git?branch=patched-v1.0.188#bf5c222f4f6742270743ecc75539ec6a00c24a03"
 dependencies = [
  "serde_derive",
 ]
@@ -2761,8 +2760,7 @@ dependencies = [
 [[package]]
 name = "serde_derive"
 version = "1.0.188"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4eca7ac642d82aa35b60049a6eccb4be6be75e599bd2e9adb5f875a737654af2"
+source = "git+https://github.com/kvinwang/serde.git?branch=patched-v1.0.188#bf5c222f4f6742270743ecc75539ec6a00c24a03"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4124,8 +4122,3 @@ source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-4.0.1#69d3
 name = "ink_env"
 version = "4.0.1"
 source = "git+https://github.com/Phala-Network/ink.git?branch=advtest-4.0.1#69d3017129608599796e9ec1c4d5ad16e347b322"
-
-[[patch.unused]]
-name = "serde"
-version = "1.0.147"
-source = "git+https://github.com/kvinwang/serde.git?branch=pink#0d6920a81befce8e44b854dc67738b0c640247e6"

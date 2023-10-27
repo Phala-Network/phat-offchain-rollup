@@ -6,14 +6,12 @@ import type { KeyringPair } from '@polkadot/keyring/types';
 import { ContractType } from '@devphase/service';
 
 import 'dotenv/config';
-import { LocalScheduler } from '@/typings/LocalScheduler';
 
 async function delay(ms: number): Promise<void> {
     return new Promise( resolve => setTimeout(resolve, ms) );
 }
 
 describe('Substrate Offchain Rollup', () => {
-    const httpRpc: string = "http://localhost:39933";
     const secretBob: string = "0x398f0c28f98885e046333d4a41c19cee4c37368a9832c6502f6cfd182e2aef89";
     const defaultDelay: number = 10_000;
     const defaultTimeout: number = 120_000;
@@ -25,11 +23,13 @@ describe('Substrate Offchain Rollup', () => {
     let sub0: Sub0Factory.Contract;
 
     let api: ApiPromise;
+    let httpRpc: string;
     let alice : KeyringPair;
     let certAlice : PhalaSdk.CertificateData;
     const txConf = { gasLimit: "10000000000000", storageDepositLimit: null };
 
     before(async function() {
+        httpRpc = this.devPhase.networkConfig.nodeUrl;
         priceFeedFactory = await this.devPhase.getFactory('sub_price_feed', {
             contractType: ContractType.InkCode,
         });

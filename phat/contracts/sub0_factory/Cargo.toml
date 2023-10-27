@@ -38,7 +38,7 @@ ink-as-dependency = []
 
 # Leave for `cargo contract` build.
 [patch.crates-io]
-serde = { git = "https://github.com/kvinwang/serde.git", branch = "pink" }
+serde = { git = "https://github.com/kvinwang/serde.git", branch = "patched-v1.0.188" }
 
 # Necessary due to the cargo bug bug: https://github.com/rust-lang/cargo/issues/10118
 [profile.release]

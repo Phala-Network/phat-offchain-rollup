@@ -5,6 +5,7 @@ extern crate alloc;
 #[ink::contract(env = pink_extension::PinkEnvironment)]
 mod sub0_factory {
     use alloc::{string::String, vec, vec::Vec};
+    #[cfg(feature = "std")]
     use ink::storage::traits::StorageLayout;
     use pink_extension::ResultExt;
     use scale::{Decode, Encode};

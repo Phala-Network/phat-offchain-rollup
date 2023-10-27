@@ -13,7 +13,7 @@ ink = { version = "4.3.0", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"], optional = true }
-serde = { version = "1.0.188", default-features = false, features = ["derive", "alloc"]}
+serde = { version = "1", default-features = false, features = ["derive", "alloc"]}
 fixed = { version = "1", default-features = false, features = ["serde"] }
 
 pink-extension = { version = "0.4.4", default-features = false }
