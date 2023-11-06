@@ -29,7 +29,7 @@ describe('Substrate Offchain Rollup', () => {
     const txConf = { gasLimit: "10000000000000", storageDepositLimit: null };
 
     before(async function() {
-        httpRpc = this.devPhase.networkConfig.nodeUrl;
+        httpRpc = this.devPhase.networkConfig.nodeUrl.replace('ws', 'http');
         priceFeedFactory = await this.devPhase.getFactory('sub_price_feed', {
             contractType: ContractType.InkCode,
         });
@@ -59,7 +59,7 @@ describe('Substrate Offchain Rollup', () => {
         });
 
         it('should have correct owners', async function() {
-            const feedOwner = await priceFeed.query.owner({ cert: certAlice }, {});
+            const feedOwner = await priceFeed.query.owner(alice.address, { cert: certAlice });
             expect(feedOwner.result.isOk).to.be.true;
             expect(feedOwner.output.asOk.toString()).to.be.equal(alice.address.toString());
         });
@@ -75,7 +75,7 @@ describe('Substrate Offchain Rollup', () => {
             await delay(defaultDelay);
 
             // Init the rollup on the blockchain
-            const init = await priceFeed.query.maybeInitRollup({ cert: certAlice }, {});
+            const init = await priceFeed.query.maybeInitRollup(alice.address, { cert: certAlice });
             console.log('Result: ', init.result.toHuman())
             console.log('Output: ', init.output.toHuman())
             expect(init.result.isOk).to.be.true;
@@ -86,7 +86,7 @@ describe('Substrate Offchain Rollup', () => {
         it('can submit tx', async function() {
             this.timeout(defaultTimeout);
 
-            const feed = await priceFeed.query.feedPrice({ cert: certAlice }, {});
+            const feed = await priceFeed.query.feedPrice(alice.address, { cert: certAlice });
             expect(feed.result.isOk).to.be.true;
             expect(feed.output.isOk).to.be.true;
             expect(feed.output.asOk.isOk).to.be.true;
@@ -108,7 +108,7 @@ describe('Substrate Offchain Rollup', () => {
         });
 
         it('should have correct owners', async function() {
-            const sub0Owner = await sub0.query.owner({ cert: certAlice }, {});
+            const sub0Owner = await sub0.query.owner(alice.address, { cert: certAlice });
             expect(sub0Owner.result.isOk).to.be.true;
             expect(sub0Owner.output.asOk.toString()).to.be.equal(alice.address.toString());
         });
@@ -123,7 +123,7 @@ describe('Substrate Offchain Rollup', () => {
             console.log('Sub0Factory configured', sub0Config.toHuman());
             await delay(4*1000);
 
-            const config = await sub0.query.getConfig({ cert: certAlice }, {})
+            const config = await sub0.query.getConfig(alice.address, { cert: certAlice })
             expect(config.result.isOk).to.be.true;
             expect(config.output.isOk).to.be.true;
             expect(config.output.asOk.asOk.length).to.be.equal(2);
@@ -141,7 +141,7 @@ describe('Substrate Offchain Rollup', () => {
             console.log('PriceFeed1&2 deployed', deploy.toHuman());
             await delay(defaultDelay);
 
-            let deployments = await sub0.query.getDeployments({ cert: certAlice }, {});
+            let deployments = await sub0.query.getDeployments(alice.address, { cert: certAlice });
             expect(deployments.result.isOk).to.be.true;
             expect(deployments.output.asOk.asOk.length).to.be.equal(2);
 
@@ -157,14 +157,14 @@ describe('Substrate Offchain Rollup', () => {
             this.timeout(defaultTimeout);
 
             // Init the rollup on the blockchain
-            const init = await priceFeed1.query.maybeInitRollup({ cert: certAlice }, {});
+            const init = await priceFeed1.query.maybeInitRollup(alice.address, { cert: certAlice });
             expect(init.result.isOk).to.be.true;
             expect(init.output.isOk).to.be.true;
             expect(init.output.asOk.isOk).to.be.true;
             await delay(defaultDelay);
 
             // Trigger a rollup
-            const feed = await priceFeed1.query.feedPrice({ cert: certAlice }, {});
+            const feed = await priceFeed1.query.feedPrice(alice.address, { cert: certAlice });
             expect(feed.result.isOk).to.be.true;
             expect(feed.output.isOk).to.be.true;
             expect(feed.output.asOk.isOk).to.be.true;
