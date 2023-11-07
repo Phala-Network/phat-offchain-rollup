@@ -1,4 +1,4 @@
-#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 extern crate alloc;
 
@@ -7,6 +7,7 @@ pub use crate::sub_price_feed::*;
 #[ink::contract(env = pink_extension::PinkEnvironment)]
 mod sub_price_feed {
     use alloc::{format, string::String, vec, vec::Vec};
+    #[cfg(feature = "std")]
     use ink::storage::traits::StorageLayout;
     use pink_extension as pink;
     use scale::{Decode, Encode};

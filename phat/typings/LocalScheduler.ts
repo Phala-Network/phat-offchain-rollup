@@ -1,105 +1,261 @@
 import type * as PhalaSdk from "@phala/sdk";
 import type * as DevPhase from "@devphase/service";
-import type * as DPT from "@devphase/service/etc/typings";
 import type { ContractCallResult, ContractQuery } from "@polkadot/api-contract/base/types";
 import type { ContractCallOutcome, ContractOptions } from "@polkadot/api-contract/types";
-import type { Codec } from "@polkadot/types/types";
+import type { ContractExecResult } from "@polkadot/types/interfaces/contracts";
+import type * as DPT from "@devphase/service/etc/typings";
+import type * as PT from "@polkadot/types";
+import type * as PTI from "@polkadot/types/interfaces";
+import type * as PTT from "@polkadot/types/types";
+
+
+/** */
+/** Exported types */
+/** */
+
+export namespace InkPrimitives {
+    export interface LangError {
+        couldNotReadInput?: null;
+    }
+
+    export namespace LangError$ {
+        export enum Enum {
+            CouldNotReadInput = "CouldNotReadInput"
+        }
+
+        export type Human = InkPrimitives.LangError$.Enum.CouldNotReadInput;
+        export type Codec = DPT.Enum<InkPrimitives.LangError$.Enum.CouldNotReadInput, never, never, PTT.Codec>;
+    }
+}
 
 export namespace LocalScheduler {
-    type InkPrimitives_Types_AccountId$1 = any;
-    type InkPrimitives_LangError$4 = {
-        CouldNotReadInput? : null
-        };
-    type Result$2 = {
-        Ok? : never[],
-        Err? : InkPrimitives_LangError$4
-        };
-    type Result$5 = {
-        Ok? : number,
-        Err? : InkPrimitives_LangError$4
-        };
-    type LocalScheduler_LocalScheduler_JobConfig$8 = { name: string, cron_expr: string, target: InkPrimitives_Types_AccountId$1, call: number[] | string, enabled: boolean };
-    type LocalScheduler_LocalScheduler_Error$9 = {
-        BadOrigin? : null,
-        JobNotFound? : null,
-        NotChanged? : null,
-        InvalidCronExpression? : null,
-        CronExpressionNeverFire? : null,
-        InternalErrorCacheCorrupted? : null,
-        CallDataTooShort? : null,
-        FailedToExecuteCall? : null,
-        CalledJobReturnedError? : null
-        };
-    type Result$7 = {
-        Ok? : LocalScheduler_LocalScheduler_JobConfig$8,
-        Err? : LocalScheduler_LocalScheduler_Error$9
-        };
-    type Result$6 = {
-        Ok? : Result$7,
-        Err? : InkPrimitives_LangError$4
-        };
-    type Result$10 = {
-        Ok? : number[] | string,
-        Err? : InkPrimitives_LangError$4
-        };
-    type Result$12 = {
-        Ok? : never[],
-        Err? : LocalScheduler_LocalScheduler_Error$9
-        };
-    type Result$11 = {
-        Ok? : Result$12,
-        Err? : InkPrimitives_LangError$4
-        };
-    type Option$14 = {
-        None? : null,
-        Some? : [ number, LocalScheduler_LocalScheduler_JobConfig$8 ]
-        };
-    type Result$13 = {
-        Ok? : Option$14,
-        Err? : InkPrimitives_LangError$4
-        };
-    type Result$16 = {
-        Ok? : InkPrimitives_Types_AccountId$1,
-        Err? : InkPrimitives_LangError$4
-        };
-    type InkPrimitives_Types_Hash$17 = any;
-    type PinkExtension_ChainExtension_PinkExt$18 = {
+    export interface JobConfig {
+        name: string;
+        cronExpr: string;
+        target: string | number[];
+        call: number[] | string;
+        enabled: boolean;
+    }
 
-        };
+    export interface Error {
+        badOrigin?: null;
+        jobNotFound?: null;
+        notChanged?: null;
+        invalidCronExpression?: null;
+        cronExpressionNeverFire?: null;
+        internalErrorCacheCorrupted?: null;
+        callDataTooShort?: null;
+        failedToExecuteCall?: null;
+        calledJobReturnedError?: null;
+    }
 
+    export namespace JobConfig$ {
+        export interface Human {
+            name: string;
+            cronExpr: string;
+            target: string;
+            call: number[] | string;
+            enabled: boolean;
+        }
+
+        export interface Codec extends DPT.Json<LocalScheduler.JobConfig, LocalScheduler.JobConfig$.Human> {
+            name: PT.Text;
+            cronExpr: PT.Text;
+            target: PTI.AccountId;
+            call: PT.Vec<PT.U8>;
+            enabled: PT.Bool;
+        }
+    }
+
+    export namespace Error$ {
+        export enum Enum {
+            BadOrigin = "BadOrigin",
+            JobNotFound = "JobNotFound",
+            NotChanged = "NotChanged",
+            InvalidCronExpression = "InvalidCronExpression",
+            CronExpressionNeverFire = "CronExpressionNeverFire",
+            InternalErrorCacheCorrupted = "InternalErrorCacheCorrupted",
+            CallDataTooShort = "CallDataTooShort",
+            FailedToExecuteCall = "FailedToExecuteCall",
+            CalledJobReturnedError = "CalledJobReturnedError"
+        }
+
+        export type Human = LocalScheduler.Error$.Enum.BadOrigin
+            | LocalScheduler.Error$.Enum.JobNotFound
+            | LocalScheduler.Error$.Enum.NotChanged
+            | LocalScheduler.Error$.Enum.InvalidCronExpression
+            | LocalScheduler.Error$.Enum.CronExpressionNeverFire
+            | LocalScheduler.Error$.Enum.InternalErrorCacheCorrupted
+            | LocalScheduler.Error$.Enum.CallDataTooShort
+            | LocalScheduler.Error$.Enum.FailedToExecuteCall
+            | LocalScheduler.Error$.Enum.CalledJobReturnedError;
+        export type Codec = DPT.Enum<LocalScheduler.Error$.Enum.BadOrigin, never, never, PTT.Codec>
+            | DPT.Enum<LocalScheduler.Error$.Enum.JobNotFound, never, never, PTT.Codec>
+            | DPT.Enum<LocalScheduler.Error$.Enum.NotChanged, never, never, PTT.Codec>
+            | DPT.Enum<LocalScheduler.Error$.Enum.InvalidCronExpression, never, never, PTT.Codec>
+            | DPT.Enum<LocalScheduler.Error$.Enum.CronExpressionNeverFire, never, never, PTT.Codec>
+            | DPT.Enum<LocalScheduler.Error$.Enum.InternalErrorCacheCorrupted, never, never, PTT.Codec>
+            | DPT.Enum<LocalScheduler.Error$.Enum.CallDataTooShort, never, never, PTT.Codec>
+            | DPT.Enum<LocalScheduler.Error$.Enum.FailedToExecuteCall, never, never, PTT.Codec>
+            | DPT.Enum<LocalScheduler.Error$.Enum.CalledJobReturnedError, never, never, PTT.Codec>;
+    }
+}
+
+export namespace PinkExtension {
+    export namespace ChainExtension {
+        export type PinkExt = any;
+
+        export namespace PinkExt$ {
+            export type Enum = any;
+            export type Human = any;
+            export type Codec = any;
+        }
+    }
+}
+
+export namespace LocalScheduler {
     /** */
     /** Queries */
     /** */
     namespace ContractQuery {
         export interface GetNumJobs extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result$5>>>;
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+            ): DPT.CallReturn<
+                DPT.Result$.Codec<
+                    PT.U32,
+                    InkPrimitives.LangError$.Codec
+                >
+            >;
         }
 
         export interface GetJob extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions, idx: number): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result$6>>>;
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+                idx: number | PT.U32,
+            ): DPT.CallReturn<
+                DPT.Result$.Codec<
+                    DPT.Result$.Codec<
+                        LocalScheduler.JobConfig$.Codec,
+                        LocalScheduler.Error$.Codec
+                    >,
+                    InkPrimitives.LangError$.Codec
+                >
+            >;
         }
 
         export interface GetActiveJobs extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result$10>>>;
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+            ): DPT.CallReturn<
+                DPT.Result$.Codec<
+                    PT.Vec<PT.U32>,
+                    InkPrimitives.LangError$.Codec
+                >
+            >;
+        }
+
+        export interface AddJob extends DPT.ContractQuery {
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+                name: string | PT.Text,
+                cron_expr: string | PT.Text,
+                target: string | number[] | PTI.AccountId,
+                call: number[] | string | PT.Vec<PT.U8>,
+            ): DPT.CallReturn<
+                ContractExecResult
+            >;
+        }
+
+        export interface SetJobCron extends DPT.ContractQuery {
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+                id: number | PT.U32,
+                cron_expr: string | PT.Text,
+            ): DPT.CallReturn<
+                ContractExecResult
+            >;
+        }
+
+        export interface SetJobTarget extends DPT.ContractQuery {
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+                id: number | PT.U32,
+                target: string | number[] | PTI.AccountId,
+                call: number[] | string | PT.Vec<PT.U8>,
+            ): DPT.CallReturn<
+                ContractExecResult
+            >;
+        }
+
+        export interface SetJobEnabled extends DPT.ContractQuery {
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+                id: number | PT.U32,
+                enabled: boolean | PT.Bool,
+            ): DPT.CallReturn<
+                ContractExecResult
+            >;
         }
 
         export interface GetJobSchedule extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions, id: number): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result$13>>>;
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+                id: number | PT.U32,
+            ): DPT.CallReturn<
+                DPT.Result$.Codec<
+                    DPT.Option$.Codec<
+                        PTT.ITuple<[PT.U64, LocalScheduler.JobConfig$.Codec]>
+                    >,
+                    InkPrimitives.LangError$.Codec
+                >
+            >;
         }
 
         export interface Owner extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result$16>>>;
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+            ): DPT.CallReturn<
+                DPT.Result$.Codec<
+                    PTI.AccountId,
+                    InkPrimitives.LangError$.Codec
+                >
+            >;
         }
 
         export interface Poll extends DPT.ContractQuery {
-            (certificateData: PhalaSdk.CertificateData, options: ContractOptions): DPT.CallResult<DPT.CallOutcome<DPT.IJson<Result$11>>>;
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+            ): DPT.CallReturn<
+                DPT.Result$.Codec<
+                    DPT.Result$.Codec<
+                        PTT.ITuple<[]>,
+                        LocalScheduler.Error$.Codec
+                    >,
+                    InkPrimitives.LangError$.Codec
+                >
+            >;
         }
     }
 
-    export interface MapMessageQuery extends DPT.MapMessageQuery {
+    interface MapMessageQuery extends DPT.MapMessageQuery {
         getNumJobs: ContractQuery.GetNumJobs;
         getJob: ContractQuery.GetJob;
         getActiveJobs: ContractQuery.GetActiveJobs;
+        addJob: ContractQuery.AddJob;
+        setJobCron: ContractQuery.SetJobCron;
+        setJobTarget: ContractQuery.SetJobTarget;
+        setJobEnabled: ContractQuery.SetJobEnabled;
         getJobSchedule: ContractQuery.GetJobSchedule;
         owner: ContractQuery.Owner;
         poll: ContractQuery.Poll;
@@ -110,7 +266,7 @@ export namespace LocalScheduler {
     /** */
     namespace ContractTx {
         export interface AddJob extends DPT.ContractTx {
-            (options: ContractOptions, name: string, cron_expr: string, target: InkPrimitives_Types_AccountId$1, call: number[] | string): DPT.SubmittableExtrinsic;
+            (options: ContractOptions, name: string, cron_expr: string, target: string | number[], call: number[] | string): DPT.SubmittableExtrinsic;
         }
 
         export interface SetJobCron extends DPT.ContractTx {
@@ -118,7 +274,7 @@ export namespace LocalScheduler {
         }
 
         export interface SetJobTarget extends DPT.ContractTx {
-            (options: ContractOptions, id: number, target: InkPrimitives_Types_AccountId$1, call: number[] | string): DPT.SubmittableExtrinsic;
+            (options: ContractOptions, id: number, target: string | number[], call: number[] | string): DPT.SubmittableExtrinsic;
         }
 
         export interface SetJobEnabled extends DPT.ContractTx {
@@ -126,7 +282,7 @@ export namespace LocalScheduler {
         }
     }
 
-    export interface MapMessageTx extends DPT.MapMessageTx {
+    interface MapMessageTx extends DPT.MapMessageTx {
         addJob: ContractTx.AddJob;
         setJobCron: ContractTx.SetJobCron;
         setJobTarget: ContractTx.SetJobTarget;
@@ -144,7 +300,7 @@ export namespace LocalScheduler {
     /** */
     /** Contract factory */
     /** */
-    export declare class Factory extends DevPhase.ContractFactory {
-        instantiate<T = Contract>(constructor: "default", params: never[], options?: DevPhase.InstantiateOptions): Promise<T>;
+    export declare class Factory extends DevPhase.ContractFactory<Contract> {
+        instantiate(constructor: "default", params: never[], options?: DevPhase.InstantiateOptions): Promise<Contract>;
     }
 }

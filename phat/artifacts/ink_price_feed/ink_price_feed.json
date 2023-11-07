@@ -1,10 +1,10 @@
 {
   "source": {
-    "hash": "0xdbe35b7090829b1bb84d8037bf0456f60177753bbc7dba9a8b9fe2a2954d1363",
+    "hash": "0xff6eaa4c8ce19a3821c284b4f5854a2101bd39878019beed223991beb92bd5c2",
     "language": "ink! 4.3.0",
-    "compiler": "rustc 1.72.0",
+    "compiler": "rustc 1.73.0",
     "build_info": {
-      "build_mode": "Debug",
+      "build_mode": "Release",
       "cargo_contract_version": "3.2.0",
       "rust_toolchain": "stable-x86_64-unknown-linux-gnu",
       "wasm_opt_settings": {
@@ -122,6 +122,24 @@
           "type": 8
         },
         "selector": "0xa29595ff"
+      },
+      {
+        "args": [],
+        "default": false,
+        "docs": [
+          " Gets the attestor address used by this rollup in the meta transaction"
+        ],
+        "label": "get_attest_address_meta_tx",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 8
+        },
+        "selector": "0xce69a454"
       },
       {
         "args": [

@@ -6,14 +6,12 @@ import type { KeyringPair } from '@polkadot/keyring/types';
 import { ContractType } from '@devphase/service';
 
 import 'dotenv/config';
-import { LocalScheduler } from '@/typings/LocalScheduler';
 
 async function delay(ms: number): Promise<void> {
     return new Promise( resolve => setTimeout(resolve, ms) );
 }
 
 describe('Substrate Offchain Rollup', () => {
-    const httpRpc: string = "http://localhost:39933";
     const secretBob: string = "0x398f0c28f98885e046333d4a41c19cee4c37368a9832c6502f6cfd182e2aef89";
     const defaultDelay: number = 10_000;
     const defaultTimeout: number = 120_000;
@@ -25,19 +23,20 @@ describe('Substrate Offchain Rollup', () => {
     let sub0: Sub0Factory.Contract;
 
     let api: ApiPromise;
+    let httpRpc: string;
     let alice : KeyringPair;
     let certAlice : PhalaSdk.CertificateData;
     const txConf = { gasLimit: "10000000000000", storageDepositLimit: null };
 
     before(async function() {
-        priceFeedFactory = await this.devPhase.getFactory('sub_price_feed');
-        sub0Factory = await this.devPhase.getFactory('sub0_factory');
+        httpRpc = this.devPhase.networkConfig.nodeUrl.replace('ws', 'http');
+        priceFeedFactory = await this.devPhase.getFactory('sub_price_feed', {
+            contractType: ContractType.InkCode,
+        });
+        sub0Factory = await this.devPhase.getFactory('sub0_factory', {
+            contractType: ContractType.InkCode,
+        });
         priceFeedCodeHash = priceFeedFactory.metadata.source.hash;
-
-        // Set contract type which is required for deploying.
-        // The current devPhase generated factory does not have the contract type set.
-        priceFeedFactory.contractType = ContractType.InkCode;
-        sub0Factory.contractType = ContractType.InkCode;
 
         await priceFeedFactory.deploy();
         await sub0Factory.deploy();
@@ -45,10 +44,7 @@ describe('Substrate Offchain Rollup', () => {
         
         api = this.api;
         alice = this.devPhase.accounts.alice;
-        certAlice = await PhalaSdk.signCertificate({
-            api,
-            pair: alice,
-        });
+        certAlice = await PhalaSdk.signCertificate({ pair: alice });
         console.log('Signer:', alice.address.toString());
         console.log('PriceFeed code:', priceFeedCodeHash)
     });
@@ -63,7 +59,7 @@ describe('Substrate Offchain Rollup', () => {
         });
 
         it('should have correct owners', async function() {
-            const feedOwner = await priceFeed.query.owner(certAlice, {});
+            const feedOwner = await priceFeed.query.owner(alice.address, { cert: certAlice });
             expect(feedOwner.result.isOk).to.be.true;
             expect(feedOwner.output.asOk.toString()).to.be.equal(alice.address.toString());
         });
@@ -79,7 +75,7 @@ describe('Substrate Offchain Rollup', () => {
             await delay(defaultDelay);
 
             // Init the rollup on the blockchain
-            const init = await priceFeed.query.maybeInitRollup(certAlice, {});
+            const init = await priceFeed.query.maybeInitRollup(alice.address, { cert: certAlice });
             console.log('Result: ', init.result.toHuman())
             console.log('Output: ', init.output.toHuman())
             expect(init.result.isOk).to.be.true;
@@ -90,7 +86,7 @@ describe('Substrate Offchain Rollup', () => {
         it('can submit tx', async function() {
             this.timeout(defaultTimeout);
 
-            const feed = await priceFeed.query.feedPrice(certAlice, {});
+            const feed = await priceFeed.query.feedPrice(alice.address, { cert: certAlice });
             expect(feed.result.isOk).to.be.true;
             expect(feed.output.isOk).to.be.true;
             expect(feed.output.asOk.isOk).to.be.true;
@@ -112,7 +108,7 @@ describe('Substrate Offchain Rollup', () => {
         });
 
         it('should have correct owners', async function() {
-            const sub0Owner = await sub0.query.owner(certAlice, {});
+            const sub0Owner = await sub0.query.owner(alice.address, { cert: certAlice });
             expect(sub0Owner.result.isOk).to.be.true;
             expect(sub0Owner.output.asOk.toString()).to.be.equal(alice.address.toString());
         });
@@ -127,7 +123,7 @@ describe('Substrate Offchain Rollup', () => {
             console.log('Sub0Factory configured', sub0Config.toHuman());
             await delay(4*1000);
 
-            const config = await sub0.query.getConfig(certAlice, {})
+            const config = await sub0.query.getConfig(alice.address, { cert: certAlice })
             expect(config.result.isOk).to.be.true;
             expect(config.output.isOk).to.be.true;
             expect(config.output.asOk.asOk.length).to.be.equal(2);
@@ -145,7 +141,7 @@ describe('Substrate Offchain Rollup', () => {
             console.log('PriceFeed1&2 deployed', deploy.toHuman());
             await delay(defaultDelay);
 
-            let deployments = await sub0.query.getDeployments(certAlice, {});
+            let deployments = await sub0.query.getDeployments(alice.address, { cert: certAlice });
             expect(deployments.result.isOk).to.be.true;
             expect(deployments.output.asOk.asOk.length).to.be.equal(2);
 
@@ -161,14 +157,14 @@ describe('Substrate Offchain Rollup', () => {
             this.timeout(defaultTimeout);
 
             // Init the rollup on the blockchain
-            const init = await priceFeed1.query.maybeInitRollup(certAlice, {});
+            const init = await priceFeed1.query.maybeInitRollup(alice.address, { cert: certAlice });
             expect(init.result.isOk).to.be.true;
             expect(init.output.isOk).to.be.true;
             expect(init.output.asOk.isOk).to.be.true;
             await delay(defaultDelay);
 
             // Trigger a rollup
-            const feed = await priceFeed1.query.feedPrice(certAlice, {});
+            const feed = await priceFeed1.query.feedPrice(alice.address, { cert: certAlice });
             expect(feed.result.isOk).to.be.true;
             expect(feed.output.isOk).to.be.true;
             expect(feed.output.asOk.isOk).to.be.true;

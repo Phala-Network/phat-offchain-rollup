@@ -14,8 +14,8 @@ ink = { version = "4.0.1", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-serde = { version = "1.0.140", default-features = false, features = ["derive", "alloc"]}
-fixed = { version = "1", default-features = false, features = ["serde"] }
+serde = { version = "1.0.188", default-features = false, features = ["derive", "alloc"]}
+fixed = { version = "1", default-features = false }
 
 pink-extension = { version = "0.4.1", default-features = false }
 pink-json = { git = "https://github.com/Phala-Network/pink-json.git", branch = "pink", default-features = false, features = ["de-number-as-str"] }
@@ -35,11 +35,6 @@ hex-literal = "0.3"
 [lib]
 name = "sub_price_feed"
 path = "lib.rs"
-crate-type = [
-	# Used for normal contract Wasm blobs.
-	"cdylib",
-    "lib",
-]
 
 [features]
 default = ["std"]
@@ -56,4 +51,4 @@ ink-as-dependency = []
 
 # Leave for `cargo contract` build.
 [patch.crates-io]
-serde = { git = "https://github.com/kvinwang/serde.git", branch = "pink" }
+serde = { git = "https://github.com/kvinwang/serde.git", branch = "patched-v1.0.188" }

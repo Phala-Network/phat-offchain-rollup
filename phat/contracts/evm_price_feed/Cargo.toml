@@ -14,16 +14,13 @@ ink = { version = "4.0.1", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-serde = { version = "1.0.140", default-features = false, features = ["derive", "alloc"]}
+serde = { version = "1.0.188", default-features = false, features = ["derive", "alloc"]}
 fixed = { version = "1", default-features = false, features = ["serde"] }
 
 pink-extension = { version = "0.4.1", default-features = false }
 pink-json = { git = "https://github.com/Phala-Network/pink-json.git", branch = "pink", default-features = false, features = ["de-number-as-str"] }
 pink-web3 = { version = "0.20.1", default-features = false, features = ["pink", "signing"] }
-ethabi = { version = "18.0.0", default-features = false, features = [
-    "serde",
-    "rlp",
-] }
+ethabi = { version = "18.0.0", default-features = false, features = ["serde", "rlp"] }
 
 phat_offchain_rollup = { path = "../../crates/rollup", default-features = false, features = ["evm"] }
 pink-kv-session = "0.2"
@@ -40,11 +37,6 @@ hex-literal = "0.3"
 [lib]
 name = "evm_price_feed"
 path = "lib.rs"
-crate-type = [
-	# Used for normal contract Wasm blobs.
-	"cdylib",
-    "lib",
-]
 
 [features]
 default = ["std"]
@@ -63,4 +55,4 @@ ink-as-dependency = []
 
 # Leave for `cargo contract` build.
 [patch.crates-io]
-serde = { git = "https://github.com/kvinwang/serde.git", branch = "pink" }
+serde = { git = "https://github.com/kvinwang/serde.git", branch = "patched-v1.0.188" }

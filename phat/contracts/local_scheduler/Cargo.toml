@@ -25,10 +25,6 @@ sub_price_feed = { path = "../sub_price_feed", features = ["ink-as-dependency"] 
 [lib]
 name = "local_scheduler"
 path = "lib.rs"
-crate-type = [
-	# Used for normal contract Wasm blobs.
-	"cdylib",
-]
 
 [features]
 default = ["std"]
@@ -45,7 +41,7 @@ ink-as-dependency = []
 
 # Leave for `cargo contract` build.
 [patch.crates-io]
-serde = { git = "https://github.com/kvinwang/serde.git", branch = "pink" }
+serde = { git = "https://github.com/kvinwang/serde.git", branch = "patched-v1.0.188" }
 
 # Necessary due to the cargo bug bug: https://github.com/rust-lang/cargo/issues/10118
 [profile.release]

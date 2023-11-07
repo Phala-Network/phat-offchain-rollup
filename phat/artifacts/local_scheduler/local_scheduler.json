@@ -1,12 +1,12 @@
 {
   "source": {
-    "hash": "0xea2b616a8cf57af445c06062b5185e4c9d18b580d1f89fc65973e98af6246997",
-    "language": "ink! 4.0.1",
-    "compiler": "rustc 1.69.0-nightly",
+    "hash": "0x2f9ea97854eb646b7a51699224afd6e1dfde229aae3433fa275ea4780930203f",
+    "language": "ink! 4.3.0",
+    "compiler": "rustc 1.73.0",
     "build_info": {
-      "build_mode": "Debug",
-      "cargo_contract_version": "2.1.0",
-      "rust_toolchain": "nightly-x86_64-unknown-linux-gnu",
+      "build_mode": "Release",
+      "cargo_contract_version": "3.2.0",
+      "rust_toolchain": "stable-x86_64-unknown-linux-gnu",
       "wasm_opt_settings": {
         "keep_debug_symbols": false,
         "optimization_passes": "Z"
@@ -24,6 +24,7 @@
     "constructors": [
       {
         "args": [],
+        "default": false,
         "docs": [],
         "label": "default",
         "payable": false,
@@ -38,6 +39,45 @@
       }
     ],
     "docs": [],
+    "environment": {
+      "accountId": {
+        "displayName": [
+          "AccountId"
+        ],
+        "type": 0
+      },
+      "balance": {
+        "displayName": [
+          "Balance"
+        ],
+        "type": 24
+      },
+      "blockNumber": {
+        "displayName": [
+          "BlockNumber"
+        ],
+        "type": 3
+      },
+      "chainExtension": {
+        "displayName": [
+          "ChainExtension"
+        ],
+        "type": 26
+      },
+      "hash": {
+        "displayName": [
+          "Hash"
+        ],
+        "type": 25
+      },
+      "maxEventTopics": 4,
+      "timestamp": {
+        "displayName": [
+          "Timestamp"
+        ],
+        "type": 22
+      }
+    },
     "events": [],
     "lang_error": {
       "displayName": [
@@ -49,6 +89,7 @@
     "messages": [
       {
         "args": [],
+        "default": false,
         "docs": [],
         "label": "get_num_jobs",
         "mutates": false,
@@ -74,6 +115,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [],
         "label": "get_job",
         "mutates": false,
@@ -89,6 +131,7 @@
       },
       {
         "args": [],
+        "default": false,
         "docs": [],
         "label": "get_active_jobs",
         "mutates": false,
@@ -141,6 +184,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [],
         "label": "add_job",
         "mutates": true,
@@ -175,6 +219,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [],
         "label": "set_job_cron",
         "mutates": true,
@@ -218,6 +263,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [],
         "label": "set_job_target",
         "mutates": true,
@@ -252,6 +298,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [],
         "label": "set_job_enabled",
         "mutates": true,
@@ -277,6 +324,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [
           " Gets the current job schedule",
           "",
@@ -297,6 +345,7 @@
       },
       {
         "args": [],
+        "default": false,
         "docs": [
           " Gets the owner of the contract"
         ],
@@ -314,6 +363,7 @@
       },
       {
         "args": [],
+        "default": false,
         "docs": [
           " Called by a scheduler periodically"
         ],
@@ -786,7 +836,11 @@
               },
               {
                 "index": 7,
-                "name": "FailedToCallJob"
+                "name": "FailedToExecuteCall"
+              },
+              {
+                "index": 8,
+                "name": "CalledJobReturnedError"
               }
             ]
           }
@@ -1057,6 +1111,47 @@
         ],
         "path": [
           "Result"
+        ]
+      }
+    },
+    {
+      "id": 24,
+      "type": {
+        "def": {
+          "primitive": "u128"
+        }
+      }
+    },
+    {
+      "id": 25,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 1,
+                "typeName": "[u8; 32]"
+              }
+            ]
+          }
+        },
+        "path": [
+          "ink_primitives",
+          "types",
+          "Hash"
+        ]
+      }
+    },
+    {
+      "id": 26,
+      "type": {
+        "def": {
+          "variant": {}
+        },
+        "path": [
+          "pink_extension",
+          "chain_extension",
+          "PinkExt"
         ]
       }
     }

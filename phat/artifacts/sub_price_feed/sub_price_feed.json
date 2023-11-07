@@ -1,14 +1,14 @@
 {
   "source": {
-    "hash": "0x46560c65bf6356e467d7cefa4b682e4c9eaea6c6c0388ac12375a12b6e4faa39",
-    "language": "ink! 4.0.1",
-    "compiler": "rustc 1.69.0-nightly",
+    "hash": "0x6a86092dbc93f7b001da2761f21f3dd5a4841121acd701a64399465f8008f307",
+    "language": "ink! 4.3.0",
+    "compiler": "rustc 1.73.0",
     "build_info": {
-      "build_mode": "Debug",
-      "cargo_contract_version": "2.1.0",
-      "rust_toolchain": "nightly-x86_64-unknown-linux-gnu",
+      "build_mode": "Release",
+      "cargo_contract_version": "3.2.0",
+      "rust_toolchain": "stable-x86_64-unknown-linux-gnu",
       "wasm_opt_settings": {
-        "keep_debug_symbols": false,
+        "keep_debug_symbols": true,
         "optimization_passes": "Z"
       }
     }
@@ -24,6 +24,7 @@
     "constructors": [
       {
         "args": [],
+        "default": false,
         "docs": [],
         "label": "default",
         "payable": false,
@@ -38,6 +39,45 @@
       }
     ],
     "docs": [],
+    "environment": {
+      "accountId": {
+        "displayName": [
+          "AccountId"
+        ],
+        "type": 0
+      },
+      "balance": {
+        "displayName": [
+          "Balance"
+        ],
+        "type": 15
+      },
+      "blockNumber": {
+        "displayName": [
+          "BlockNumber"
+        ],
+        "type": 18
+      },
+      "chainExtension": {
+        "displayName": [
+          "ChainExtension"
+        ],
+        "type": 19
+      },
+      "hash": {
+        "displayName": [
+          "Hash"
+        ],
+        "type": 16
+      },
+      "maxEventTopics": 4,
+      "timestamp": {
+        "displayName": [
+          "Timestamp"
+        ],
+        "type": 17
+      }
+    },
     "events": [],
     "lang_error": {
       "displayName": [
@@ -49,6 +89,7 @@
     "messages": [
       {
         "args": [],
+        "default": false,
         "docs": [
           " Gets the owner of the contract"
         ],
@@ -112,6 +153,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [
           " Configures the rollup target (admin only)"
         ],
@@ -139,6 +181,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [
           " Transfers the ownership of the contract (admin only)"
         ],
@@ -156,6 +199,7 @@
       },
       {
         "args": [],
+        "default": false,
         "docs": [
           " Initializes the rollup on the target blockchain if it's not done yet",
           "",
@@ -178,6 +222,7 @@
       },
       {
         "args": [],
+        "default": false,
         "docs": [
           " Feeds a price by a rollup transaction"
         ],
@@ -740,6 +785,63 @@
         ],
         "path": [
           "Option"
+        ]
+      }
+    },
+    {
+      "id": 15,
+      "type": {
+        "def": {
+          "primitive": "u128"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 1,
+                "typeName": "[u8; 32]"
+              }
+            ]
+          }
+        },
+        "path": [
+          "ink_primitives",
+          "types",
+          "Hash"
+        ]
+      }
+    },
+    {
+      "id": 17,
+      "type": {
+        "def": {
+          "primitive": "u64"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "type": {
+        "def": {
+          "primitive": "u32"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "type": {
+        "def": {
+          "variant": {}
+        },
+        "path": [
+          "pink_extension",
+          "chain_extension",
+          "PinkExt"
         ]
       }
     }
