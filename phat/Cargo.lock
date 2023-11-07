@@ -1123,22 +1123,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "http_test"
-version = "0.1.0"
-dependencies = [
- "dotenvy",
- "env_logger",
- "hex",
- "hex-literal 0.3.4",
- "ink",
- "ink_env",
- "parity-scale-codec",
- "pink-extension",
- "pink-extension-runtime",
- "scale-info",
-]
-
-[[package]]
 name = "httparse"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1542,7 +1526,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb0889898416213fab133e1d33a0e5858a48177452750691bde3666d0fdbaf8b"
 dependencies = [
  "hermit-abi",
- "rustix 0.38.18",
+ "rustix 0.38.21",
  "windows-sys 0.48.0",
 ]
 
@@ -1733,7 +1717,7 @@ version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2cffa4ad52c6f791f4f8b15f0c05f9824b2ced1160e88cc393d64fff9a8ac64"
 dependencies = [
- "rustix 0.38.18",
+ "rustix 0.38.21",
 ]
 
 [[package]]
@@ -2044,9 +2028,9 @@ dependencies = [
 
 [[package]]
 name = "pink-extension"
-version = "0.4.5"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "772ec0c206907d436864919e2de0227fca5f1a33c82bdbf312ff505dde9336bf"
+checksum = "fe261c26b4018364320cf86615b6c82c068b3aa00ada4de3147842f97a20c548"
 dependencies = [
  "ink",
  "log",
@@ -2074,9 +2058,9 @@ dependencies = [
 
 [[package]]
 name = "pink-extension-runtime"
-version = "0.4.6"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "179cd9c29a36a2693bf2f3cef2f28cb65d92418d660ab55bc075d2281b7029ac"
+checksum = "4275a5832723d802f3f87a9fa4a0f600dfeaa0f6e52849dc502fc915c6bd92ea"
 dependencies = [
  "futures",
  "getrandom 0.2.10",
@@ -2119,9 +2103,9 @@ checksum = "3da595e670ee22ac5ae563a55388ce2148d68b993fe09ca0099a247cb55cf790"
 
 [[package]]
 name = "pink-subrpc"
-version = "0.4.3"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c866be0ff83521271c4ac4fde6e4e3f5b3658780ab21ed0255359360ca01db03"
+checksum = "3fbde259c3cb869ab7e27f667c8a3a0226ab37760269224df0941f2d8baf2ffe"
 dependencies = [
  "base58",
  "hex",
@@ -2139,9 +2123,9 @@ dependencies = [
 
 [[package]]
 name = "pink-web3"
-version = "0.20.2"
+version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c45b0e3c122279f69ce3625c8895589e39afbf63162d08740f201e4bde89f21d"
+checksum = "f130df064fa37b63137b8f784f7249759978ab897def6c5fa608bf2d1a2eddb8"
 dependencies = [
  "arrayvec 0.7.4",
  "derive_more",
@@ -2507,9 +2491,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.38.18"
+version = "0.38.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a74ee2d7c2581cd139b42447d7d9389b889bdaad3a73f1ebb16f2a3237bb19c"
+checksum = "2b426b0506e5d50a7d8dafcf2e81471400deb602392c7dd110815afb4eaf02a3"
 dependencies = [
  "bitflags 2.4.0",
  "errno",
@@ -2630,9 +2614,9 @@ dependencies = [
 
 [[package]]
 name = "scale-info"
-version = "2.9.0"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35c0a159d0c45c12b20c5a844feb1fe4bea86e28f17b92a5f0c42193634d3782"
+checksum = "7f7d66a1128282b7ef025a8ead62a4a9fcf017382ec53b8ffbf4d7bf77bd3c60"
 dependencies = [
  "bitvec",
  "cfg-if",
@@ -2644,9 +2628,9 @@ dependencies = [
 
 [[package]]
 name = "scale-info-derive"
-version = "2.9.0"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "912e55f6d20e0e80d63733872b40e1227c0bce1e1ab81ba67d696339bfd7fd29"
+checksum = "abf2c68b89cafb3b8d918dd07b42be0da66ff202cf1155c5739a4e0c1ea0dc19"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -3263,6 +3247,12 @@ checksum = "6093bad37da69aab9d123a8091e4be0aa4a03e4d601ec641c327398315f62b64"
 dependencies = [
  "winapi-util",
 ]
+
+[[package]]
+name = "this-crate"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23c3dac231fac5770597ae4670029b06ea5adab46e2fd192838e9a77007ec656"
 
 [[package]]
 name = "thiserror"
@@ -4122,6 +4112,11 @@ dependencies = [
  "quote",
  "syn 2.0.38",
 ]
+
+[[patch.unused]]
+name = "drink"
+version = "0.6.0"
+source = "git+https://github.com/kvinwang/drink-for-pink.git#3e21675d4b99939bcbd2b3425569259cced17f95"
 
 [[patch.unused]]
 name = "ink"

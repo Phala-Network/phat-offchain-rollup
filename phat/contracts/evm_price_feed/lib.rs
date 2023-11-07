@@ -271,8 +271,9 @@ mod evm_price_feed {
                 .or(Err(Error::FailedToGetStorage))?
                 .ok_or(Error::NoRequestInQueue)?;
             // Decode the queue data by ethabi (u256, bytes)
-            let Ok(decoded) = ethabi::decode(&[ParamType::Uint(32), ParamType::Bytes], &raw_req) else {
-                return Ok(PriceReponse::Error(None, Error::FailedToDecode))
+            let Ok(decoded) = ethabi::decode(&[ParamType::Uint(32), ParamType::Bytes], &raw_req)
+            else {
+                return Ok(PriceReponse::Error(None, Error::FailedToDecode));
             };
             let [Token::Uint(rid), Token::Bytes(pair)] = decoded.as_slice() else {
                 return Err(Error::FailedToDecode);
@@ -281,7 +282,7 @@ mod evm_price_feed {
             let pair = String::from_utf8_lossy(&pair);
             let pair_components: Vec<&str> = pair.split('/').collect();
             let [token0, token1] = pair_components.as_slice() else {
-                return Ok(PriceReponse::Error(Some(*rid), Error::InvalidRequest))
+                return Ok(PriceReponse::Error(Some(*rid), Error::InvalidRequest));
             };
             pink::info!("Request received: ({token0}, {token1})");
             // Get the price and respond as a rollup action.

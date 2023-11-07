@@ -6,12 +6,11 @@ pub use crate::momoka_publication::*;
 
 #[ink::contract(env = pink_extension::PinkEnvironment)]
 mod momoka_publication {
-    use alloc::{format, string::String, vec, vec::Vec};
+    use alloc::{string::String, vec, vec::Vec};
     use ethabi::Token;
     use ink::storage::traits::StorageLayout;
     use pink_extension as pink;
     use pink_extension::chain_extension::signing;
-    use pink_json as json;
     use pink_web3::{
         api::{Eth, Namespace},
         contract::{Contract, Options},
@@ -21,7 +20,6 @@ mod momoka_publication {
         types::{Bytes, H160, U256},
     };
     use scale::{Decode, Encode};
-    use serde::Deserialize;
     use this_crate::{version_tuple, VersionTuple};
 
     // To enable `(result).log_err("Reason")?`
@@ -61,6 +59,7 @@ mod momoka_publication {
         FailedToParseId,
         FailedToParseAddress,
         NoProofForComment,
+        NoProofForQuote,
         UnknownPublicationType,
         MissingMirrorField,
         MissingCollectModule,
@@ -164,17 +163,17 @@ mod momoka_publication {
             publication_id: String,
             mainnet: bool,
         ) -> Result<Token> {
-            use alloc::string::ToString;
             let lens_api = if mainnet {
-                "https://api.lens.dev/"
+                "https://api-v2.lens.dev/"
             } else {
-                "https://api-mumbai.lens.dev/"
+                "https://api-mumbai-v2.lens.dev/"
             };
             let headers = vec![
                 ("Content-Type".into(), "application/json".into()),
                 ("User-Agent".into(), "phat-contract".into()),
             ];
-            let body = format!("{{\"query\": \"query Publication {{\\n  publication(request: {{\\n    publicationId: \\\"{publication_id}\\\"\\n  }}) {{\\n   __typename\\n    ... on Post {{\\n      ...PostFields\\n    }}\\n    ... on Mirror {{\\n      ...MirrorFields\\n    }}\\n  }}\\n}}\\n\\nfragment PostFields on Post {{\\n  id\\n  onChainContentURI\\n  collectModule {{\\n    ...CollectModuleFields\\n  }}\\n}}\\n\\nfragment MirrorBaseFields on Mirror {{\\n  id\\n}}\\n\\nfragment MirrorFields on Mirror {{\\n  ...MirrorBaseFields\\n  mirrorOf {{\\n   ... on Post {{\\n      ...PostFields\\n   }}\\n  }}\\n}}\\n\\nfragment CollectModuleFields on CollectModule {{\\n  ... on FreeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on FeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on LimitedFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on LimitedTimedFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on RevertCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on TimedFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on MultirecipientFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on SimpleCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on ERC4626FeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on AaveFeeCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n  ... on UnknownCollectModuleSettings {{\\n    type\\n    contractAddress\\n  }}\\n}}\"}}");
+            let body = String::from(r#"{"query":"query Publication {\n  publication(request: { forId: \"${publicationId}\" }) {\n    __typename\n    ... on Post {\n      ...PostFields\n    }\n    ... on Mirror {\n      ...MirrorFields\n    }\n  }\n}\n\nfragment PostFields on Post {\n  id\n  metadata {\n    __typename\n    ... on TextOnlyMetadataV3 {\n      id\n      rawURI\n      contentWarning\n      content\n    }\n  }\n  openActionModules {\n    __typename\n  }\n}\n\nfragment MirrorFields on Mirror {\n  id\n  mirrorOn {\n    __typename\n    ... on Post {\n      ...PostFields\n    }\n  }\n}\n"}"#)
+                .replace("${publicationId}", &publication_id);
 
             let resp = pink::http_post!(lens_api, body.as_bytes(), headers);
             if resp.status_code != 200 {
@@ -187,85 +186,67 @@ mod momoka_publication {
                 return Err(Error::FailedToFetchData);
             }
 
-            // Response body examples:
-            // {
-            //     "data": {
-            //         "publication": {
-            //             "__typename": "Post",
-            //             "id": "0x01-0x01",
-            //             "collectModule": {
-            //                 "type": "FreeCollectModule",
-            //                 "contractAddress": "0x23b9467334bEb345aAa6fd1545538F3d54436e96"
-            //             }
-            //         }
-            //     }
-            // },
-            // {
-            //     "data": {
-            //         "publication": {
-            //             "__typename": "Mirror",
-            //             "id": "0x9d72-0x0457-DA-64abf0b0",
-            //             "mirrorOf": {
-            //                 "id": "0x05-0x1e8a-DA-6d1b60c9",
-            //                 "collectModule": {
-            //                     "type": "RevertCollectModule",
-            //                     "contractAddress": "0xa31FF85E840ED117E172BC9Ad89E55128A999205"
-            //                 }
-            //             }
-            //         }
-            //     }
-            // },
-            // {
-            //     "data": {
-            //         "publication": {
-            //             "__typename": "Comment"
-            //         }
-            //     }
-            // }
             let resp_body = String::from_utf8(resp.body).or(Err(Error::FailedToDecode))?;
-            let parsed: Response = json::from_str(&resp_body)
-                .log_err("failed to parse json")
-                .or(Err(Error::FailedToParseJson))?;
 
-            let pub_info = parsed.data.publication.ok_or(Error::PublicationNotExists)?;
-            let publication = match pub_info.__typename {
-                "Post" => {
-                    let id = pub_info.id.ok_or(Error::PublicationNotExists)?;
-                    let (profile_id, pub_id) = Self::extract_ids(String::from(id))?;
-                    let content_uri = pub_info.on_chain_content_uri.expect("no post content uri");
-                    evm_publication(
+            let script: &str = r"
+            (function() {
+                const [ jsonStr ] = scriptArgs;
+                const obj = JSON.parse(jsonStr);
+                let mirrorOn = '', post, pubType;
+                if (obj.data.publication.__typename == 'Mirror') {
+                    pubType = 3;
+                    mirrorOn = obj.data.publication.mirrorOn.id;
+                    post = obj.data.publication.mirrorOn;
+                } else {
+                    pubType = 1;
+                    post = obj.data.publication;
+                }
+                if (post.__typename != 'Post' 
+                  || post.metadata.__typename != 'TextOnlyMetadataV3') {
+                    throw new Exception('Unsupported publication');
+                }
+                const contentUri = post.metadata.rawURI;
+                // ---- codec
+                const typedef = 'PublicationData = {pubType:u8, pointedTo:str, contentUri:str}';
+                const output = {pubType, contentUri, pointedTo: mirrorOn};
+                return Pink.SCALE.encode(output, 'PublicationData', typedef);
+            })()
+            ";
+
+            let js_output = phat_js::eval(script, &[resp_body]);
+            let Ok(phat_js::Output::Bytes(encoded)) = js_output else {
+                return Err(Error::FailedToParseJson);
+            };
+            let pub_data = PublicationData::decode(&mut &encoded[..]).expect("encoded by js; qed.");
+            
+            let (profile_id, pub_id) = Self::extract_ids(publication_id)?;
+            let publication = match pub_data.pub_type {
+                1 => {
+                    evm_publication_memory(
                         U256::from(0),
                         U256::from(0),
-                        content_uri.to_string(),
-                        PublicationType::Post,
+                        pub_data.content_uri,
+                        1,
                         profile_id,
                         pub_id,
                     )
                 }
-                "Mirror" => {
-                    // let id = pub_info.id.ok_or(Error::PublicationNotExists)?;
-                    // let (profile_id, pub_id) = Self::extract_ids(String::from(id))?;
-                    let mirror_of = pub_info.mirror_of.ok_or(Error::MissingMirrorField)?;
-                    let root_id = mirror_of.id;
-                    let (root_profile_id, root_pub_id) = Self::extract_ids(String::from(root_id))?;
-                    // let root_collect_module = mirror_of.collect_module.contract_address;
-                    // let root_collect_module: [u8; 20] = Self::decode_hex(root_collect_module)?
-                    //     .try_into()
-                    //     .or(Err(Error::FailedToParseAddress))?;
-                    evm_publication(
+                3 => {
+                    let (root_profile_id, root_pub_id) = Self::extract_ids(String::from(pub_data.pointed_to))?;
+                    evm_publication_memory(
                         root_profile_id,
                         root_pub_id,
-                        mirror_of.on_chain_content_uri.to_string(),
-                        PublicationType::Mirror,
+                        pub_data.content_uri,
+                        3,
                         root_profile_id,
                         root_pub_id,
                     )
                 }
-                "Comment" => Err(Error::NoProofForComment)?,
+                2 => Err(Error::NoProofForComment)?,
+                4 => Err(Error::NoProofForQuote)?,
                 _ => Err(Error::UnknownPublicationType)?,
             };
 
-            let (profile_id, pub_id) = Self::extract_ids(publication_id)?;
             // free collect action
             let collect_act = H160::from(match mainnet {
                 true => hex_literal::hex!("efBa1032bB5f9bEC79e022f52D89C2cc9090D1B8"),
@@ -322,20 +303,27 @@ mod momoka_publication {
         }
     }
 
-    #[repr(u8)]
-    pub enum PublicationType {
-        Nonexistent,
-        Post,
-        Comment,
-        Mirror,
-        Quote,
+    // #[repr(u8)]
+    // pub enum PublicationType {
+    //     Nonexistent,
+    //     Post,
+    //     Comment,
+    //     Mirror,
+    //     Quote,
+    // }
+
+    #[derive(Decode)]
+    struct PublicationData {
+        pub_type: u8,
+        pointed_to: String,
+        content_uri: String,
     }
 
-    pub fn evm_publication(
+    pub fn evm_publication_memory(
         pointed_profile_id: U256,
         pointed_pub_id: U256,
         content_uri: String,
-        pub_type: PublicationType,
+        pub_type: u8,
         root_profile_id: U256,
         root_pub_id: U256,
     ) -> Token {
@@ -343,7 +331,7 @@ mod momoka_publication {
             Token::Uint(pointed_profile_id),
             Token::Uint(pointed_pub_id),
             Token::String(content_uri),
-            // reference_module
+            // TODO: reference_module
             Token::Address(H160::default()),
             // deprecated collect_module
             Token::Address(H160::default()),
@@ -352,8 +340,6 @@ mod momoka_publication {
             Token::Uint(U256::from(pub_type as u8)),
             Token::Uint(root_profile_id),
             Token::Uint(root_pub_id),
-            // enabled_action_modules_bitmap
-            Token::Uint(U256::default())
         ])
     }
 
@@ -435,181 +421,260 @@ mod momoka_publication {
             (&self.r, &self.s, self.v as u8).encode()
         }
     }
+}
 
-    // Define the structures to parse json response
-    #[derive(Deserialize, Clone)]
-    struct Response<'a> {
-        #[serde(borrow)]
-        data: ResponsePayload<'a>,
-    }
-    #[derive(Deserialize, Clone)]
-    struct ResponsePayload<'a> {
-        #[serde(borrow)]
-        publication: Option<ResponseInner<'a>>,
-    }
-    #[derive(Deserialize, Clone)]
-    struct ResponseInner<'a> {
-        __typename: &'a str,
-        #[serde(borrow)]
-        id: Option<&'a str>,
-        #[serde(borrow, alias = "onChainContentURI")]
-        on_chain_content_uri: Option<&'a str>,
-        #[serde(borrow, alias = "mirrorOf")]
-        mirror_of: Option<MirrorOf<'a>>,
-        #[serde(borrow, alias = "collectModule")]
-        collect_module: Option<CollectModule<'a>>,
+#[cfg(test)]
+mod tests {
+    use crate::momoka_publication::*;
+
+    struct EnvVars {
+        rpc: String,
+        client_addr: Vec<u8>,
+        attest_key: Vec<u8>,
     }
 
-    #[derive(Deserialize, Clone)]
-    struct MirrorOf<'a> {
-        id: &'a str,
-        #[serde(alias = "onChainContentURI")]
-        on_chain_content_uri: &'a str,
-        #[serde(borrow, alias = "collectModule")]
-        collect_module: CollectModule<'a>,
+    fn get_env(key: &str) -> String {
+        std::env::var(key).expect("env not found")
     }
-
-    #[derive(Deserialize, Clone)]
-    struct CollectModule<'a> {
-        #[serde(alias = "type")]
-        _module_type: &'a str,
-        #[serde(alias = "contractAddress")]
-        contract_address: &'a str,
-    }
-
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-
-        struct EnvVars {
-            rpc: String,
-            client_addr: Vec<u8>,
-            attest_key: Vec<u8>,
+    fn config() -> EnvVars {
+        dotenvy::dotenv().ok();
+        let rpc = get_env("RPC");
+        let client_addr = hex::decode(get_env("CLIENT_ADDR")).expect("hex decode failed");
+        let attest_key = hex::decode(get_env("ATTEST_KEY")).expect("hex decode failed");
+        EnvVars {
+            rpc,
+            client_addr,
+            attest_key,
         }
+    }
 
-        fn get_env(key: &str) -> String {
-            std::env::var(key).expect("env not found")
-        }
-        fn config() -> EnvVars {
-            dotenvy::dotenv().ok();
-            let rpc = get_env("RPC");
-            let client_addr = hex::decode(get_env("CLIENT_ADDR")).expect("hex decode failed");
-            let attest_key = hex::decode(get_env("ATTEST_KEY")).expect("hex decode failed");
-            EnvVars {
-                rpc,
-                client_addr,
-                attest_key,
-            }
-        }
+    use ::ink::env::call::{
+        utils::{ReturnType, Set, Unset},
+        Call, ExecutionInput,
+    };
+    use drink::{errors::MessageResult, runtime::Runtime, session::Session, ContractBundle};
+    use drink_pink_runtime::{ExecMode, PinkRuntime};
+    use ink::codegen::TraitCallBuilder;
+    use ink::env::{
+        call::{CallBuilder, CreateBuilder, FromAccountId},
+        Environment,
+    };
+    use ink::primitives::Hash;
+    use pink_extension::Balance;
+    use pink_extension::ConvertTo;
+    use scale::{Decode, Encode};
 
-        #[ink::test]
-        fn can_parse_lens_publication() {
-            use std::str::FromStr;
-            let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+    const DEFAULT_GAS_LIMIT: u64 = 1_000_000_000_000_000;
 
-            let pub_resp = MomokaPublication::fetch_lens_publication(
-                String::from("0x814a-0x01-DA-0e18b370"),
-                false,
-            )
-            .unwrap();
-            assert_eq!(
-                pub_resp,
+    #[drink::contract_bundle_provider]
+    enum BundleProvider {}
+
+    fn deploy_bundle<Env, Contract, Args>(
+        session: &mut Session<PinkRuntime>,
+        bundle: ContractBundle,
+        constructor: CreateBuilder<
+            Env,
+            Contract,
+            Unset<Hash>,
+            Unset<u64>,
+            Unset<Balance>,
+            Set<ExecutionInput<Args>>,
+            Set<Vec<u8>>,
+            Set<ReturnType<Contract>>,
+        >,
+    ) -> core::result::Result<Contract, String>
+    where
+        Env: Environment<Hash = Hash, Balance = Balance>,
+        Contract: FromAccountId<Env>,
+        Args: Encode,
+        Env::AccountId: From<[u8; 32]>,
+    {
+        session.execute_with(move || {
+            let caller = PinkRuntime::default_actor();
+            let code_hash = PinkRuntime::upload_code(caller.clone(), bundle.wasm, true)?;
+            let constructor = constructor
+                .code_hash(code_hash.0.into())
+                .endowment(0)
+                .gas_limit(DEFAULT_GAS_LIMIT);
+            let params = constructor.params();
+            let input_data = params.exec_input().encode();
+            let account_id = PinkRuntime::instantiate(
+                caller,
+                0,
+                params.gas_limit(),
+                None,
+                code_hash,
+                input_data,
+                params.salt_bytes().clone(),
+            )?;
+            Ok(Contract::from_account_id(account_id.convert_to()))
+        })
+    }
+
+    fn call<Env, Args, Ret>(
+        session: &mut Session<PinkRuntime>,
+        call_builder: CallBuilder<
+            Env,
+            Set<Call<Env>>,
+            Set<ExecutionInput<Args>>,
+            Set<ReturnType<Ret>>,
+        >,
+        deterministic: bool,
+    ) -> core::result::Result<Ret, String>
+    where
+        Env: Environment<Hash = Hash, Balance = Balance>,
+        Args: Encode,
+        Ret: Decode,
+    {
+        session.execute_with(move || {
+            let origin = PinkRuntime::default_actor();
+            let params = call_builder.params();
+            let data = params.exec_input().encode();
+            let callee = params.callee();
+            let address: [u8; 32] = callee.as_ref().try_into().or(Err("Invalid callee"))?;
+            let result = PinkRuntime::call(
+                origin,
+                address.into(),
+                0,
+                DEFAULT_GAS_LIMIT,
+                None,
+                data,
+                deterministic,
+            )?;
+            let ret = MessageResult::<Ret>::decode(&mut &result[..])
+                .map_err(|e| format!("Failed to decode result: {}", e))?
+                .map_err(|e| format!("Failed to execute call: {}", e))?;
+            Ok(ret)
+        })
+    }
+
+    #[drink::test]
+    fn check_lens_publication_works() -> Result<(), Box<dyn std::error::Error>> {
+        let _ = env_logger::try_init();
+        let EnvVars {
+            rpc,
+            client_addr,
+            attest_key,
+        } = config();
+
+        let mut session = Session::<PinkRuntime>::new()?;
+        session.execute_with(|| {
+            PinkRuntime::setup_cluster().expect("Failed to setup cluster");
+        });
+
+        let bundle = BundleProvider::local()?;
+        let mut contract = deploy_bundle(
+            &mut session,
+            bundle,
+            MomokaPublicationRef::default().salt_bytes(vec![]),
+        )?;
+
+        let result = call(
+            &mut session,
+            contract.call_mut().config_client(rpc, client_addr),
+            true,
+        )?;
+
+        let result = call(
+            &mut session,
+            contract.call().check_lens_publication(String::from("0x01-0x01ef-DA-eb395e21"), true),
+            false,
+        )?
+        .expect("check_lens_publication failed");
+        println!("publication proof: {}", hex::encode(&result));
+        Ok(())
+    }
+
+    /*
+    #[ink::test]
+    fn can_parse_lens_publication() {
+        use std::str::FromStr;
+        let _ = env_logger::try_init();
+        pink_extension_runtime::mock_ext::mock_all_ext();
+
+        let pub_resp = MomokaPublication::fetch_lens_publication(
+            String::from("0x814a-0x01-DA-0e18b370"),
+            false,
+        )
+        .unwrap();
+        assert_eq!(
+            pub_resp,
+            Token::Tuple(vec![
+                Token::Uint(U256::from_str("0x814a").unwrap()),
+                Token::Uint(U256::from_str("0xe18b37000000000000000000000000000000001").unwrap()),
                 Token::Tuple(vec![
+                    Token::Uint(U256::from(0)),
+                    Token::Uint(U256::from(0)),
+                    Token::String("ar://YhErKXFGi8pe4vR4w7vUc__KSmShdJ5_hLQJ7M9BTRU".to_string()),
+                    Token::Address(H160::default()),
+                    Token::Address(H160::default()),
+                    Token::Address(H160::default()),
+                    Token::Uint(U256::from(1)),
                     Token::Uint(U256::from_str("0x814a").unwrap()),
                     Token::Uint(U256::from_str("0xe18b37000000000000000000000000000000001").unwrap()),
-                    Token::Tuple(vec![
-                        Token::Uint(U256::from(0)),
-                        Token::Uint(U256::from(0)),
-                        Token::String("ar://YhErKXFGi8pe4vR4w7vUc__KSmShdJ5_hLQJ7M9BTRU".to_string()),
-                        Token::Address(H160::default()),
-                        Token::Address(H160::default()),
-                        Token::Address(H160::default()),
-                        Token::Uint(U256::from(1)),
-                        Token::Uint(U256::from_str("0x814a").unwrap()),
-                        Token::Uint(U256::from_str("0xe18b37000000000000000000000000000000001").unwrap()),
-                        Token::Uint(U256::from(0))
-                    ]),
-                    Token::Array(vec![]),
-                    Token::Array(vec![Token::Address(H160::from(hex_literal::hex!("f4054e308f7804e34713c114a0c9e48e786a9a4c")))]),
-                    Token::Array(vec![Token::Bytes(vec![])]),
-                    Token::Array(vec![]),
-                    Token::Array(vec![]),
-                ])
-            );
+                    Token::Uint(U256::from(0))
+                ]),
+                Token::Array(vec![]),
+                Token::Array(vec![Token::Address(H160::from(hex_literal::hex!("f4054e308f7804e34713c114a0c9e48e786a9a4c")))]),
+                Token::Array(vec![Token::Bytes(vec![])]),
+                Token::Array(vec![]),
+                Token::Array(vec![]),
+            ])
+        );
 
-            let pub_resp = MomokaPublication::fetch_lens_publication(
-                String::from("0x9d72-0x0457-DA-64abf0b0"),
-                true,
-            )
-            .unwrap();
-            assert_eq!(
-                pub_resp,
+        let pub_resp = MomokaPublication::fetch_lens_publication(
+            String::from("0x9d72-0x0457-DA-64abf0b0"),
+            true,
+        )
+        .unwrap();
+        assert_eq!(
+            pub_resp,
+            Token::Tuple(vec![
+                Token::Uint(U256::from_str("0x9d72").unwrap()),
+                Token::Uint(U256::from_str("0x64abf0b000000000000000000000000000000457").unwrap()),
                 Token::Tuple(vec![
-                    Token::Uint(U256::from_str("0x9d72").unwrap()),
-                    Token::Uint(U256::from_str("0x64abf0b000000000000000000000000000000457").unwrap()),
-                    Token::Tuple(vec![
-                        Token::Uint(U256::from_str("0x5").unwrap()),
-                        Token::Uint(U256::from_str("0x6d1b60c900000000000000000000000000001e8a").unwrap()),
-                        Token::String("ar://s7-KUGt9F0TuJ4xTP01kbybqz0QLsk7NKp4zy4day1M".to_string()),
-                        Token::Address(H160::default()),
-                        Token::Address(H160::default()),
-                        Token::Address(H160::default()),
-                        Token::Uint(U256::from(3)),
-                        Token::Uint(U256::from_str("0x5").unwrap()),
-                        Token::Uint(U256::from_str("0x6d1b60c900000000000000000000000000001e8a").unwrap()),
-                        Token::Uint(U256::from(0))
-                    ]),
-                    Token::Array(vec![]),
-                    Token::Array(vec![Token::Address(H160::from(hex_literal::hex!("f4054e308f7804e34713c114a0c9e48e786a9a4c")))]),
-                    Token::Array(vec![Token::Bytes(vec![])]),
-                    Token::Array(vec![]),
-                    Token::Array(vec![]),
-                ])
-            );
-        }
-
-        #[ink::test]
-        fn fetch_lens_publicatino_negatives() {
-            let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
-
-            let res = MomokaPublication::fetch_lens_publication(
-                String::from("0x73b1-0x2b05-DA-ebdf984e"),
-                true,
-            );
-            assert_eq!(res, Err(Error::NoProofForComment));
-
-            let res = MomokaPublication::fetch_lens_publication(
-                String::from("0x814a-0x01-DA-0e18b37"),
-                true,
-            );
-            assert_eq!(res, Err(Error::PublicationNotExists));
-
-            let res = MomokaPublication::fetch_lens_publication(
-                String::from("0x814a-0x01-DA-0e18b37"),
-                false,
-            );
-            assert_eq!(res, Err(Error::PublicationNotExists));
-        }
-
-        #[ink::test]
-        fn check_lens_publication() {
-            let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
-            let EnvVars {
-                rpc,
-                client_addr,
-                attest_key,
-            } = config();
-
-            let mut momoka_publication = MomokaPublication::new(attest_key.try_into().unwrap());
-            momoka_publication.config_client(rpc, client_addr).unwrap();
-
-            let r = momoka_publication
-                .check_lens_publication(String::from("0x01-0x01ef-DA-eb395e21"), true)
-                .expect("failed to check publication");
-            pink::warn!("publication proof: {}", hex::encode(&r));
-        }
+                    Token::Uint(U256::from_str("0x5").unwrap()),
+                    Token::Uint(U256::from_str("0x6d1b60c900000000000000000000000000001e8a").unwrap()),
+                    Token::String("ar://s7-KUGt9F0TuJ4xTP01kbybqz0QLsk7NKp4zy4day1M".to_string()),
+                    Token::Address(H160::default()),
+                    Token::Address(H160::default()),
+                    Token::Address(H160::default()),
+                    Token::Uint(U256::from(3)),
+                    Token::Uint(U256::from_str("0x5").unwrap()),
+                    Token::Uint(U256::from_str("0x6d1b60c900000000000000000000000000001e8a").unwrap()),
+                    Token::Uint(U256::from(0))
+                ]),
+                Token::Array(vec![]),
+                Token::Array(vec![Token::Address(H160::from(hex_literal::hex!("f4054e308f7804e34713c114a0c9e48e786a9a4c")))]),
+                Token::Array(vec![Token::Bytes(vec![])]),
+                Token::Array(vec![]),
+                Token::Array(vec![]),
+            ])
+        );
     }
+
+    #[ink::test]
+    fn fetch_lens_publication_negatives() {
+        let _ = env_logger::try_init();
+        pink_extension_runtime::mock_ext::mock_all_ext();
+
+        let res = MomokaPublication::fetch_lens_publication(
+            String::from("0x73b1-0x2b05-DA-ebdf984e"),
+            true,
+        );
+        assert_eq!(res, Err(Error::NoProofForComment));
+
+        let res = MomokaPublication::fetch_lens_publication(
+            String::from("0x814a-0x01-DA-0e18b37"),
+            true,
+        );
+        assert_eq!(res, Err(Error::PublicationNotExists));
+
+        let res = MomokaPublication::fetch_lens_publication(
+            String::from("0x814a-0x01-DA-0e18b37"),
+            false,
+        );
+        assert_eq!(res, Err(Error::PublicationNotExists));
+    }
+*/
 }

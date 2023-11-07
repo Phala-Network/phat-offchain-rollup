@@ -16,19 +16,19 @@ scale-info = { version = "2", default-features = false, features = ["derive"], o
 primitive-types = { version = "0.12.1", default-features = false, features = ["codec", "scale-info"] }
 hex = { version = "0.4", default-features = false, features = ["alloc"] }
 
-pink-extension = { version = "0.4.1", default-features = false, optional = true }
+pink-extension = { version = "0.5.0", default-features = false, optional = true }
 kv-session = { package = "pink-kv-session", version = "0.2" }
 
 # for EVM rollup
-pink-web3 = { version = "0.20.1", default-features = false, features = ["pink", "signing"], optional = true }
+pink-web3 = { version = "0.21.0", default-features = false, features = ["pink", "signing"], optional = true }
 ethabi = { version = "18.0.0", default-features = false, features = ["serde", "rlp"], optional = true }
 
 # for Substrate and ink! rollup
-subrpc = { package = "pink-subrpc", version = "0.4.3", default-features = false, optional = true }
+subrpc = { package = "pink-subrpc", version = "0.5", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = "0.4.1"
-pink-extension-runtime = { version = "0.4.0", default-features = false }
+pink-extension-runtime = { version = "0.5.0", default-features = false }
 
 [features]
 default = ["std", "logging"]

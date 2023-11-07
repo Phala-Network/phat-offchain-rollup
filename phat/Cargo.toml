@@ -7,8 +7,7 @@ members = [
     "contracts/sub_price_feed",
     "contracts/evm_price_feed",
     "contracts/ink_price_feed",
-    "contracts/momoka_publication",
-    "contracts/http_test",
+    # "contracts/momoka_publication",
 ]
 
 # Sneak peek of the new test engine!
@@ -16,3 +15,4 @@ members = [
 ink = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-4.0.1" }
 ink_env = { git = "https://github.com/Phala-Network/ink.git", branch = "advtest-4.0.1" }
 serde = { git = "https://github.com/kvinwang/serde.git", branch = "patched-v1.0.188" }
+drink = { git = "https://github.com/kvinwang/drink-for-pink.git" }

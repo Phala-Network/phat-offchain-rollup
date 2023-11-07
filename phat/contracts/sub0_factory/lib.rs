@@ -87,7 +87,7 @@ mod sub0_factory {
         /// Returns the current public config
         #[ink(message)]
         pub fn get_config(&self) -> Result<(u8, Hash)> {
-            let config = self.ensure_configured()?.clone();
+            let config = self.ensure_configured()?;
             Ok((config.pallet_id, config.price_feed_code))
         }
 
@@ -101,7 +101,7 @@ mod sub0_factory {
         ) -> Result<AccountId> {
             use ink::ToAccountId;
 
-            let config = self.ensure_configured()?.clone();
+            let config = self.ensure_configured()?;
             let caller = self.env().caller();
             let mut deployed = sub_price_feed::SubPriceFeedRef::default()
                 .code_hash(config.price_feed_code)
