@@ -268,11 +268,11 @@ mod momoka_publication {
             let (profile_id, pub_id) = Self::extract_ids(publication_id)?;
             // free collect action
             let collect_act = H160::from(match mainnet {
-                true => hex_literal::hex!("027AfbD7628221A0222eD4851EE63dF449d9dAE7"),
+                true => hex_literal::hex!("efBa1032bB5f9bEC79e022f52D89C2cc9090D1B8"),
                 false => hex_literal::hex!("027AfbD7628221A0222eD4851EE63dF449d9dAE7"),
             });
             let free_collect = H160::from(match mainnet {
-                true => hex_literal::hex!("2adb3d8fC5E5BB5552a342A0FB9fC23Ffb5d1Eee"),
+                true => hex_literal::hex!("c9205abC4A4fceC25E15446A8c2DD19ab60e1149"),
                 false => hex_literal::hex!("2adb3d8fC5E5BB5552a342A0FB9fC23Ffb5d1Eee"),
             });
             Ok(evm_act_oracle_response_with_collect_act(
@@ -607,7 +607,7 @@ mod momoka_publication {
             momoka_publication.config_client(rpc, client_addr).unwrap();
 
             let r = momoka_publication
-                .check_lens_publication(String::from("0x01-0x01ef-DA-eb395e21"), true, true)
+                .check_lens_publication(String::from("0x01-0x01ef-DA-eb395e21"), true)
                 .expect("failed to check publication");
             pink::warn!("publication proof: {}", hex::encode(&r));
         }
