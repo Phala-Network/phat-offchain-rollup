@@ -198,6 +198,16 @@ impl<'a> InkRollupClient<'a> {
         Ok(None)
     }
 
+    pub fn pop_raw(&mut self) -> Result<Option<Value>> {
+        let v = self.session.pop().map_err(Self::convert_err)?;
+
+        if let Some(v) = v {
+            return Ok(Some(v));
+        }
+
+        Ok(None)
+    }
+
     pub fn action(&mut self, action: Action) -> &mut Self {
         self.actions.push(action);
         self
