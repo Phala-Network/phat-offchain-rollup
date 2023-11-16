@@ -6,7 +6,7 @@ use openbrush::traits::Storage;
 use scale::{Decode, Encode};
 
 
-pub const MANAGER_ROLE: RoleType = ink::selector_id!("JS_MANAGER_ROLE");
+pub const JS_RA_MANAGER_ROLE: RoleType = ink::selector_id!("JS_RA_MANAGER_ROLE");
 
 #[derive(Debug, Eq, PartialEq, scale::Encode, scale::Decode)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
@@ -75,7 +75,7 @@ pub trait JsRollupAnchor:
     Storage<Data> + access_control::Internal
 {
     #[ink(message)]
-    #[openbrush::modifiers(access_control::only_role(MANAGER_ROLE))]
+    #[openbrush::modifiers(access_control::only_role(JS_RA_MANAGER_ROLE))]
     fn set_js_script_hash(&mut self, js_script_hash: CodeHash) -> Result<(), JsRollupAnchorError> {
         self.data::<Data>().js_script_hash.set(&js_script_hash);
         Ok(())
@@ -87,7 +87,7 @@ pub trait JsRollupAnchor:
     }
 
     #[ink(message)]
-    #[openbrush::modifiers(access_control::only_role(MANAGER_ROLE))]
+    #[openbrush::modifiers(access_control::only_role(JS_RA_MANAGER_ROLE))]
     fn set_settings_hash(&mut self, settings_hash: CodeHash) -> Result<(), JsRollupAnchorError> {
         self.data::<Data>().settings_hash.set(&settings_hash);
         Ok(())
