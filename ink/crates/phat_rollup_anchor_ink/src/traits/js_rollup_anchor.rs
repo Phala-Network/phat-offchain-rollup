@@ -30,7 +30,7 @@ type CodeHash = [u8; 32];
     feature = "std",
     derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout)
 )]
-enum ResponseMessage {
+pub enum ResponseMessage {
     JsResponse {
         /// hash of js script executed to get the data
         js_script_hash: CodeHash,
