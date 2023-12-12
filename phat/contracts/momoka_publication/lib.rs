@@ -213,8 +213,8 @@ mod momoka_publication {
             })()
             ";
 
-            let js_output = phat_js::eval(script, &[resp_body]);
-            let Ok(phat_js::Output::Bytes(encoded)) = js_output else {
+            let js_output = phat_js::eval_async_js(script, &[resp_body]);
+            let phat_js::JsValue::Bytes(encoded) = js_output else {
                 return Err(Error::FailedToParseJson);
             };
             let pub_data = PublicationData::decode(&mut &encoded[..]).expect("encoded by js; qed.");

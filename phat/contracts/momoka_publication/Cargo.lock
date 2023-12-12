@@ -3084,10 +3084,11 @@ checksum = "9b2a4787296e9989611394c33f193f676704af1686e70b8f8033ab5ba9a35a94"
 
 [[package]]
 name = "phat_js"
-version = "0.2.1"
+version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da23e44e6655966334644faaf3ea6bbda22a82143068246ba16dcf384d90ac4d"
+checksum = "9fadbc0bec0391f21aa3d076b1f3bd6408034884336c28cd121c8b39dc173b5a"
 dependencies = [
+ "hex_fmt",
  "ink",
  "parity-scale-codec",
  "pink-extension",
@@ -3153,16 +3154,19 @@ dependencies = [
 
 [[package]]
 name = "pink-extension"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe261c26b4018364320cf86615b6c82c068b3aa00ada4de3147842f97a20c548"
+checksum = "0f00d09691bd1922017d47eeb9a6d4bcd5aa35b163a00dc1e730ce8859ab1f05"
 dependencies = [
+ "hex",
  "ink",
  "log",
  "num_enum",
  "parity-scale-codec",
  "pink-extension-macro",
+ "pink-types",
  "scale-info",
+ "serde",
  "this-crate",
 ]
 
@@ -3235,6 +3239,16 @@ dependencies = [
  "serde",
  "sp-core-hashing 9.0.0",
  "ss58-registry",
+]
+
+[[package]]
+name = "pink-types"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cbfce16d3b505cfe560e1278836e16f400274d04395773ceb7879029b409429"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
 ]
 
 [[package]]
