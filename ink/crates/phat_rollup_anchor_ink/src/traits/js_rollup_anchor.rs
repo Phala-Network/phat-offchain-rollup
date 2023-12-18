@@ -54,11 +54,11 @@ pub enum ResponseMessage {
 }
 
 /// Enum used in the function on_message_received to return the result
-/// INPUT is the request type sent from the smart contract to phat offchain rollup
-/// OUTPUT is the response type receive by the smart contract
-pub enum MessageReceived<INPUT, OUTPUT> {
-    Ok { output: OUTPUT },
-    Error { input: INPUT, error: Vec<u8> },
+/// Input is the request type sent from the smart contract to phat offchain rollup
+/// Output is the response type receive by the smart contract
+pub enum MessageReceived<Input, Output> {
+    Ok { output: Output },
+    Error { input: Input, error: Vec<u8> },
 }
 
 #[derive(Default, Debug)]
@@ -114,23 +114,17 @@ pub trait JsRollupAnchor:
                 ..
             } => {
                 // check the js code hash
-                match self.data::<Data>().js_script_hash.get() {
-                    Some(expected_js_hash) => {
-                        if js_script_hash != expected_js_hash {
-                            return Err(RollupAnchorError::ConditionNotMet); // improve the error
-                        }
+                if let Some(expected_js_hash) = self.data::<Data>().js_script_hash.get() {
+                    if js_script_hash != expected_js_hash {
+                        return Err(RollupAnchorError::ConditionNotMet);
                     }
-                    None => {}
                 }
 
                 // check the settings hash
-                match self.data::<Data>().settings_hash.get() {
-                    Some(expected_settings_hash) => {
-                        if settings_hash != expected_settings_hash {
-                            return Err(RollupAnchorError::ConditionNotMet); // improve the error
-                        }
+                if let Some(expected_settings_hash) = self.data::<Data>().settings_hash.get() {
+                    if settings_hash != expected_settings_hash {
+                        return Err(RollupAnchorError::ConditionNotMet);
                     }
-                    None => {}
                 }
 
                 // we received the data
