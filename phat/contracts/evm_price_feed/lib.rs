@@ -4,11 +4,10 @@ extern crate alloc;
 
 pub use crate::evm_price_feed::*;
 
-#[ink::contract(env = pink_extension::PinkEnvironment)]
+#[ink::contract(env = pink::PinkEnvironment)]
 mod evm_price_feed {
     use alloc::{format, string::String, vec, vec::Vec};
     use ink::storage::traits::StorageLayout;
-    use pink_extension as pink;
     use pink_web3::types::{H160, U256};
     use scale::{Decode, Encode};
     use serde::Deserialize;
@@ -400,7 +399,7 @@ mod evm_price_feed {
         #[ink::test]
         fn fixed_parse() {
             let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_chain_extension::mock_ext::mock_all_ext();
             let p = EvmPriceFeed::fetch_coingecko_price("polkadot", "usd").unwrap();
             pink::warn!("Price: {p:?}");
         }
@@ -409,7 +408,7 @@ mod evm_price_feed {
         #[ignore]
         fn submit_price_feed() {
             let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_chain_extension::mock_ext::mock_all_ext();
             let EnvVars {
                 rpc,
                 attest_key,
@@ -438,7 +437,7 @@ mod evm_price_feed {
         #[ignore]
         fn answer_price_request() {
             let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_chain_extension::mock_ext::mock_all_ext();
             let EnvVars {
                 rpc,
                 attest_key,

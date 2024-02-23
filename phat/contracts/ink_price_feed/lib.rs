@@ -3,13 +3,13 @@
 extern crate alloc;
 extern crate core;
 
-#[ink::contract(env = pink_extension::PinkEnvironment)]
+#[ink::contract(env = pink::PinkEnvironment)]
 mod ink_price_feed {
     use alloc::{format, string::String, vec, vec::Vec};
     use ink::env::debug_println;
 
-    use pink_extension::chain_extension::signing;
-    use pink_extension::{debug, error, info, warn, ResultExt};
+    use pink::chain_extension::signing;
+    use pink::{debug, error, info, warn, ResultExt};
     use scale::{Decode, Encode};
     use serde::Deserialize;
 
@@ -220,7 +220,7 @@ mod ink_price_feed {
                 "https://api.coingecko.com/api/v3/simple/price?ids={token0}&vs_currencies={token1}"
             );
             let headers = vec![("accept".into(), "application/json".into())];
-            let resp = pink_extension::http_get!(url, headers);
+            let resp = pink::http_get!(url, headers);
             if resp.status_code != 200 {
                 return Err(Error::FailedToFetchPrice);
             }
@@ -445,7 +445,7 @@ mod ink_price_feed {
     #[cfg(test)]
     mod tests {
         use ink::env::debug_println;
-        use pink_extension::chain_extension::SigType;
+        use pink::chain_extension::SigType;
 
         use super::*;
 
@@ -512,7 +512,7 @@ mod ink_price_feed {
         #[ink::test]
         fn test_update_attestor_key() {
             let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_chain_extension::mock_ext::mock_all_ext();
 
             let mut price_feed = InkPriceFeed::default();
 
@@ -540,7 +540,7 @@ mod ink_price_feed {
         #[ignore = "the target contract must be deployed in local node or shibuya"]
         fn feed_custom_price() {
             let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_chain_extension::mock_ext::mock_all_ext();
 
             let price_feed = init_contract();
 
@@ -557,7 +557,7 @@ mod ink_price_feed {
         #[ink::test]
         fn fetch_coingecko_price() {
             let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_chain_extension::mock_ext::mock_all_ext();
 
             let token0 = "polkadot".to_string();
             let token1 = "usd".to_string();
@@ -571,7 +571,7 @@ mod ink_price_feed {
         #[ignore = "the target contract must be deployed in local node or shibuya"]
         fn feed_price_from_coingecko() {
             let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_chain_extension::mock_ext::mock_all_ext();
 
             let price_feed = init_contract();
 
@@ -588,7 +588,7 @@ mod ink_price_feed {
         #[ignore = "the target contract must be deployed in local node or shibuya"]
         fn answer_price_request() {
             let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_chain_extension::mock_ext::mock_all_ext();
 
             let price_feed = init_contract();
 
@@ -599,7 +599,7 @@ mod ink_price_feed {
         #[ink::test]
         fn test_sign_and_ecdsa_recover() {
             let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_chain_extension::mock_ext::mock_all_ext();
 
             // Secret key of test account `//Alice`
             let private_key = hex_literal::hex!(

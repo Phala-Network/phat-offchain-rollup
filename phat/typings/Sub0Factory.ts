@@ -16,6 +16,7 @@ import type * as PTT from "@polkadot/types/types";
 export namespace InkPrimitives {
     export interface LangError {
         couldNotReadInput?: null;
+        [index: string]: any;
     }
 
     export namespace LangError$ {
@@ -23,8 +24,16 @@ export namespace InkPrimitives {
             CouldNotReadInput = "CouldNotReadInput"
         }
 
-        export type Human = InkPrimitives.LangError$.Enum.CouldNotReadInput;
-        export type Codec = DPT.Enum<InkPrimitives.LangError$.Enum.CouldNotReadInput, never, never, PTT.Codec>;
+        export type Human = InkPrimitives.LangError$.Enum.CouldNotReadInput & { [index: string]: any };
+
+        export interface Codec extends PT.Enum {
+            type: Enum;
+            inner: PTT.Codec;
+            value: PTT.Codec;
+            toHuman(isExtended?: boolean): Human;
+            toJSON(): LangError;
+            toPrimitive(): LangError;
+        }
     }
 }
 
@@ -36,6 +45,7 @@ export namespace Sub0Factory {
         failedToDeployContract?: null;
         failedToConfigContract?: null;
         failedToTransferOwnership?: null;
+        [index: string]: any;
     }
 
     export interface Deployment {
@@ -56,18 +66,21 @@ export namespace Sub0Factory {
             FailedToTransferOwnership = "FailedToTransferOwnership"
         }
 
-        export type Human = Sub0Factory.Error$.Enum.BadOrigin
-            | Sub0Factory.Error$.Enum.NotConfigured
-            | Sub0Factory.Error$.Enum.InvalidKeyLength
-            | Sub0Factory.Error$.Enum.FailedToDeployContract
-            | Sub0Factory.Error$.Enum.FailedToConfigContract
-            | Sub0Factory.Error$.Enum.FailedToTransferOwnership;
-        export type Codec = DPT.Enum<Sub0Factory.Error$.Enum.BadOrigin, never, never, PTT.Codec>
-            | DPT.Enum<Sub0Factory.Error$.Enum.NotConfigured, never, never, PTT.Codec>
-            | DPT.Enum<Sub0Factory.Error$.Enum.InvalidKeyLength, never, never, PTT.Codec>
-            | DPT.Enum<Sub0Factory.Error$.Enum.FailedToDeployContract, never, never, PTT.Codec>
-            | DPT.Enum<Sub0Factory.Error$.Enum.FailedToConfigContract, never, never, PTT.Codec>
-            | DPT.Enum<Sub0Factory.Error$.Enum.FailedToTransferOwnership, never, never, PTT.Codec>;
+        export type Human = Sub0Factory.Error$.Enum.BadOrigin & { [index: string]: any }
+            | Sub0Factory.Error$.Enum.NotConfigured & { [index: string]: any }
+            | Sub0Factory.Error$.Enum.InvalidKeyLength & { [index: string]: any }
+            | Sub0Factory.Error$.Enum.FailedToDeployContract & { [index: string]: any }
+            | Sub0Factory.Error$.Enum.FailedToConfigContract & { [index: string]: any }
+            | Sub0Factory.Error$.Enum.FailedToTransferOwnership & { [index: string]: any };
+
+        export interface Codec extends PT.Enum {
+            type: Enum;
+            inner: PTT.Codec;
+            value: PTT.Codec;
+            toHuman(isExtended?: boolean): Human;
+            toJSON(): Error;
+            toPrimitive(): Error;
+        }
     }
 
     export namespace Deployment$ {
@@ -89,7 +102,7 @@ export namespace Sub0Factory {
     }
 }
 
-export namespace PinkExtension {
+export namespace Pink {
     export namespace ChainExtension {
         export type PinkExt = any;
 

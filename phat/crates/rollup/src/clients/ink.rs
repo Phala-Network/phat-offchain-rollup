@@ -8,11 +8,11 @@ use kv_session::{
     },
     RwTracker, Session,
 };
-use pink_extension::chain_extension::signing;
-use pink_extension::ResultExt;
+use pink::chain_extension::signing;
+use pink::ResultExt;
 
 #[cfg(feature = "logging")]
-use pink_extension::debug;
+use pink::debug;
 
 use primitive_types::H256;
 use scale::{Decode, Encode};

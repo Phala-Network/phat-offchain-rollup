@@ -170,7 +170,7 @@ if resp.status_code != 200 {
 let body = resp.body;
 ```
 
-The `http_get!` macro is provided by the Phat Contract API [`pink_extension::http_get`](https://docs.rs/pink-extension/0.2.0/pink_extension/macro.http_get.html). It allows the developer to send a `GET` or `POST` request in query context.
+The `http_get!` macro is provided by the Phat Contract API [`pink::http_get`](https://docs.rs/pink/0.2.0/pink/macro.http_get.html). It allows the developer to send a `GET` or `POST` request in query context.
 
 > In the transaction context, the http request will always fail, because it violates the determinism rule.
 

@@ -1,12 +1,12 @@
 {
   "source": {
-    "hash": "0x0edc2799f7b86d042f41abc80161c67696a1060d89a3904bd6175f0161713d20",
-    "language": "ink! 4.2.1",
-    "compiler": "rustc 1.69.0-nightly",
+    "hash": "0xf90215f99637241ea1c7f2d7239339933b10c2001bf6d19386a5efb9d2c5cc5f",
+    "language": "ink! 4.3.0",
+    "compiler": "rustc 1.73.0",
     "build_info": {
-      "build_mode": "Debug",
-      "cargo_contract_version": "3.0.1",
-      "rust_toolchain": "nightly-x86_64-unknown-linux-gnu",
+      "build_mode": "Release",
+      "cargo_contract_version": "3.2.0",
+      "rust_toolchain": "stable-x86_64-unknown-linux-gnu",
       "wasm_opt_settings": {
         "keep_debug_symbols": false,
         "optimization_passes": "Z"
@@ -795,30 +795,34 @@
               },
               {
                 "index": 10,
-                "name": "UnknownPublicationType"
+                "name": "NoProofForQuote"
               },
               {
                 "index": 11,
-                "name": "MissingMirrorField"
+                "name": "UnknownPublicationType"
               },
               {
                 "index": 12,
-                "name": "MissingCollectModule"
+                "name": "MissingMirrorField"
               },
               {
                 "index": 13,
-                "name": "BadEvmAnchorAbi"
+                "name": "MissingCollectModule"
               },
               {
                 "index": 14,
-                "name": "EvmFailedToPrepareMetaTx"
+                "name": "BadEvmAnchorAbi"
               },
               {
                 "index": 15,
-                "name": "BadPublicationId"
+                "name": "EvmFailedToPrepareMetaTx"
               },
               {
                 "index": 16,
+                "name": "BadPublicationId"
+              },
+              {
+                "index": 17,
                 "name": "BadDaId"
               }
             ]
@@ -1068,7 +1072,7 @@
           "variant": {}
         },
         "path": [
-          "pink_extension",
+          "pink",
           "chain_extension",
           "PinkExt"
         ]

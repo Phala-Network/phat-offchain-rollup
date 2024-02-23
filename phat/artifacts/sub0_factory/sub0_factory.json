@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0x4d387c1431a40d3fac6690c6bd97b03cd15c8518f888780c765122c84aae6d43",
+    "hash": "0xfa7c1251483afb89ea9632d379bc7ff799650700ad2a0a6d95eedffc981cc710",
     "language": "ink! 4.3.0",
     "compiler": "rustc 1.73.0",
     "build_info": {
@@ -1023,7 +1023,7 @@
           "variant": {}
         },
         "path": [
-          "pink_extension",
+          "pink",
           "chain_extension",
           "PinkExt"
         ]

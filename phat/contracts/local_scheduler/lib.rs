@@ -2,12 +2,11 @@
 
 extern crate alloc;
 
-#[ink::contract(env = pink_extension::PinkEnvironment)]
+#[ink::contract(env = pink::PinkEnvironment)]
 mod local_scheduler {
     use alloc::{string::String, vec::Vec};
     use ink::storage::{traits::StorageLayout, Mapping};
     use pink::ResultExt;
-    use pink_extension as pink;
     use scale::{Decode, Encode};
 
     #[ink(storage)]
@@ -297,7 +296,7 @@ mod local_scheduler {
         #[ink::test]
         fn it_works() {
             let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_chain_extension::mock_ext::mock_all_ext();
 
             // Register contracts
             let hash1 = ink::primitives::Hash::try_from([10u8; 32]).unwrap();

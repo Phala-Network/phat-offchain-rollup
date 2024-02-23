@@ -16,6 +16,7 @@ import type * as PTT from "@polkadot/types/types";
 export namespace InkPrimitives {
     export interface LangError {
         couldNotReadInput?: null;
+        [index: string]: any;
     }
 
     export namespace LangError$ {
@@ -23,8 +24,16 @@ export namespace InkPrimitives {
             CouldNotReadInput = "CouldNotReadInput"
         }
 
-        export type Human = InkPrimitives.LangError$.Enum.CouldNotReadInput;
-        export type Codec = DPT.Enum<InkPrimitives.LangError$.Enum.CouldNotReadInput, never, never, PTT.Codec>;
+        export type Human = InkPrimitives.LangError$.Enum.CouldNotReadInput & { [index: string]: any };
+
+        export interface Codec extends PT.Enum {
+            type: Enum;
+            inner: PTT.Codec;
+            value: PTT.Codec;
+            toHuman(isExtended?: boolean): Human;
+            toJSON(): LangError;
+            toPrimitive(): LangError;
+        }
     }
 }
 
@@ -45,6 +54,7 @@ export namespace InkPriceFeed {
         failedToDecode?: null;
         invalidRequest?: null;
         failedToCallRollup?: null;
+        [index: string]: any;
     }
 
     export namespace Error$ {
@@ -66,40 +76,34 @@ export namespace InkPriceFeed {
             FailedToCallRollup = "FailedToCallRollup"
         }
 
-        export type Human = InkPriceFeed.Error$.Enum.BadOrigin
-            | InkPriceFeed.Error$.Enum.NotConfigured
-            | InkPriceFeed.Error$.Enum.InvalidKeyLength
-            | InkPriceFeed.Error$.Enum.InvalidAddressLength
-            | InkPriceFeed.Error$.Enum.NoRequestInQueue
-            | InkPriceFeed.Error$.Enum.FailedToCreateClient
-            | InkPriceFeed.Error$.Enum.FailedToCommitTx
-            | InkPriceFeed.Error$.Enum.FailedToFetchPrice
-            | InkPriceFeed.Error$.Enum.FailedToGetStorage
-            | InkPriceFeed.Error$.Enum.FailedToCreateTransaction
-            | InkPriceFeed.Error$.Enum.FailedToSendTransaction
-            | InkPriceFeed.Error$.Enum.FailedToGetBlockHash
-            | InkPriceFeed.Error$.Enum.FailedToDecode
-            | InkPriceFeed.Error$.Enum.InvalidRequest
-            | InkPriceFeed.Error$.Enum.FailedToCallRollup;
-        export type Codec = DPT.Enum<InkPriceFeed.Error$.Enum.BadOrigin, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.NotConfigured, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.InvalidKeyLength, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.InvalidAddressLength, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.NoRequestInQueue, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.FailedToCreateClient, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.FailedToCommitTx, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.FailedToFetchPrice, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.FailedToGetStorage, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.FailedToCreateTransaction, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.FailedToSendTransaction, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.FailedToGetBlockHash, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.FailedToDecode, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.InvalidRequest, never, never, PTT.Codec>
-            | DPT.Enum<InkPriceFeed.Error$.Enum.FailedToCallRollup, never, never, PTT.Codec>;
+        export type Human = InkPriceFeed.Error$.Enum.BadOrigin & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.NotConfigured & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.InvalidKeyLength & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.InvalidAddressLength & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.NoRequestInQueue & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.FailedToCreateClient & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.FailedToCommitTx & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.FailedToFetchPrice & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.FailedToGetStorage & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.FailedToCreateTransaction & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.FailedToSendTransaction & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.FailedToGetBlockHash & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.FailedToDecode & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.InvalidRequest & { [index: string]: any }
+            | InkPriceFeed.Error$.Enum.FailedToCallRollup & { [index: string]: any };
+
+        export interface Codec extends PT.Enum {
+            type: Enum;
+            inner: PTT.Codec;
+            value: PTT.Codec;
+            toHuman(isExtended?: boolean): Human;
+            toJSON(): Error;
+            toPrimitive(): Error;
+        }
     }
 }
 
-export namespace PinkExtension {
+export namespace Pink {
     export namespace ChainExtension {
         export type PinkExt = any;
 
