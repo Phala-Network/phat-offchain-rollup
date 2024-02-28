@@ -2,12 +2,12 @@
 
 extern crate alloc;
 
-#[ink::contract(env = pink_extension::PinkEnvironment)]
+#[ink::contract(env = pink::PinkEnvironment)]
 mod sub0_factory {
     use alloc::{string::String, vec, vec::Vec};
     #[cfg(feature = "std")]
     use ink::storage::traits::StorageLayout;
-    use pink_extension::ResultExt;
+    use pink::ResultExt;
     use scale::{Decode, Encode};
 
     #[ink(storage)]
@@ -184,7 +184,7 @@ mod sub0_factory {
         #[ink::test]
         fn it_works() {
             let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_chain_extension::mock_ext::mock_all_ext();
 
             // Mock code hash of contracts
             let hash1 = ink::primitives::Hash::try_from([10u8; 32]).unwrap();

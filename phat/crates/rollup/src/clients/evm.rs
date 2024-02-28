@@ -11,7 +11,6 @@ use kv_session::{
     RwTracker, Session,
 };
 use pink::ResultExt;
-use pink_extension as pink;
 use pink_web3::{
     api::{Eth, Namespace},
     contract::{Contract, Options},
@@ -362,7 +361,7 @@ mod tests {
 
     #[test]
     fn sig_encode() {
-        pink_extension_runtime::mock_ext::mock_all_ext();
+        pink_chain_extension::mock_ext::mock_all_ext();
         let seed: [u8; 32] =
             hex_literal::hex!("0000000000000000000000000000000000000000000000000000000000000001");
         let msg: [u8; 32] =
@@ -376,7 +375,7 @@ mod tests {
     #[test]
     #[ignore]
     fn meta_tx() {
-        pink_extension_runtime::mock_ext::mock_all_ext();
+        pink_chain_extension::mock_ext::mock_all_ext();
         let seed: [u8; 32] =
             hex_literal::hex!("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80");
         let pair = pink_web3::keys::pink::KeyPair::from(seed);

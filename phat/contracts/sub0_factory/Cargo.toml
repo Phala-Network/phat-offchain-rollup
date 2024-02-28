@@ -11,13 +11,13 @@ ink = { version = "4.2.1", default-features = false }
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 
-pink-extension = { version = "0.5.0", default-features = false }
+pink = { version = "0.4", default-features = false }
 sub_price_feed = { path = "../sub_price_feed", default-features = false, features = ["ink-as-dependency"] }
 
 [dev-dependencies]
 env_logger = "0.10.0"
 hex-literal = "0.3"
-pink-extension-runtime = "0.5.0"
+pink-chain-extension = "0.1"
 
 [lib]
 name = "sub0_factory"
@@ -30,7 +30,7 @@ std = [
     "ink/std",
     "scale/std",
     "scale-info/std",
-    "pink-extension/std",
+    "pink/std",
     "sub_price_feed/std",
 ]
 ink-as-dependency = []

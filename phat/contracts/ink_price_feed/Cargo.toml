@@ -16,20 +16,20 @@ scale-info = { version = "2.9.0", default-features = false, features = ["derive"
 serde = { version = "1", default-features = false, features = ["derive", "alloc"]}
 fixed = { version = "1", default-features = false, features = ["serde"] }
 
-pink-extension = { version = "0.5.0", default-features = false }
+pink = { version = "0.4", default-features = false }
 pink-json = { git = "https://github.com/Phala-Network/pink-json.git", branch = "pink", default-features = false, features = ["de-number-as-str"] }
-pink-web3 = { version = "0.21.0", default-features = false, features = ["pink", "signing"] }
+pink-web3 = { version = "0.22", default-features = false, features = ["pink", "signing"] }
 
 phat_offchain_rollup = { path = "../../crates/rollup", default-features = false, features = ["ink"] }
 
-subrpc = { package = "pink-subrpc", version = "0.5", default-features = false }
+subrpc = { package = "pink-subrpc", version = "0.6.0", default-features = false }
 
 hex = { version = "0.4", default-features = false }
 
 [dev-dependencies]
 dotenvy = "0.15"
 env_logger = "0.10.0"
-pink-extension-runtime = { version = "0.5.0", default-features = false }
+pink-chain-extension = { version = "0.1", default-features = false }
 hex-literal = "0.4.1"
 subxt-signer = { version = "0.31.0" }
 
@@ -46,7 +46,7 @@ std = [
     "scale/std",
     "scale-info/std",
     "phat_offchain_rollup/std",
-    "pink-extension/std",
+    "pink/std",
     "subrpc/std",
     "pink-json/std",
     "pink-web3/std",

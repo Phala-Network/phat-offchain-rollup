@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0x6a86092dbc93f7b001da2761f21f3dd5a4841121acd701a64399465f8008f307",
+    "hash": "0x3b9f39a1bddadb0847c403a17626b030463121361d3f85eb23d3cdd070d5609d",
     "language": "ink! 4.3.0",
     "compiler": "rustc 1.73.0",
     "build_info": {
@@ -8,7 +8,7 @@
       "cargo_contract_version": "3.2.0",
       "rust_toolchain": "stable-x86_64-unknown-linux-gnu",
       "wasm_opt_settings": {
-        "keep_debug_symbols": true,
+        "keep_debug_symbols": false,
         "optimization_passes": "Z"
       }
     }
@@ -839,7 +839,7 @@
           "variant": {}
         },
         "path": [
-          "pink_extension",
+          "pink",
           "chain_extension",
           "PinkExt"
         ]

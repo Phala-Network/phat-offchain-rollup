@@ -9,8 +9,7 @@ use kv_session::{
     RwTracker, Session,
 };
 use pink::ResultExt;
-use pink_extension as pink;
-use pink_extension::AccountId;
+use pink::AccountId;
 use primitive_types::H256;
 
 const METHOD_CLAIM_NAME: u8 = 0u8;

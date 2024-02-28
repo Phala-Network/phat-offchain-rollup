@@ -16,6 +16,7 @@ import type * as PTT from "@polkadot/types/types";
 export namespace InkPrimitives {
     export interface LangError {
         couldNotReadInput?: null;
+        [index: string]: any;
     }
 
     export namespace LangError$ {
@@ -23,8 +24,16 @@ export namespace InkPrimitives {
             CouldNotReadInput = "CouldNotReadInput"
         }
 
-        export type Human = InkPrimitives.LangError$.Enum.CouldNotReadInput;
-        export type Codec = DPT.Enum<InkPrimitives.LangError$.Enum.CouldNotReadInput, never, never, PTT.Codec>;
+        export type Human = InkPrimitives.LangError$.Enum.CouldNotReadInput & { [index: string]: any };
+
+        export interface Codec extends PT.Enum {
+            type: Enum;
+            inner: PTT.Codec;
+            value: PTT.Codec;
+            toHuman(isExtended?: boolean): Human;
+            toJSON(): LangError;
+            toPrimitive(): LangError;
+        }
     }
 }
 
@@ -45,6 +54,7 @@ export namespace SubPriceFeed {
         failedToDecode?: null;
         rollupAlreadyInitialized?: null;
         rollupConfiguredByAnotherAccount?: null;
+        [index: string]: any;
     }
 
     export namespace Error$ {
@@ -66,40 +76,34 @@ export namespace SubPriceFeed {
             RollupConfiguredByAnotherAccount = "RollupConfiguredByAnotherAccount"
         }
 
-        export type Human = SubPriceFeed.Error$.Enum.BadOrigin
-            | SubPriceFeed.Error$.Enum.NotConfigured
-            | SubPriceFeed.Error$.Enum.InvalidKeyLength
-            | SubPriceFeed.Error$.Enum.FailedToCreateClient
-            | SubPriceFeed.Error$.Enum.FailedToCommitTx
-            | SubPriceFeed.Error$.Enum.FailedToFetchPrice
-            | SubPriceFeed.Error$.Enum.FailedToGetNameOwner
-            | SubPriceFeed.Error$.Enum.FailedToClaimName
-            | SubPriceFeed.Error$.Enum.FailedToGetStorage
-            | SubPriceFeed.Error$.Enum.FailedToCreateTransaction
-            | SubPriceFeed.Error$.Enum.FailedToSendTransaction
-            | SubPriceFeed.Error$.Enum.FailedToGetBlockHash
-            | SubPriceFeed.Error$.Enum.FailedToDecode
-            | SubPriceFeed.Error$.Enum.RollupAlreadyInitialized
-            | SubPriceFeed.Error$.Enum.RollupConfiguredByAnotherAccount;
-        export type Codec = DPT.Enum<SubPriceFeed.Error$.Enum.BadOrigin, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.NotConfigured, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.InvalidKeyLength, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.FailedToCreateClient, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.FailedToCommitTx, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.FailedToFetchPrice, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.FailedToGetNameOwner, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.FailedToClaimName, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.FailedToGetStorage, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.FailedToCreateTransaction, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.FailedToSendTransaction, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.FailedToGetBlockHash, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.FailedToDecode, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.RollupAlreadyInitialized, never, never, PTT.Codec>
-            | DPT.Enum<SubPriceFeed.Error$.Enum.RollupConfiguredByAnotherAccount, never, never, PTT.Codec>;
+        export type Human = SubPriceFeed.Error$.Enum.BadOrigin & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.NotConfigured & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.InvalidKeyLength & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.FailedToCreateClient & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.FailedToCommitTx & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.FailedToFetchPrice & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.FailedToGetNameOwner & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.FailedToClaimName & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.FailedToGetStorage & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.FailedToCreateTransaction & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.FailedToSendTransaction & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.FailedToGetBlockHash & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.FailedToDecode & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.RollupAlreadyInitialized & { [index: string]: any }
+            | SubPriceFeed.Error$.Enum.RollupConfiguredByAnotherAccount & { [index: string]: any };
+
+        export interface Codec extends PT.Enum {
+            type: Enum;
+            inner: PTT.Codec;
+            value: PTT.Codec;
+            toHuman(isExtended?: boolean): Human;
+            toJSON(): Error;
+            toPrimitive(): Error;
+        }
     }
 }
 
-export namespace PinkExtension {
+export namespace Pink {
     export namespace ChainExtension {
         export type PinkExt = any;
 

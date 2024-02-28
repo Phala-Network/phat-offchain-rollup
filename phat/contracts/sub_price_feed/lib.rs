@@ -4,12 +4,11 @@ extern crate alloc;
 
 pub use crate::sub_price_feed::*;
 
-#[ink::contract(env = pink_extension::PinkEnvironment)]
+#[ink::contract(env = pink::PinkEnvironment)]
 mod sub_price_feed {
     use alloc::{format, string::String, vec, vec::Vec};
     #[cfg(feature = "std")]
     use ink::storage::traits::StorageLayout;
-    use pink_extension as pink;
     use scale::{Decode, Encode};
     use serde::Deserialize;
 
@@ -287,7 +286,7 @@ mod sub_price_feed {
         #[ink::test]
         fn fixed_parse() {
             let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_chain_extension::mock_ext::mock_all_ext();
             let p = SubPriceFeed::fetch_coingecko_price("polkadot", "usd").unwrap();
             pink::warn!("Price: {p:?}");
         }
@@ -296,7 +295,7 @@ mod sub_price_feed {
         #[ignore = "run a phala node at 39933 to test"]
         fn default_works() {
             let _ = env_logger::try_init();
-            pink_extension_runtime::mock_ext::mock_all_ext();
+            pink_chain_extension::mock_ext::mock_all_ext();
             // Secret key of test account `//Alice`
             let sk_alice = hex_literal::hex!(
                 "e5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a"

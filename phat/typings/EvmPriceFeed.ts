@@ -16,6 +16,7 @@ import type * as PTT from "@polkadot/types/types";
 export namespace InkPrimitives {
     export interface LangError {
         couldNotReadInput?: null;
+        [index: string]: any;
     }
 
     export namespace LangError$ {
@@ -23,8 +24,16 @@ export namespace InkPrimitives {
             CouldNotReadInput = "CouldNotReadInput"
         }
 
-        export type Human = InkPrimitives.LangError$.Enum.CouldNotReadInput;
-        export type Codec = DPT.Enum<InkPrimitives.LangError$.Enum.CouldNotReadInput, never, never, PTT.Codec>;
+        export type Human = InkPrimitives.LangError$.Enum.CouldNotReadInput & { [index: string]: any };
+
+        export interface Codec extends PT.Enum {
+            type: Enum;
+            inner: PTT.Codec;
+            value: PTT.Codec;
+            toHuman(isExtended?: boolean): Human;
+            toJSON(): LangError;
+            toPrimitive(): LangError;
+        }
     }
 }
 
@@ -44,6 +53,7 @@ export namespace EvmPriceFeed {
         failedToGetBlockHash?: null;
         failedToDecode?: null;
         invalidRequest?: null;
+        [index: string]: any;
     }
 
     export namespace Error$ {
@@ -64,38 +74,33 @@ export namespace EvmPriceFeed {
             InvalidRequest = "InvalidRequest"
         }
 
-        export type Human = EvmPriceFeed.Error$.Enum.BadOrigin
-            | EvmPriceFeed.Error$.Enum.NotConfigured
-            | EvmPriceFeed.Error$.Enum.InvalidKeyLength
-            | EvmPriceFeed.Error$.Enum.InvalidAddressLength
-            | EvmPriceFeed.Error$.Enum.NoRequestInQueue
-            | EvmPriceFeed.Error$.Enum.FailedToCreateClient
-            | EvmPriceFeed.Error$.Enum.FailedToCommitTx
-            | EvmPriceFeed.Error$.Enum.FailedToFetchPrice
-            | EvmPriceFeed.Error$.Enum.FailedToGetStorage
-            | EvmPriceFeed.Error$.Enum.FailedToCreateTransaction
-            | EvmPriceFeed.Error$.Enum.FailedToSendTransaction
-            | EvmPriceFeed.Error$.Enum.FailedToGetBlockHash
-            | EvmPriceFeed.Error$.Enum.FailedToDecode
-            | EvmPriceFeed.Error$.Enum.InvalidRequest;
-        export type Codec = DPT.Enum<EvmPriceFeed.Error$.Enum.BadOrigin, never, never, PTT.Codec>
-            | DPT.Enum<EvmPriceFeed.Error$.Enum.NotConfigured, never, never, PTT.Codec>
-            | DPT.Enum<EvmPriceFeed.Error$.Enum.InvalidKeyLength, never, never, PTT.Codec>
-            | DPT.Enum<EvmPriceFeed.Error$.Enum.InvalidAddressLength, never, never, PTT.Codec>
-            | DPT.Enum<EvmPriceFeed.Error$.Enum.NoRequestInQueue, never, never, PTT.Codec>
-            | DPT.Enum<EvmPriceFeed.Error$.Enum.FailedToCreateClient, never, never, PTT.Codec>
-            | DPT.Enum<EvmPriceFeed.Error$.Enum.FailedToCommitTx, never, never, PTT.Codec>
-            | DPT.Enum<EvmPriceFeed.Error$.Enum.FailedToFetchPrice, never, never, PTT.Codec>
-            | DPT.Enum<EvmPriceFeed.Error$.Enum.FailedToGetStorage, never, never, PTT.Codec>
-            | DPT.Enum<EvmPriceFeed.Error$.Enum.FailedToCreateTransaction, never, never, PTT.Codec>
-            | DPT.Enum<EvmPriceFeed.Error$.Enum.FailedToSendTransaction, never, never, PTT.Codec>
-            | DPT.Enum<EvmPriceFeed.Error$.Enum.FailedToGetBlockHash, never, never, PTT.Codec>
-            | DPT.Enum<EvmPriceFeed.Error$.Enum.FailedToDecode, never, never, PTT.Codec>
-            | DPT.Enum<EvmPriceFeed.Error$.Enum.InvalidRequest, never, never, PTT.Codec>;
+        export type Human = EvmPriceFeed.Error$.Enum.BadOrigin & { [index: string]: any }
+            | EvmPriceFeed.Error$.Enum.NotConfigured & { [index: string]: any }
+            | EvmPriceFeed.Error$.Enum.InvalidKeyLength & { [index: string]: any }
+            | EvmPriceFeed.Error$.Enum.InvalidAddressLength & { [index: string]: any }
+            | EvmPriceFeed.Error$.Enum.NoRequestInQueue & { [index: string]: any }
+            | EvmPriceFeed.Error$.Enum.FailedToCreateClient & { [index: string]: any }
+            | EvmPriceFeed.Error$.Enum.FailedToCommitTx & { [index: string]: any }
+            | EvmPriceFeed.Error$.Enum.FailedToFetchPrice & { [index: string]: any }
+            | EvmPriceFeed.Error$.Enum.FailedToGetStorage & { [index: string]: any }
+            | EvmPriceFeed.Error$.Enum.FailedToCreateTransaction & { [index: string]: any }
+            | EvmPriceFeed.Error$.Enum.FailedToSendTransaction & { [index: string]: any }
+            | EvmPriceFeed.Error$.Enum.FailedToGetBlockHash & { [index: string]: any }
+            | EvmPriceFeed.Error$.Enum.FailedToDecode & { [index: string]: any }
+            | EvmPriceFeed.Error$.Enum.InvalidRequest & { [index: string]: any };
+
+        export interface Codec extends PT.Enum {
+            type: Enum;
+            inner: PTT.Codec;
+            value: PTT.Codec;
+            toHuman(isExtended?: boolean): Human;
+            toJSON(): Error;
+            toPrimitive(): Error;
+        }
     }
 }
 
-export namespace PinkExtension {
+export namespace Pink {
     export namespace ChainExtension {
         export type PinkExt = any;
 

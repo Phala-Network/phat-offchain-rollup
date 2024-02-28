@@ -16,6 +16,7 @@ import type * as PTT from "@polkadot/types/types";
 export namespace InkPrimitives {
     export interface LangError {
         couldNotReadInput?: null;
+        [index: string]: any;
     }
 
     export namespace LangError$ {
@@ -23,8 +24,16 @@ export namespace InkPrimitives {
             CouldNotReadInput = "CouldNotReadInput"
         }
 
-        export type Human = InkPrimitives.LangError$.Enum.CouldNotReadInput;
-        export type Codec = DPT.Enum<InkPrimitives.LangError$.Enum.CouldNotReadInput, never, never, PTT.Codec>;
+        export type Human = InkPrimitives.LangError$.Enum.CouldNotReadInput & { [index: string]: any };
+
+        export interface Codec extends PT.Enum {
+            type: Enum;
+            inner: PTT.Codec;
+            value: PTT.Codec;
+            toHuman(isExtended?: boolean): Human;
+            toJSON(): LangError;
+            toPrimitive(): LangError;
+        }
     }
 }
 
@@ -47,6 +56,7 @@ export namespace LocalScheduler {
         callDataTooShort?: null;
         failedToExecuteCall?: null;
         calledJobReturnedError?: null;
+        [index: string]: any;
     }
 
     export namespace JobConfig$ {
@@ -80,28 +90,28 @@ export namespace LocalScheduler {
             CalledJobReturnedError = "CalledJobReturnedError"
         }
 
-        export type Human = LocalScheduler.Error$.Enum.BadOrigin
-            | LocalScheduler.Error$.Enum.JobNotFound
-            | LocalScheduler.Error$.Enum.NotChanged
-            | LocalScheduler.Error$.Enum.InvalidCronExpression
-            | LocalScheduler.Error$.Enum.CronExpressionNeverFire
-            | LocalScheduler.Error$.Enum.InternalErrorCacheCorrupted
-            | LocalScheduler.Error$.Enum.CallDataTooShort
-            | LocalScheduler.Error$.Enum.FailedToExecuteCall
-            | LocalScheduler.Error$.Enum.CalledJobReturnedError;
-        export type Codec = DPT.Enum<LocalScheduler.Error$.Enum.BadOrigin, never, never, PTT.Codec>
-            | DPT.Enum<LocalScheduler.Error$.Enum.JobNotFound, never, never, PTT.Codec>
-            | DPT.Enum<LocalScheduler.Error$.Enum.NotChanged, never, never, PTT.Codec>
-            | DPT.Enum<LocalScheduler.Error$.Enum.InvalidCronExpression, never, never, PTT.Codec>
-            | DPT.Enum<LocalScheduler.Error$.Enum.CronExpressionNeverFire, never, never, PTT.Codec>
-            | DPT.Enum<LocalScheduler.Error$.Enum.InternalErrorCacheCorrupted, never, never, PTT.Codec>
-            | DPT.Enum<LocalScheduler.Error$.Enum.CallDataTooShort, never, never, PTT.Codec>
-            | DPT.Enum<LocalScheduler.Error$.Enum.FailedToExecuteCall, never, never, PTT.Codec>
-            | DPT.Enum<LocalScheduler.Error$.Enum.CalledJobReturnedError, never, never, PTT.Codec>;
+        export type Human = LocalScheduler.Error$.Enum.BadOrigin & { [index: string]: any }
+            | LocalScheduler.Error$.Enum.JobNotFound & { [index: string]: any }
+            | LocalScheduler.Error$.Enum.NotChanged & { [index: string]: any }
+            | LocalScheduler.Error$.Enum.InvalidCronExpression & { [index: string]: any }
+            | LocalScheduler.Error$.Enum.CronExpressionNeverFire & { [index: string]: any }
+            | LocalScheduler.Error$.Enum.InternalErrorCacheCorrupted & { [index: string]: any }
+            | LocalScheduler.Error$.Enum.CallDataTooShort & { [index: string]: any }
+            | LocalScheduler.Error$.Enum.FailedToExecuteCall & { [index: string]: any }
+            | LocalScheduler.Error$.Enum.CalledJobReturnedError & { [index: string]: any };
+
+        export interface Codec extends PT.Enum {
+            type: Enum;
+            inner: PTT.Codec;
+            value: PTT.Codec;
+            toHuman(isExtended?: boolean): Human;
+            toJSON(): Error;
+            toPrimitive(): Error;
+        }
     }
 }
 
-export namespace PinkExtension {
+export namespace Pink {
     export namespace ChainExtension {
         export type PinkExt = any;
 

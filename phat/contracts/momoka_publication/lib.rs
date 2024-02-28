@@ -4,13 +4,12 @@ extern crate alloc;
 
 pub use crate::momoka_publication::*;
 
-#[ink::contract(env = pink_extension::PinkEnvironment)]
+#[ink::contract(env = pink::PinkEnvironment)]
 mod momoka_publication {
     use alloc::{string::String, vec, vec::Vec};
     use ethabi::Token;
     use ink::storage::traits::StorageLayout;
-    use pink_extension as pink;
-    use pink_extension::chain_extension::signing;
+    use pink::chain_extension::signing;
     use pink_web3::{
         api::{Eth, Namespace},
         contract::{Contract, Options},
@@ -213,8 +212,8 @@ mod momoka_publication {
             })()
             ";
 
-            let js_output = phat_js::eval(script, &[resp_body]);
-            let Ok(phat_js::Output::Bytes(encoded)) = js_output else {
+            let js_output = phat_js::eval_async_js(script, &[resp_body]);
+            let phat_js::JsValue::Bytes(encoded) = js_output else {
                 return Err(Error::FailedToParseJson);
             };
             let pub_data = PublicationData::decode(&mut &encoded[..]).expect("encoded by js; qed.");
@@ -453,15 +452,14 @@ mod tests {
         Call, ExecutionInput,
     };
     use drink::{errors::MessageResult, runtime::Runtime, session::Session, ContractBundle};
-    use drink_pink_runtime::{ExecMode, PinkRuntime};
+    use pink_drink::{ExecMode, PinkRuntime};
     use ink::codegen::TraitCallBuilder;
     use ink::env::{
         call::{CallBuilder, CreateBuilder, FromAccountId},
         Environment,
     };
     use ink::primitives::Hash;
-    use pink_extension::Balance;
-    use pink_extension::ConvertTo;
+    use pink::{Balance, ConvertTo};
     use scale::{Decode, Encode};
 
     const DEFAULT_GAS_LIMIT: u64 = 1_000_000_000_000_000;
@@ -590,7 +588,7 @@ mod tests {
     fn can_parse_lens_publication() {
         use std::str::FromStr;
         let _ = env_logger::try_init();
-        pink_extension_runtime::mock_ext::mock_all_ext();
+        pink_chain_extension::mock_ext::mock_all_ext();
 
         let pub_resp = MomokaPublication::fetch_lens_publication(
             String::from("0x814a-0x01-DA-0e18b370"),
@@ -656,7 +654,7 @@ mod tests {
     #[ink::test]
     fn fetch_lens_publication_negatives() {
         let _ = env_logger::try_init();
-        pink_extension_runtime::mock_ext::mock_all_ext();
+        pink_chain_extension::mock_ext::mock_all_ext();
 
         let res = MomokaPublication::fetch_lens_publication(
             String::from("0x73b1-0x2b05-DA-ebdf984e"),
