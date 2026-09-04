@@ -290,7 +290,7 @@ To connect the oracle to your own Substrate chain, you will need to import [`Pha
 
 - Github Repo: <https://github.com/Phala-Network/oracle-workshop>
 - Support
-    - Discord (dev group): <https://discord.gg/phala-network>
+    - Discord (dev group): <https://phala.com/discord>
     - Polkadot StackExchange (tag with `phala` and `phat-contract`): <https://substrate.stackexchange.com/>
 
 ---
